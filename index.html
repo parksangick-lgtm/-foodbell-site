@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 
@@ -120,66 +120,193 @@
       <p class="section-desc">규모와 격식, 인원에 따라 상차림 구성이 달라집니다. 자세한 사항은 문의 바랍니다.</p>
 
       <div class="menu__tabs" role="tablist" aria-label="서비스 카테고리">
-        <button class="menu__tab is-active" role="tab" aria-selected="true" data-target="sije">시제·제사음식</button>
-        <button class="menu__tab" role="tab" aria-selected="false" data-target="village">체육대회·모임·마을잔치</button>
+        <button class="menu__tab is-active" role="tab" aria-selected="true" data-target="sije">시제상차림</button>
+        <button class="menu__tab" role="tab" aria-selected="false" data-target="jesa">기제사·제사상차림</button>
+        <button class="menu__tab" role="tab" aria-selected="false" data-target="event">행사음식</button>
       </div>
 
-      <!-- 시제/제사음식 -->
+      <!-- 시제상차림 -->
       <div class="menu__panel is-active" id="sije" role="tabpanel">
         <div class="menu__grid">
           <article class="menu-card">
-            <div class="menu-card__thumb"><img src="images/gallery-5.jpg" alt="종중 시제상 전체 상차림" loading="lazy"></div>
+            <div class="menu-card__thumb"><img src="images/menu-sije-1.jpg?v=6" alt="봉분 앞에 유과와 과일을 층층이 쌓아 차린 종중 시제·묘사 상차림" loading="lazy"></div>
             <div class="menu-card__body">
-              <h3>종중 시제·제실 상차림</h3>
-              <p>문중 단위의 시제·묘사부터 제실, 사당 등 실내 공간까지 격식에 맞춰 정갈하게 준비합니다.</p>
+              <h3>종중 시제·묘사 상차림</h3>
+              <p>문중 단위의 시제와 묘사를 우리 전통 예법에 맞춰 격식 있게 준비합니다.</p>
               <span class="menu-card__price">상담 후 안내</span>
             </div>
           </article>
           <article class="menu-card">
-            <div class="menu-card__thumb"><img src="images/gallery-6.jpg" alt="가정 제사상 상차림" loading="lazy"></div>
+            <div class="menu-card__thumb"><img src="images/menu-sije-2.jpg?v=6" alt="산소 앞 야외에 정갈하게 차린 시제 상차림" loading="lazy"></div>
             <div class="menu-card__body">
-              <h3>가정 제사상·차례상</h3>
-              <p>기일에 맞춘 기제사, 명절 차례상을 정갈하게 준비합니다.</p>
+              <h3>산소 상석 상차림</h3>
+              <p>봉분 앞 상석과 제단에 우리 예법대로 진설해 격식 있게 차려드립니다.</p>
               <span class="menu-card__price">상담 후 안내</span>
             </div>
           </article>
           <article class="menu-card">
-            <div class="menu-card__thumb"><img src="images/gallery-1.jpg" alt="제사 음식 근접 사진" loading="lazy"></div>
+            <div class="menu-card__thumb"><img src="images/menu-sije-3.jpg?v=6" alt="공원묘지에 지방과 병풍을 갖추고 차린 시제 상차림" loading="lazy"></div>
             <div class="menu-card__body">
-              <h3>정갈한 제수 음식</h3>
-              <p>육포, 조기, 나물까지 정성껏 준비한 제수 음식 일체를 준비합니다.</p>
+              <h3>공원묘지 출장 상차림</h3>
+              <p>문중 산소, 공원묘지 등 어디든 직접 찾아가 상을 차려드립니다.</p>
               <span class="menu-card__price">상담 후 안내</span>
             </div>
           </article>
         </div>
+
+        <!-- 시제상차림 앨범 -->
+        <button class="album-toggle is-open" type="button" aria-expanded="true" aria-controls="album-sije" data-album="album-sije">
+          <span class="album-toggle__label">시제상차림 사진</span>
+          <span class="album-toggle__count">20장</span>
+        </button>
+        <div class="album" id="album-sije">
+          <button class="album__item" type="button" data-src="images/album/sije-01.jpg"><img src="images/album/sije-01.jpg" alt="시제상차림 시공 사례 1" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-02.jpg"><img src="images/album/sije-02.jpg" alt="시제상차림 시공 사례 2" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-03.jpg"><img src="images/album/sije-03.jpg" alt="시제상차림 시공 사례 3" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-04.jpg"><img src="images/album/sije-04.jpg" alt="시제상차림 시공 사례 4" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-05.jpg"><img src="images/album/sije-05.jpg" alt="시제상차림 시공 사례 5" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-06.jpg"><img src="images/album/sije-06.jpg" alt="시제상차림 시공 사례 6" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-07.jpg"><img src="images/album/sije-07.jpg" alt="시제상차림 시공 사례 7" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-08.jpg"><img src="images/album/sije-08.jpg" alt="시제상차림 시공 사례 8" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-09.jpg"><img src="images/album/sije-09.jpg" alt="시제상차림 시공 사례 9" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-10.jpg"><img src="images/album/sije-10.jpg" alt="시제상차림 시공 사례 10" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-11.jpg"><img src="images/album/sije-11.jpg" alt="시제상차림 시공 사례 11" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-12.jpg"><img src="images/album/sije-12.jpg" alt="시제상차림 시공 사례 12" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-13.jpg"><img src="images/album/sije-13.jpg" alt="시제상차림 시공 사례 13" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-14.jpg"><img src="images/album/sije-14.jpg" alt="시제상차림 시공 사례 14" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-15.jpg"><img src="images/album/sije-15.jpg" alt="시제상차림 시공 사례 15" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-16.jpg"><img src="images/album/sije-16.jpg" alt="시제상차림 시공 사례 16" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-17.jpg"><img src="images/album/sije-17.jpg" alt="시제상차림 시공 사례 17" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-18.jpg"><img src="images/album/sije-18.jpg" alt="시제상차림 시공 사례 18" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-19.jpg"><img src="images/album/sije-19.jpg" alt="시제상차림 시공 사례 19" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/sije-20.jpg"><img src="images/album/sije-20.jpg" alt="시제상차림 시공 사례 20" loading="lazy"></button>
+        </div>
+
         <p class="menu__note">※ 모시는 위(位)의 수, 장소, 구성에 따라 상차림과 비용이 달라집니다. 전화 또는 이메일로 문의해주시면 상세히 안내해드립니다.</p>
       </div>
 
-      <!-- 체육대회/모임/마을잔치 -->
-      <div class="menu__panel" id="village" role="tabpanel" hidden>
-        <div class="menu__grid menu__grid--simple">
-          <article class="menu-card menu-card--simple">
-            <span class="menu-card__emoji" aria-hidden="true">🏃</span>
-            <h3>체육대회 출장음식</h3>
-            <p>학교·마을·직장 체육대회에 맞춘 든든한 출장음식을 준비합니다.</p>
+      <!-- 기제사·제사상차림 -->
+      <div class="menu__panel" id="jesa" role="tabpanel" hidden>
+        <div class="menu__grid">
+          <article class="menu-card">
+            <div class="menu-card__thumb"><img src="images/menu-jesa-1.jpg" alt="자택 실내에 흰 상보를 깔고 차린 가정 기제사상" loading="lazy"></div>
+            <div class="menu-card__body">
+              <h3>가정 기제사상</h3>
+              <p>기일에 맞춘 기제사상을 가정 예법에 맞춰 정갈하게 준비합니다.</p>
+              <span class="menu-card__price">상담 후 안내</span>
+            </div>
           </article>
-          <article class="menu-card menu-card--simple">
-            <span class="menu-card__emoji" aria-hidden="true">🎊</span>
-            <h3>마을잔치·경로잔치</h3>
-            <p>마을 잔치, 경로잔치 등 단체 모임에 맞춘 푸짐한 상차림을 준비합니다.</p>
+          <article class="menu-card">
+            <div class="menu-card__thumb"><img src="images/menu-jesa-2.jpg" alt="실내에 격식에 맞춰 진설한 차례상" loading="lazy"></div>
+            <div class="menu-card__body">
+              <h3>명절 차례상</h3>
+              <p>설·추석 등 명절 차례상을 격식에 맞춰 상차림해드립니다.</p>
+              <span class="menu-card__price">상담 후 안내</span>
+            </div>
           </article>
-          <article class="menu-card menu-card--simple">
-            <span class="menu-card__emoji" aria-hidden="true">🧺</span>
-            <h3>모임·야유회 도시락</h3>
-            <p>단체 모임, 야유회에 적합한 실속형 단체 도시락을 준비합니다.</p>
-          </article>
-          <article class="menu-card menu-card--simple">
-            <span class="menu-card__emoji" aria-hidden="true">🫖</span>
-            <h3>다과·간식 세트</h3>
-            <p>회의, 모임에 어울리는 다과와 간식을 구성해드립니다.</p>
+          <article class="menu-card">
+            <div class="menu-card__thumb"><img src="images/menu-jesa-3.jpg" alt="과일과 편, 나물 등을 갖춰 차린 제수 음식" loading="lazy"></div>
+            <div class="menu-card__body">
+              <h3>정갈한 제수 음식</h3>
+              <p>육포, 조기, 전, 나물까지 정성껏 준비한 제수 음식 일체를 준비합니다.</p>
+              <span class="menu-card__price">상담 후 안내</span>
+            </div>
           </article>
         </div>
-        <p class="menu__note">※ 인원과 장소, 구성에 따라 견적이 달라집니다. 실제 사진은 준비 중이며, 자세한 구성은 상담을 통해 안내해드립니다.</p>
+
+        <!-- 기제사·제사상차림 앨범 -->
+        <button class="album-toggle is-open" type="button" aria-expanded="true" aria-controls="album-jesa" data-album="album-jesa">
+          <span class="album-toggle__label">기제사·제사상차림 사진</span>
+          <span class="album-toggle__count">20장</span>
+        </button>
+        <div class="album" id="album-jesa">
+          <button class="album__item" type="button" data-src="images/album/jesa-01.jpg"><img src="images/album/jesa-01.jpg" alt="기제사·제사상차림 시공 사례 1" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-02.jpg"><img src="images/album/jesa-02.jpg" alt="기제사·제사상차림 시공 사례 2" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-03.jpg"><img src="images/album/jesa-03.jpg" alt="기제사·제사상차림 시공 사례 3" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-04.jpg"><img src="images/album/jesa-04.jpg" alt="기제사·제사상차림 시공 사례 4" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-05.jpg"><img src="images/album/jesa-05.jpg" alt="기제사·제사상차림 시공 사례 5" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-06.jpg"><img src="images/album/jesa-06.jpg" alt="기제사·제사상차림 시공 사례 6" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-07.jpg"><img src="images/album/jesa-07.jpg" alt="기제사·제사상차림 시공 사례 7" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-08.jpg"><img src="images/album/jesa-08.jpg" alt="기제사·제사상차림 시공 사례 8" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-09.jpg"><img src="images/album/jesa-09.jpg" alt="기제사·제사상차림 시공 사례 9" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-10.jpg"><img src="images/album/jesa-10.jpg" alt="기제사·제사상차림 시공 사례 10" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-11.jpg"><img src="images/album/jesa-11.jpg" alt="기제사·제사상차림 시공 사례 11" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-12.jpg"><img src="images/album/jesa-12.jpg" alt="기제사·제사상차림 시공 사례 12" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-13.jpg"><img src="images/album/jesa-13.jpg" alt="기제사·제사상차림 시공 사례 13" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-14.jpg"><img src="images/album/jesa-14.jpg" alt="기제사·제사상차림 시공 사례 14" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-15.jpg"><img src="images/album/jesa-15.jpg" alt="기제사·제사상차림 시공 사례 15" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-16.jpg"><img src="images/album/jesa-16.jpg" alt="기제사·제사상차림 시공 사례 16" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-17.jpg"><img src="images/album/jesa-17.jpg" alt="기제사·제사상차림 시공 사례 17" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-18.jpg"><img src="images/album/jesa-18.jpg" alt="기제사·제사상차림 시공 사례 18" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-19.jpg"><img src="images/album/jesa-19.jpg" alt="기제사·제사상차림 시공 사례 19" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/jesa-20.jpg"><img src="images/album/jesa-20.jpg" alt="기제사·제사상차림 시공 사례 20" loading="lazy"></button>
+        </div>
+
+        <p class="menu__note">※ 모시는 위(位)의 수, 장소, 구성에 따라 상차림과 비용이 달라집니다. 전화 또는 이메일로 문의해주시면 상세히 안내해드립니다.</p>
+      </div>
+
+      <!-- 행사음식 -->
+      <div class="menu__panel" id="event" role="tabpanel" hidden>
+        <div class="menu__grid">
+          <article class="menu-card">
+            <div class="menu-card__thumb"><img src="images/menu-event-1.jpg" alt="제실 마당에 천막을 치고 긴 테이블을 차린 문중 행사 현장" loading="lazy"></div>
+            <div class="menu-card__body">
+              <h3>제실·문중 행사 상차림</h3>
+              <p>제실 마당이나 문중 행사장에 천막과 상을 세팅해 단체 음식을 차려드립니다.</p>
+              <span class="menu-card__price">상담 후 안내</span>
+            </div>
+          </article>
+          <article class="menu-card">
+            <div class="menu-card__thumb"><img src="images/menu-event-2.jpg" alt="야외 천막 아래 긴 테이블에 음식을 차린 음복상" loading="lazy"></div>
+            <div class="menu-card__body">
+              <h3>야외 음복·단체 상차림</h3>
+              <p>제례 후 음복과 단체 식사를 위한 야외 상차림을 현장에서 준비합니다.</p>
+              <span class="menu-card__price">상담 후 안내</span>
+            </div>
+          </article>
+          <article class="menu-card">
+            <div class="menu-card__thumb"><img src="images/menu-event-3.jpg" alt="산소 인근 숲에 긴 테이블과 의자를 놓고 차린 단체 상차림" loading="lazy"></div>
+            <div class="menu-card__body">
+              <h3>산소 현장 단체 상차림</h3>
+              <p>산소·공원묘지 인근 현장에 테이블과 의자를 갖춰 단체 상을 차려드립니다.</p>
+              <span class="menu-card__price">상담 후 안내</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- 출장음식 앨범 -->
+        <button class="album-toggle is-open" type="button" aria-expanded="true" aria-controls="album-event" data-album="album-event">
+          <span class="album-toggle__label">출장음식 사진</span>
+          <span class="album-toggle__count">24장</span>
+        </button>
+        <div class="album" id="album-event">
+          <button class="album__item" type="button" data-src="images/album/event-01.jpg"><img src="images/album/event-01.jpg" alt="출장음식 시공 사례 1" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-02.jpg"><img src="images/album/event-02.jpg" alt="출장음식 시공 사례 2" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-03.jpg"><img src="images/album/event-03.jpg" alt="출장음식 시공 사례 3" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-04.jpg"><img src="images/album/event-04.jpg" alt="출장음식 시공 사례 4" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-05.jpg"><img src="images/album/event-05.jpg" alt="출장음식 시공 사례 5" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-06.jpg"><img src="images/album/event-06.jpg" alt="출장음식 시공 사례 6" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-07.jpg"><img src="images/album/event-07.jpg" alt="출장음식 시공 사례 7" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-08.jpg"><img src="images/album/event-08.jpg" alt="출장음식 시공 사례 8" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-09.jpg"><img src="images/album/event-09.jpg" alt="출장음식 시공 사례 9" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-10.jpg"><img src="images/album/event-10.jpg" alt="출장음식 시공 사례 10" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-11.jpg"><img src="images/album/event-11.jpg" alt="출장음식 시공 사례 11" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-12.jpg"><img src="images/album/event-12.jpg" alt="출장음식 시공 사례 12" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-13.jpg"><img src="images/album/event-13.jpg" alt="출장음식 시공 사례 13" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-14.jpg"><img src="images/album/event-14.jpg" alt="출장음식 시공 사례 14" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-15.jpg"><img src="images/album/event-15.jpg" alt="출장음식 시공 사례 15" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-16.jpg"><img src="images/album/event-16.jpg" alt="출장음식 시공 사례 16" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-17.jpg"><img src="images/album/event-17.jpg" alt="출장음식 시공 사례 17" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-18.jpg"><img src="images/album/event-18.jpg" alt="출장음식 시공 사례 18" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-19.jpg"><img src="images/album/event-19.jpg" alt="출장음식 시공 사례 19" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-20.jpg"><img src="images/album/event-20.jpg" alt="출장음식 시공 사례 20" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-21.jpg"><img src="images/album/event-21.jpg" alt="출장음식 시공 사례 21" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-22.jpg"><img src="images/album/event-22.jpg" alt="출장음식 시공 사례 22" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-23.jpg"><img src="images/album/event-23.jpg" alt="출장음식 시공 사례 23" loading="lazy"></button>
+          <button class="album__item" type="button" data-src="images/album/event-24.jpg"><img src="images/album/event-24.jpg" alt="출장음식 시공 사례 24" loading="lazy"></button>
+        </div>
+
+        <p class="menu__note">※ 인원과 장소, 구성에 따라 견적이 달라집니다. 자세한 구성은 상담을 통해 안내해드립니다.</p>
       </div>
     </div>
   </section>
@@ -213,6 +340,9 @@
         <button class="gallery__item" data-full="images/gallery-7.jpg">
           <img src="images/gallery-7.jpg" alt="가정에서 준비한 제사상 전체 상차림" loading="lazy">
         </button>
+        <button class="gallery__item" data-full="images/gallery-9.jpg">
+          <img src="images/gallery-9.jpg" alt="봉분 상석에 영정과 함께 차린 시제 상차림" loading="lazy">
+        </button>
         <button class="gallery__item" data-full="images/gallery-8.jpg">
           <img src="images/gallery-8.jpg" alt="야외 시제상 전체 상차림" loading="lazy">
         </button>
@@ -226,7 +356,7 @@
       <div class="contact__info">
         <p class="section-eyebrow">CONTACT</p>
         <h2 class="section-title">문의</h2>
-        <p class="section-desc">시제상차림·제사상차림부터 체육대회·마을잔치 출장음식 견적까지, 편하게 연락 주시면 자세히 안내해드립니다.</p>
+        <p class="section-desc">시제상차림·제사상차림부터 문중 행사 출장음식 견적까지, 편하게 연락 주시면 자세히 안내해드립니다.</p>
 
         <ul class="contact__list">
           <li>
@@ -273,9 +403,14 @@
 <!-- ============ 갤러리 라이트박스 ============ -->
 <div class="lightbox" id="lightbox" hidden>
   <button class="lightbox__close" id="lightboxClose" aria-label="닫기">✕</button>
-  <img src="" alt="" id="lightboxImg" class="lightbox__img">
+  <button class="lightbox__nav lightbox__nav--prev" id="lightboxPrev" type="button" aria-label="이전 사진">‹</button>
+  <button class="lightbox__nav lightbox__nav--next" id="lightboxNext" type="button" aria-label="다음 사진">›</button>
+  <figure class="lightbox__stage">
+    <img src="" alt="" id="lightboxImg" class="lightbox__img">
+    <figcaption class="lightbox__count" id="lightboxCount"></figcaption>
+  </figure>
 </div>
 
-<script src="js/main.js"></script>
+<script src="js/main.js?v=6"></script>
 </body>
 </html>

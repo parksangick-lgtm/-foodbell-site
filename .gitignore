@@ -1,0 +1,10 @@
+# OS / 편집기 부산물
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# 임시·테스트 파일
+_*.html
+/tmp/

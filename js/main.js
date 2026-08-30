@@ -58,16 +58,54 @@
     toggleToTop();
   }
 
-  /* ---------- 갤러리 라이트박스 ---------- */
-  var galleryItems = document.querySelectorAll('.gallery__item');
+  /* ---------- 카테고리별 사진 앨범 접기/펼치기 (기본: 펼침) ---------- */
+  document.querySelectorAll('.album-toggle').forEach(function (btn) {
+    var album = document.getElementById(btn.getAttribute('data-album'));
+    if (!album) return;
+    var label = btn.querySelector('.album-toggle__label');
+    var baseLabel = label ? label.textContent : '';
+
+    var sync = function () {
+      var open = !album.hidden;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.classList.toggle('is-open', open);
+      if (label) label.textContent = open ? baseLabel + ' 접기' : baseLabel + ' 펼치기';
+    };
+    sync();
+
+    btn.addEventListener('click', function () {
+      album.hidden = !album.hidden;
+      sync();
+    });
+  });
+
+  /* ---------- 라이트박스 (갤러리 · 앨범 공용, 이전/다음 이동) ---------- */
   var lightbox = document.getElementById('lightbox');
   var lightboxImg = document.getElementById('lightboxImg');
   var lightboxClose = document.getElementById('lightboxClose');
+  var lightboxPrev = document.getElementById('lightboxPrev');
+  var lightboxNext = document.getElementById('lightboxNext');
+  var lightboxCount = document.getElementById('lightboxCount');
 
-  function openLightbox(src, alt) {
-    if (!lightbox || !lightboxImg) return;
-    lightboxImg.src = src;
-    lightboxImg.alt = alt || '';
+  var group = [];
+  var groupIndex = 0;
+
+  function renderLightbox() {
+    var item = group[groupIndex];
+    if (!item) return;
+    lightboxImg.src = item.src;
+    lightboxImg.alt = item.alt || '';
+    var many = group.length > 1;
+    if (lightboxCount) lightboxCount.textContent = many ? (groupIndex + 1) + ' / ' + group.length : '';
+    if (lightboxPrev) lightboxPrev.hidden = !many;
+    if (lightboxNext) lightboxNext.hidden = !many;
+  }
+
+  function openLightbox(items, start) {
+    if (!lightbox || !lightboxImg || !items.length) return;
+    group = items;
+    groupIndex = start || 0;
+    renderLightbox();
     lightbox.hidden = false;
     document.body.style.overflow = 'hidden';
   }
@@ -76,25 +114,46 @@
     if (!lightbox) return;
     lightbox.hidden = true;
     lightboxImg.src = '';
+    group = [];
     document.body.style.overflow = '';
   }
 
-  galleryItems.forEach(function (item) {
-    item.addEventListener('click', function () {
-      var full = item.getAttribute('data-full');
-      var img = item.querySelector('img');
-      openLightbox(full, img ? img.alt : '');
+  function step(delta) {
+    if (group.length < 2) return;
+    groupIndex = (groupIndex + delta + group.length) % group.length;
+    renderLightbox();
+  }
+
+  function wireGroup(container, itemSelector, srcAttr) {
+    var nodes = Array.prototype.slice.call(container.querySelectorAll(itemSelector));
+    var items = nodes.map(function (n) {
+      var img = n.querySelector('img');
+      return { src: n.getAttribute(srcAttr), alt: img ? img.alt : '' };
     });
+    nodes.forEach(function (n, i) {
+      n.addEventListener('click', function () { openLightbox(items, i); });
+    });
+  }
+
+  var galleryGrid = document.querySelector('.gallery__grid');
+  if (galleryGrid) wireGroup(galleryGrid, '.gallery__item', 'data-full');
+  document.querySelectorAll('.album').forEach(function (album) {
+    wireGroup(album, '.album__item', 'data-src');
   });
 
   if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+  if (lightboxPrev) lightboxPrev.addEventListener('click', function () { step(-1); });
+  if (lightboxNext) lightboxNext.addEventListener('click', function () { step(1); });
   if (lightbox) {
     lightbox.addEventListener('click', function (e) {
-      if (e.target === lightbox) closeLightbox();
+      if (e.target === lightbox || e.target === lightboxImg.parentNode) closeLightbox();
     });
   }
   document.addEventListener('keydown', function (e) {
+    if (!lightbox || lightbox.hidden) return;
     if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft') step(-1);
+    else if (e.key === 'ArrowRight') step(1);
   });
 
   /* ---------- 헤더 스크롤 그림자(선택적 시각 효과) ---------- */

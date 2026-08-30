@@ -347,20 +347,79 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 0.92rem;
 }
 
-/* 체육대회·마을잔치 탭: 이미지 없는 단순 카드 */
-.menu-card--simple {
-  padding: 30px 22px;
-  text-align: center;
-}
-.menu-card__emoji { font-size: 2.2rem; display: block; margin-bottom: 14px; }
-.menu-card--simple h3 { font-size: 1.02rem; margin-bottom: 8px; font-family: var(--font-body); font-weight: 700; }
-.menu-card--simple p { color: var(--color-ink-soft); font-size: 0.88rem; }
-
 .menu__note {
   margin-top: 34px;
   font-size: 0.82rem;
   color: var(--color-ink-soft);
   text-align: center;
+}
+
+/* 카테고리별 사진 앨범 (사진 더보기) */
+.album-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 30px auto 0;
+  padding: 12px 26px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.album-toggle::after {
+  content: "▾";
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+.album-toggle:hover,
+.album-toggle.is-open { border-color: var(--color-primary); color: var(--color-primary); }
+.album-toggle.is-open::after { transform: rotate(180deg); }
+.album-toggle__count {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-white);
+  background: var(--color-primary);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.album {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  animation: fadeIn 0.35s ease;
+}
+.album[hidden] { display: none; }
+.album__item {
+  border: none;
+  padding: 0;
+  background: var(--color-cream-deep);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  cursor: zoom-in;
+  position: relative;
+}
+.album__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.album__item:hover img { transform: scale(1.07); }
+.album__item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px rgba(36,28,21,0.08);
+  border-radius: var(--radius-sm);
 }
 
 /* ---------- 갤러리 ---------- */
@@ -427,6 +486,39 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 1.1rem;
 }
 .lightbox__close:hover { background: rgba(255,255,255,0.24); }
+.lightbox__stage {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.lightbox__count {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.lightbox__count:empty { display: none; }
+.lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: var(--color-white);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.lightbox__nav:hover { background: rgba(255,255,255,0.24); }
+.lightbox__nav[hidden] { display: none; }
+.lightbox__nav--prev { left: 20px; }
+.lightbox__nav--next { right: 20px; }
 
 /* ---------- 문의 ---------- */
 .contact { padding: 100px 0; background: var(--color-cream-deep); }
@@ -497,6 +589,7 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 960px) {
   .features { grid-template-columns: repeat(2, 1fr); }
   .gallery__grid { grid-template-columns: repeat(2, 1fr); }
+  .album { grid-template-columns: repeat(3, 1fr); }
   .lg-only { display: none; }
 }
 
@@ -524,5 +617,11 @@ button { font-family: inherit; cursor: pointer; }
   .about, .menu, .gallery, .contact { padding: 64px 0; }
   .features { grid-template-columns: 1fr; }
   .gallery__grid { grid-template-columns: 1fr; }
+  .album { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .menu__tab { padding: 10px 16px; font-size: 0.84rem; }
+  .album-toggle { width: 100%; }
   .lightbox { padding: 20px; }
+  .lightbox__nav { width: 40px; height: 40px; font-size: 1.3rem; }
+  .lightbox__nav--prev { left: 8px; }
+  .lightbox__nav--next { right: 8px; }
 }
