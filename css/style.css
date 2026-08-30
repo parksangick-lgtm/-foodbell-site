@@ -91,6 +91,13 @@ button { font-family: inherit; cursor: pointer; }
 }
 .btn--ghost:hover { background: var(--color-gold); color: var(--color-white); }
 
+.header__cta {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  letter-spacing: 0.01em;
+}
+
 /* ---------- 헤더 ---------- */
 .header {
   position: sticky;
@@ -116,7 +123,8 @@ button { font-family: inherit; cursor: pointer; }
   margin-right: auto;
 }
 .logo__mark { color: var(--color-gold); display: inline-flex; }
-.logo__text em { font-style: normal; color: var(--color-primary); }
+.logo__text { color: var(--color-primary); }
+.logo__text em { font-style: normal; color: inherit; }
 
 .nav__list {
   display: flex;
@@ -436,6 +444,14 @@ button { font-family: inherit; cursor: pointer; }
 .contact__list strong { display: block; font-size: 0.9rem; margin-bottom: 3px; }
 .contact__list p { color: var(--color-ink-soft); font-size: 0.92rem; }
 .contact__list a:hover { color: var(--color-primary); }
+.phone-number {
+  display: inline-block;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: 0.01em;
+}
+.phone-number:hover { color: var(--color-primary-dark); }
 .contact__list em { font-style: normal; color: #A89A83; font-size: 0.8rem; }
 
 .contact__actions { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
