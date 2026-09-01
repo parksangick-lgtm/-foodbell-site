@@ -9,6 +9,16 @@
 <meta property="og:description" content="종중 시제와 묘사, 가정의 제사상부터 체육대회·모임·마을잔치 출장음식까지 정성껏 차려드립니다.">
 <meta property="og:image" content="images/hero-table.jpg">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.85em%22 font-size=%2290%22>🏮</text></svg>">
+
+<!-- PWA (홈 화면에 추가하면 앱처럼 실행) -->
+<meta name="theme-color" content="#6E1E2B">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="푸드벨">
+<meta name="mobile-web-app-capable" content="yes">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
@@ -443,5 +453,13 @@
 </div>
 
 <script src="js/main.js?v=6"></script>
+<script>
+  /* 서비스 워커 등록 — 홈 화면 앱 실행 + 오프라인 기본 지원 */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>

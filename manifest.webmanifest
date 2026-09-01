@@ -1,0 +1,31 @@
+{
+  "name": "푸드벨 | 시제·제사상차림 출장음식",
+  "short_name": "푸드벨",
+  "description": "서울 송파구 기반, 시제상차림·제사상차림·출장음식 전문 푸드벨(박상익출장음식)",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F2E9",
+  "theme_color": "#6E1E2B",
+  "categories": ["food", "business", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "전화 문의",
+      "short_name": "전화",
+      "url": "/?utm_source=pwa_shortcut#contact"
+    },
+    {
+      "name": "서비스 보기",
+      "short_name": "서비스",
+      "url": "/?utm_source=pwa_shortcut#menu"
+    }
+  ]
+}
