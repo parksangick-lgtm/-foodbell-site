@@ -646,8 +646,14 @@ button { font-family: inherit; cursor: pointer; }
     flex: 0 0 40%;
     aspect-ratio: auto;
     align-self: stretch;
+    position: relative;      /* 사진이 카드 높이(설명 글 기준)에 딱 맞게 채워지도록 */
   }
-  .menu-card__thumb img { height: 100%; }
+  .menu-card__thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
   .menu-card__body {
     flex: 1;
     padding: 15px 16px 16px;
