@@ -637,6 +637,27 @@ button { font-family: inherit; cursor: pointer; }
   .album { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .menu__tab { padding: 10px 16px; font-size: 0.84rem; }
   .album-toggle { width: 100%; }
+
+  /* 서비스 카드: 좁은 화면에서는 한 줄에 하나, 사진 왼쪽 · 설명 오른쪽 (설명 글이 길쭉하게 눌리지 않도록) */
+  .menu__grid { grid-template-columns: 1fr; gap: 14px; }
+  .menu-card { display: flex; align-items: stretch; }
+  .menu-card:hover { transform: none; box-shadow: none; }
+  .menu-card__thumb {
+    flex: 0 0 40%;
+    aspect-ratio: auto;
+    align-self: stretch;
+  }
+  .menu-card__thumb img { height: 100%; }
+  .menu-card__body {
+    flex: 1;
+    padding: 15px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .menu-card__body h3 { font-size: 1.04rem; margin-bottom: 5px; }
+  .menu-card__body p { min-height: 0; font-size: 0.92rem; line-height: 1.55; }
+  .menu-card__price { margin-top: 8px; }
   .lightbox { padding: 20px; }
   .lightbox__nav { width: 40px; height: 40px; font-size: 1.3rem; }
   .lightbox__nav--prev { left: 8px; }
