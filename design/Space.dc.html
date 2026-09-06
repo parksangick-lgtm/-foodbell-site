@@ -18,7 +18,7 @@
   <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px;">
     <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.08em; color: #6E1E2B;">푸드벨 디자인 시스템 · 03</div>
     <h1 style="font-family: 'Gowun Batang', serif; font-size: 35px; font-weight: 700; margin: 0;">간격 · 모서리 · 그림자</h1>
-    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 640px;">간격은 4의 배수로만 씁니다. 지금은 4·5·8·10·12·14·16·20·22·24·28px가 섞여 있어 화면마다 미묘하게 어긋납니다.</p>
+    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 640px;">간격은 4의 배수로만 씁니다. 4·5·8·10·12·14·16·20·22·24·28px가 섞여 있던 것을 아래 9단으로 정리해 style.css에 반영했습니다.</p>
   </div>
 
   <div style="display: flex; flex-direction: column; gap: 28px;">
@@ -26,7 +26,7 @@
     <div style="display: flex; flex-direction: column; gap: 12px;">
       <div style="display: flex; align-items: baseline; gap: 10px;">
         <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">간격 스케일</h2>
-        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">4px 기준 · 9단</span>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">4px 기준 · 9단 · --space-1 ~ --space-24</span>
       </div>
       <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 8px 24px; display: flex; flex-direction: column;">
         <sc-for list="{{steps}}" as="step" hint-placeholder-count="9">
@@ -40,8 +40,9 @@
           </div>
         </sc-for>
       </div>
-      <div style="background: #EDE4D3; border-radius: 12px; padding: 14px 18px; font-size: 14px; font-weight: 700; color: #2A2318;">
-        바꿀 값: 5px → 4px · 10px → 8px · 14px → 16px · 20px과 22px → 24px · 28px → 24px
+      <div style="background: #EDE4D3; border-radius: 12px; padding: 14px 18px; font-size: 14px; font-weight: 700; color: #2A2318; display: flex; flex-direction: column; gap: 8px;">
+        <span>규칙: 배치 간격(gap · margin · 섹션 여백)은 위 토큰에서만 고르고, 부품 안쪽 여백(padding)은 토큰 대신 4의 배수 숫자를 그대로 씁니다.</span>
+        <span style="color: #6E1E2B;">바꾼 값: 3·5px → 4px · 6·9·10px → 8px · 11·15px → 12px · 14·18px → 16px · 20·22·26px → 24px · 30·34·36px → 32px · 40·44px → 48px · 90px → 96px</span>
       </div>
     </div>
 
