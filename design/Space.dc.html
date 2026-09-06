@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif; }
+    a { color: #6E1E2B; } a:hover { color: #4E141E; }
+  </style>
+</helmet>
+<div style="background: #F7F2E9; padding: 40px; min-height: 1240px; color: #120C06;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px;">
+    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.08em; color: #6E1E2B;">푸드벨 디자인 시스템 · 03</div>
+    <h1 style="font-family: 'Gowun Batang', serif; font-size: 35px; font-weight: 700; margin: 0;">간격 · 모서리 · 그림자</h1>
+    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 640px;">간격은 4의 배수로만 씁니다. 지금은 4·5·8·10·12·14·16·20·22·24·28px가 섞여 있어 화면마다 미묘하게 어긋납니다.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 28px;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">간격 스케일</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">4px 기준 · 9단</span>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 8px 24px; display: flex; flex-direction: column;">
+        <sc-for list="{{steps}}" as="step" hint-placeholder-count="9">
+          <div style="display: flex; align-items: center; gap: 20px; padding: 11px 0; border-bottom: 1px solid #EDE4D3;">
+            <div style="width: 92px; flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">{{step.name}}</div>
+            <div style="width: 54px; flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700;">{{step.px}}px</div>
+            <div style="width: 340px; flex-shrink: 0; display: flex; align-items: center;">
+              <div style="height: 16px; border-radius: 4px; background: #B08D57; width: {{step.px}}px;"></div>
+            </div>
+            <div style="flex-grow: 1; font-size: 13px; font-weight: 700; color: #2A2318;">{{step.use}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background: #EDE4D3; border-radius: 12px; padding: 14px 18px; font-size: 14px; font-weight: 700; color: #2A2318;">
+        바꿀 값: 5px → 4px · 10px → 8px · 14px → 16px · 20px과 22px → 24px · 28px → 24px
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">모서리 둥글기</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">이미 토큰으로 잡혀 있음</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <div style="width: 100%; height: 60px; background: #EDE4D3; border-radius: 10px;"></div>
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--radius-sm</div>
+            <div style="font-size: 13px; font-weight: 700;">10px · 앨범 썸네일</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <div style="width: 100%; height: 60px; background: #EDE4D3; border-radius: 16px;"></div>
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--radius-md</div>
+            <div style="font-size: 13px; font-weight: 700;">16px · 카드 기본</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <div style="width: 100%; height: 60px; background: #EDE4D3; border-radius: 24px;"></div>
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--radius-lg</div>
+            <div style="font-size: 13px; font-weight: 700;">24px · 큰 블록</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <div style="width: 100%; height: 60px; background: #EDE4D3; border-radius: 999px;"></div>
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">999px</div>
+            <div style="font-size: 13px; font-weight: 700;">알약 · 버튼과 탭</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">그림자</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">2단만 씁니다 · 평소와 마우스 올렸을 때</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 24px; box-shadow: 0 12px 30px -14px rgba(36, 28, 21, 0.28); display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--shadow-soft</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0 12px 30px -14px rgba(36, 28, 21, 0.28)</div>
+          <div style="font-size: 14px; font-weight: 700;">주 버튼, 떠 있는 카드의 기본 상태</div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 24px; box-shadow: 0 18px 40px -16px rgba(36, 28, 21, 0.38); display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--shadow-hover</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0 18px 40px -16px rgba(36, 28, 21, 0.38)</div>
+          <div style="font-size: 14px; font-weight: 700;">마우스를 올렸을 때 · 6px 위로 뜨면서 같이 적용</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"density":{"editor":"enum","default":"기본","options":["촘촘","기본","넉넉"],"section":"밀도"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const d = this.props.density ?? '기본';
+    const mult = d === '촘촘' ? 0.75 : d === '넉넉' ? 1.25 : 1;
+    const base = [
+      { name: 'space-1', px: 4, use: '아이콘과 글자 사이' },
+      { name: 'space-2', px: 8, use: '버튼 안 요소 간격' },
+      { name: 'space-3', px: 12, use: '태그·칩 사이' },
+      { name: 'space-4', px: 16, use: '카드 사이 그리드 간격' },
+      { name: 'space-6', px: 24, use: '컨테이너 좌우 여백' },
+      { name: 'space-8', px: 32, use: '제목과 본문 사이' },
+      { name: 'space-12', px: 48, use: '블록과 블록 사이' },
+      { name: 'space-16', px: 64, use: '모바일 섹션 위아래' },
+      { name: 'space-24', px: 100, use: '데스크톱 섹션 위아래' }
+    ];
+    return { steps: base.map((s) => ({ ...s, px: Math.round(s.px * mult) })) };
+  }
+}
+</script>
+</body>
+</html>

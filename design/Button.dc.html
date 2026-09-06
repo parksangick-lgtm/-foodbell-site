@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif; }
+    a { color: #6E1E2B; } a:hover { color: #4E141E; }
+  </style>
+</helmet>
+<div style="background: #F7F2E9; padding: 40px; min-height: 780px; color: #120C06;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 30px;">
+    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.08em; color: #6E1E2B;">푸드벨 디자인 시스템 · 04</div>
+    <h1 style="font-family: 'Gowun Batang', serif; font-size: 35px; font-weight: 700; margin: 0;">버튼</h1>
+    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 640px;">한 화면에 주 버튼(자주색)은 하나만 둡니다. 나머지는 테두리형이나 연한 버튼으로 물러나야 시선이 갈라지지 않습니다.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 26px;">
+
+    <div style="background: {{panelBg}}; border: 1px solid {{panelBorder}}; border-radius: 24px; padding: 30px 28px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px;">
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: {{labelColor}};">.btn--primary</div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15.2px; line-height: 1.65; background: #6E1E2B; color: #FFFFFF; box-shadow: 0 12px 30px -14px rgba(36, 28, 21, 0.28);">주문 문의하기</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15.2px; line-height: 1.65; background: #4E141E; color: #FFFFFF; box-shadow: 0 18px 40px -16px rgba(36, 28, 21, 0.38); transform: translateY(-2px);">주문 문의하기</span>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: {{subColor}};">기본 / 마우스 올림 · 페이지당 1개</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: {{labelColor}};">.btn--outline</div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15.2px; line-height: 1.65; background: transparent; color: #6E1E2B; border: 1.5px solid #6E1E2B;">메뉴 보기</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15.2px; line-height: 1.65; background: #6E1E2B; color: #FFFFFF; border: 1.5px solid #6E1E2B; transform: translateY(-2px);">메뉴 보기</span>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: {{subColor}};">밝은 배경 위 보조 행동</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: {{labelColor}};">.btn--outline-light</div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15.2px; line-height: 1.65; background: transparent; color: #FFFFFF; border: 1.5px solid rgba(255,255,255,0.7);">사진 더보기</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15.2px; line-height: 1.65; background: #FFFFFF; color: #6E1E2B; border: 1.5px solid #FFFFFF;">사진 더보기</span>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: {{subColor}};">히어로 사진 위에서만 · 위 토글을 켜고 보세요</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: {{labelColor}};">.btn--ghost</div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-size: 14.4px; line-height: 1.65; background: #EDE4D3; color: #120C06;">전화 걸기</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-size: 14.4px; line-height: 1.65; background: #B08D57; color: #FFFFFF;">전화 걸기</span>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: {{subColor}};">가장 약한 버튼 · 카드 안 부가 행동</div>
+      </div>
+
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+      <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">공통 규격</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 700;">
+          <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: #2A2318;">안쪽 여백</span><span style="font-family: ui-monospace, monospace;">14px 28px</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: #2A2318;">모서리</span><span style="font-family: ui-monospace, monospace;">999px (알약)</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: #2A2318;">글자</span><span style="font-family: ui-monospace, monospace;">15.2px · 700</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: #2A2318;">아이콘 간격</span><span style="font-family: ui-monospace, monospace;">gap 8px</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: #2A2318;">움직임</span><span style="font-family: ui-monospace, monospace;">0.2s · 위로 2px</span></div>
+        </div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #B08D57; border-radius: 16px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">고쳐야 할 것 하나</h2>
+        <p style="font-size: 14px; font-weight: 700; color: #2A2318; margin: 0;">손가락으로 누르는 버튼은 최소 44px 높이가 필요합니다. 지금 <span style="font-family: ui-monospace, monospace;">.btn--ghost</span>는 세로 43.8px로 아슬아슬하게 모자랍니다.</p>
+        <p style="font-size: 14px; font-weight: 800; color: #6E1E2B; margin: 0;">세로 여백을 10px → 11px로 올리면 45.8px가 되어 해결됩니다.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"onDark":{"editor":"boolean","default":false,"section":"미리보기"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.onDark ?? false;
+    return {
+      panelBg: dark ? '#241412' : '#FFFFFF',
+      panelBorder: dark ? '#241412' : '#E2D6BF',
+      labelColor: dark ? '#B08D57' : '#6E1E2B',
+      subColor: dark ? '#D6CBB9' : '#2A2318'
+    };
+  }
+}
+</script>
+</body>
+</html>

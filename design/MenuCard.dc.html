@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif; }
+    a { color: #6E1E2B; } a:hover { color: #4E141E; }
+  </style>
+</helmet>
+<div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;">
+  <div style="aspect-ratio: 4 / 3; overflow: hidden; background: #EDE4D3;">
+    <img src="jesa-thumb.jpg" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+  </div>
+  <div style="padding: 18px 20px 22px; display: flex; flex-direction: column;">
+    <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 6px; color: #120C06; line-height: 1.4;">{{title}}</h3>
+    <p style="color: #2A2318; font-size: 15px; font-weight: 700; margin: 0; min-height: 2.6em; line-height: 1.65;">{{desc}}</p>
+    <span style="margin-top: 10px; font-weight: 800; color: #4E141E; font-size: 16px;">{{price}}</span>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"title":{"editor":null,"default":"기제사 기본상"},"desc":{"editor":null,"default":"삼색나물과 전, 탕국까지 갖춘 기본 구성"},"price":{"editor":null,"default":"25만원부터"},"$preview":{"width":280,"height":360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      title: this.props.title ?? '기제사 기본상',
+      desc: this.props.desc ?? '삼색나물과 전, 탕국까지 갖춘 기본 구성',
+      price: this.props.price ?? '25만원부터'
+    };
+  }
+}
+</script>
+</body>
+</html>

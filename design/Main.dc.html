@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif; }
+    a { color: #6E1E2B; } a:hover { color: #4E141E; }
+  </style>
+</helmet>
+<div style="background: #F7F2E9; padding: 40px; min-height: 1120px; color: #120C06;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 36px;">
+    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.08em; color: #6E1E2B;">푸드벨 디자인 시스템 · 01</div>
+    <h1 style="font-family: 'Gowun Batang', serif; font-size: 35px; font-weight: 700; margin: 0;">색상 토큰</h1>
+    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 620px;">css/style.css의 :root에 정의된 9개 토큰입니다. 새 화면을 만들 때 색은 이 안에서만 고릅니다.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 30px;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">브랜드</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">버튼·강조·로고에 쓰는 주인공 색</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #6E1E2B; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #FFFFFF; font-size: 14px; font-weight: 800;">#6E1E2B</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">자주 (기본)</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-primary</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">주 버튼, 활성 탭, 로고 글자</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #4E141E; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #FFFFFF; font-size: 14px; font-weight: 800;">#4E141E</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">자주 (진한)</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-primary-dark</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">버튼 호버, 가격 글자</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #B08D57; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #FFFFFF; font-size: 14px; font-weight: 800;">#B08D57</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">금색</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-gold</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">로고 마크, 포인트 강조</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">글자와 선</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">검정 대신 쓰는 따뜻한 먹색</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #120C06; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #FFFFFF; font-size: 14px; font-weight: 800;">#120C06</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">먹색 (본문)</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-ink</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">제목, 본문 기본 글자색</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #2A2318; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #FFFFFF; font-size: 14px; font-weight: 800;">#2A2318</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">먹색 (연한)</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-ink-soft</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">설명문, 보조 문구</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #E2D6BF; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #120C06; font-size: 14px; font-weight: 800;">#E2D6BF</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">테두리</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-border</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">카드 선, 헤더 아래 선</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">배경</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">한지 느낌의 크림 계열 3단</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #F7F2E9; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #120C06; font-size: 14px; font-weight: 800;">#F7F2E9</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">크림 (기본)</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-cream</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">페이지 전체 바탕</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #EDE4D3; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px;"><span style="color: #120C06; font-size: 14px; font-weight: 800;">#EDE4D3</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">크림 (진한)</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-cream-deep</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">메뉴 섹션 바탕, 아이브로우</div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; overflow: hidden;">
+          <div style="background: #FFFFFF; height: 76px; display: flex; align-items: flex-end; padding: 10px 14px; border-bottom: 1px solid #E2D6BF;"><span style="color: #120C06; font-size: 14px; font-weight: 800;">#FFFFFF</span></div>
+          <div style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 15px; font-weight: 800;">흰색</div>
+            <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: #6E1E2B;">--color-white</div>
+            <div style="font-size: 13px; font-weight: 700; color: #2A2318;">카드 바탕, 주 버튼 글자</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">토큰 밖에 흩어진 색 7개</h2>
+        <p style="font-size: 14px; font-weight: 700; color: #2A2318; margin: 0;">지금 style.css 안에 이름 없이 직접 적힌 색입니다. 디자인 시스템의 첫 숙제는 이걸 토큰으로 흡수하는 것입니다.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #FBF1DC; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#FBF1DC</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #F6E8CC; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#F6E8CC</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #F5ECDD; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#F5ECDD</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #EDE3D4; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#EDE3D4</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #D6CBB9; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#D6CBB9</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #B0A492; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#B0A492</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; background: #F7F2E9; border-radius: 10px; padding: 8px 10px;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #6B5E48; border: 1px solid #E2D6BF; flex-shrink: 0;"></span><span style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700;">#6B5E48</span></div>
+      </div>
+      <p style="font-size: 14px; font-weight: 700; color: #2A2318; margin: 0;">앞의 넷은 히어로 위 밝은 글자용이라 <strong style="font-weight: 800;">--color-cream-light</strong> 하나로 합칠 수 있고, 뒤의 셋은 어두운 배경 위 보조 글자라 <strong style="font-weight: 800;">--color-ink-muted</strong> 계열로 정리됩니다.</p>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

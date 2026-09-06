@@ -8,3 +8,6 @@ desktop.ini
 # 임시·테스트 파일
 _*.html
 /tmp/
+
+# 디자인 캔버스 조립 결과물 (2.5MB) — design/*.dc.html 소스에서 다시 만들 수 있음
+design/foodbell-design-system.html

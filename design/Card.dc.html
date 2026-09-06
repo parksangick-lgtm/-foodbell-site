@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif; }
+    a { color: #6E1E2B; } a:hover { color: #4E141E; }
+  </style>
+</helmet>
+<div style="background: #F7F2E9; padding: 40px; min-height: 1120px; color: #120C06;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 30px;">
+    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.08em; color: #6E1E2B;">푸드벨 디자인 시스템 · 05</div>
+    <h1 style="font-family: 'Gowun Batang', serif; font-size: 35px; font-weight: 700; margin: 0;">카드</h1>
+    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 660px;">사이트에 쓰이는 카드는 두 종류뿐입니다. 새 카드가 필요해 보이면 먼저 이 둘 중 하나로 풀리는지 확인합니다.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 30px;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">특징 카드</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">.feature-card · 아이콘 + 제목 + 두 줄 설명</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px;">
+
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 28px 22px; display: flex; flex-direction: column;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #EDE4D3; margin-bottom: 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E1E2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16"></path><path d="M6.5 8c0 4 2.2 6.5 5.5 6.5S17.5 12 17.5 8"></path><path d="M12 14.5V18"></path><path d="M8 18h8"></path></svg>
+          </span>
+          <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 8px; line-height: 1.4;">전통 격식</h3>
+          <p style="color: #2A2318; font-size: 16px; font-weight: 700; margin: 0; line-height: 1.65;">지방·차례상 예법에 맞춘 진설로 격식 있는 상차림을 준비합니다.</p>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 28px 22px; display: flex; flex-direction: column;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #EDE4D3; margin-bottom: 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E1E2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"></path><path d="M13 10h4l3 3v3h-7"></path><circle cx="6.5" cy="18" r="2"></circle><circle cx="16.5" cy="18" r="2"></circle></svg>
+          </span>
+          <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 8px; line-height: 1.4;">어디든 출장</h3>
+          <p style="color: #2A2318; font-size: 16px; font-weight: 700; margin: 0; line-height: 1.65;">제실·문중 산소·공원묘지·자택 등 현장으로 직접 찾아가 세팅합니다.</p>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 28px 22px; display: flex; flex-direction: column;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #EDE4D3; margin-bottom: 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E1E2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5c-3 0-5 2.2-5 5.5s2.2 6.5 5 6.5 5-3.2 5-6.5-2-5.5-5-5.5z"></path><path d="M12 8.5V5.5"></path><path d="M12 6c1.4-1.6 3.2-1.2 3.2-1.2s.3 1.7-1.3 2.6"></path></svg>
+          </span>
+          <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 8px; line-height: 1.4;">정갈한 재료</h3>
+          <p style="color: #2A2318; font-size: 16px; font-weight: 700; margin: 0; line-height: 1.65;">과일, 전, 육포, 나물까지 정성껏 준비한 신선한 재료를 사용합니다.</p>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 28px 22px; display: flex; flex-direction: column;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #EDE4D3; margin-bottom: 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E1E2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4h13v16.5h-13z"></path><path d="M9 9h6"></path><path d="M9 13h6"></path><path d="M9 17h3.5"></path></svg>
+          </span>
+          <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 8px; line-height: 1.4;">맞춤 상차림</h3>
+          <p style="color: #2A2318; font-size: 16px; font-weight: 700; margin: 0; line-height: 1.65;">모시는 위(位)의 수와 규모에 맞춰 상차림 구성을 조정해드립니다.</p>
+        </div>
+
+      </div>
+      <div style="background: #EDE4D3; border-radius: 12px; padding: 14px 18px; font-size: 14px; font-weight: 700; color: #2A2318;">
+        아이콘은 지금 이모지(🙏 🚚 🍎 📋)를 쓰고 있습니다. 위처럼 선 아이콘으로 바꾸면 기기마다 다르게 보이는 문제가 없어지고 브랜드 색으로 물들일 수 있습니다.
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">메뉴 카드</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">.menu-card · 사진 + 이름 + 설명 + 가격</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px;">
+        <sc-for list="{{items}}" as="item" hint-placeholder-count="3">
+          <dc-import name="MenuCard" title="{{ item.title }}" desc="{{ item.desc }}" price="{{ item.price }}" hint-size="100%,356px"></dc-import>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">두 카드가 공유하는 규칙</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; font-size: 14px; font-weight: 700;">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><span style="color: #2A2318;">바탕과 테두리</span><span style="font-family: ui-monospace, monospace; font-size: 13px;">#FFFFFF · 1px #E2D6BF</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;"><span style="color: #2A2318;">모서리</span><span style="font-family: ui-monospace, monospace; font-size: 13px;">16px (--radius-md)</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;"><span style="color: #2A2318;">카드 사이 간격</span><span style="font-family: ui-monospace, monospace; font-size: 13px;">22px → 24px로 정리</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;"><span style="color: #2A2318;">마우스 올림</span><span style="font-family: ui-monospace, monospace; font-size: 13px;">위로 6px + 그림자</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      items: [
+        { title: '종중 시제·묘사 상차림', desc: '문중 단위의 시제와 묘사를 우리 전통 예법에 맞춰 격식 있게 준비합니다.', price: '상담 후 안내' },
+        { title: '산소 상석 상차림', desc: '봉분 앞 상석과 제단에 우리 예법대로 진설해 격식 있게 차려드립니다.', price: '상담 후 안내' },
+        { title: '공원묘지 출장 상차림', desc: '문중 산소, 공원묘지 등 어디든 직접 찾아가 상을 차려드립니다.', price: '상담 후 안내' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
