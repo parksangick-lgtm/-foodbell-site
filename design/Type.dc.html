@@ -13,12 +13,12 @@
     a { color: #6E1E2B; } a:hover { color: #4E141E; }
   </style>
 </helmet>
-<div style="background: #F7F2E9; padding: 40px; min-height: 1220px; color: #120C06;">
+<div style="background: #F7F2E9; padding: 40px; min-height: 1500px; color: #120C06;">
 
   <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px;">
     <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.08em; color: #6E1E2B;">푸드벨 디자인 시스템 · 02</div>
     <h1 style="font-family: 'Gowun Batang', serif; font-size: 35px; font-weight: 700; margin: 0;">글자 크기 램프</h1>
-    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 640px;">지금 사이트에는 글자 크기가 20종류 흩어져 있습니다. 사람 눈에 구분되지 않는 차이(0.94rem과 0.95rem)는 시스템이 아니라 사고입니다. 아래 9단계로 줄입니다.</p>
+    <p style="font-size: 16px; font-weight: 700; color: #2A2318; margin: 0; max-width: 640px;">사람 눈에 구분되지 않는 차이(0.94rem과 0.95rem)는 시스템이 아니라 사고입니다. 흩어져 있던 20종을 아래 11단계로 줄여 style.css에 반영했습니다.</p>
   </div>
 
   <div style="display: flex; flex-direction: column; gap: 28px;">
@@ -29,7 +29,7 @@
         <span style="font-size: 14px; font-weight: 700; color: #2A2318;">Pretendard · 굵기 700 / 800</span>
       </div>
       <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 8px 24px; display: flex; flex-direction: column;">
-        <sc-for list="{{body}}" as="step" hint-placeholder-count="6">
+        <sc-for list="{{body}}" as="step" hint-placeholder-count="8">
           <div style="display: flex; align-items: baseline; gap: 20px; padding: 14px 0; border-bottom: 1px solid #EDE4D3;">
             <div style="width: 96px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;">
               <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">{{step.name}}</div>
@@ -63,33 +63,41 @@
 
     <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px;">
       <div style="display: flex; flex-direction: column; gap: 4px;">
-        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">지금 값 → 바꿀 값</h2>
-        <p style="font-size: 14px; font-weight: 700; color: #2A2318; margin: 0;">style.css를 열어 왼쪽 값을 찾아 오른쪽으로 바꾸면 램프가 정리됩니다.</p>
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">이렇게 바꿨습니다</h2>
+        <p style="font-size: 14px; font-weight: 700; color: #2A2318; margin: 0;">왼쪽이 예전 값, 오른쪽이 지금 style.css에 들어 있는 토큰입니다.</p>
       </div>
       <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
         <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0.86rem · 0.88rem</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ 0.875rem (14px)</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0.76 · 0.82rem</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-xs (12px)</div>
+        </div>
+        <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0.84 · 0.85 · 0.86 · 0.88rem</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-caption (14px)</div>
         </div>
         <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0.9 · 0.92 · 0.94 · 0.95rem</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ 0.9375rem (15px)</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-sm (15px)</div>
         </div>
         <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0.98 · 1.04 · 1.05rem</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ 1rem (16px)</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">0.98 · 1.04rem</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-base (16px)</div>
+        </div>
+        <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">1.05rem</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-md (17px)</div>
         </div>
         <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">1.08 · 1.1 · 1.12 · 1.15rem</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ 1.125rem (18px)</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-lg (18px)</div>
         </div>
         <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">1.3rem · 1.35rem</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ 1.25rem (20px)</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">1.3 · 1.35rem</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-xl (20px)</div>
         </div>
         <div style="background: #F7F2E9; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">1.5 · 1.6 · 1.8rem</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ 1.5rem (24px)</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">1.8rem</div>
+          <div style="font-family: ui-monospace, monospace; font-size: 14px; font-weight: 800; color: #6E1E2B;">→ --text-3xl (28px)</div>
         </div>
       </div>
     </div>
@@ -103,15 +111,17 @@ class Component extends DCLogic {
     const s = this.props.scale ?? 1;
     const at = (px) => Math.round(px * s * 10) / 10;
     const body = [
-      { name: 'caption', px: 14, use: '아이브로우 · 주석 · 배지' },
+      { name: 'xs', px: 12, use: '배지 · 저작권' },
+      { name: 'caption', px: 14, use: '아이브로우 · 주석' },
       { name: 'sm', px: 15, use: '카드 설명 · 버튼 글자' },
       { name: 'base', px: 16, use: '본문 기본' },
       { name: 'md', px: 17, use: '섹션 설명문' },
       { name: 'lg', px: 18, use: '카드 제목' },
-      { name: 'xl', px: 20, use: '로고 · 헤더 전화번호' }
+      { name: 'xl', px: 20, use: '로고 · 헤더 전화번호' },
+      { name: '3xl', px: 28, use: '대표 전화번호' }
     ];
     const display = [
-      { name: '2xl', px: 24, sample: '정성으로 차린 한 상', use: '작은 제목' },
+      { name: '2xl', px: 24, sample: '정성으로 차린 한 상', use: '작은 제목 (아직 안 씀)' },
       { name: 'section', px: 35, sample: '제사·시제 상차림', use: '섹션 제목 (최대)' },
       { name: 'hero', px: 53, sample: '푸드벨 제사상', use: '히어로 제목 (최대)' }
     ];
