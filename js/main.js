@@ -3,6 +3,7 @@
    - 모바일 내비게이션 토글
    - 메뉴 카테고리 탭 전환
    - 맨 위로 버튼 표시/스크롤
+   - 문의 폼 보내기 (넷리파이 폼)
 ========================================================= */
 (function () {
   'use strict';
@@ -166,5 +167,52 @@
     };
     window.addEventListener('scroll', toggleHeaderShadow, { passive: true });
     toggleHeaderShadow();
+  }
+
+  /* ---------- 문의 폼 보내기 ----------
+     넷리파이(Netlify) 폼 기능을 씁니다. 페이지를 새로 열지 않고 보내기 위해
+     fetch 로 넘기고, 결과는 버튼 아래 한 줄로 알려줍니다.
+     ※ 내 컴퓨터 미리보기(localhost)에서는 전송이 안 됩니다. 넷리파이에 올라가야 작동합니다. */
+  var contactForm = document.getElementById('contactForm');
+  var formNote = document.getElementById('formNote');
+
+  if (contactForm && formNote) {
+    var isLocal = ['localhost', '127.0.0.1', ''].indexOf(window.location.hostname) !== -1;
+
+    var setNote = function (text, kind) {
+      formNote.className = 'contact__form-note' + (kind ? ' is-' + kind : '');
+      formNote.textContent = text;
+    };
+
+    contactForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var submitBtn = contactForm.querySelector('button[type="submit"]');
+
+      if (isLocal) {
+        setNote('미리보기에서는 전송되지 않습니다. 인터넷에 올린 주소에서 시험해보세요.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      setNote('보내는 중...');
+
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(contactForm)).toString()
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error(String(res.status));
+          contactForm.reset();
+          setNote('문의가 접수되었습니다. 확인하는 대로 연락드리겠습니다.', 'ok');
+        })
+        .catch(function () {
+          setNote('전송에 실패했습니다. 010-5353-3477 로 전화 주시면 바로 도와드리겠습니다.', 'error');
+        })
+        .then(function () {
+          submitBtn.disabled = false;
+        });
+    });
   }
 })();

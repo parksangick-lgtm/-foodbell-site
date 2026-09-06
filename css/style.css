@@ -568,7 +568,12 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- 문의 ---------- */
 .contact { padding: var(--space-24) 0; background: var(--color-cream-deep); }
-.contact__inner { max-width: 560px; }
+.contact__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: var(--space-12);
+  align-items: start;
+}
 .contact__list { margin-top: var(--space-8); display: flex; flex-direction: column; gap: var(--space-6); }
 .contact__list li { display: flex; gap: var(--space-4); align-items: flex-start; }
 .contact__icon {
@@ -593,6 +598,76 @@ button { font-family: inherit; cursor: pointer; }
 .contact__list em { font-style: normal; color: var(--color-ink-muted); font-size: var(--text-caption); font-weight: 700; }
 
 .contact__actions { display: flex; gap: var(--space-4); margin-top: var(--space-8); flex-wrap: wrap; }
+
+/* ---------- 문의 폼 ---------- */
+.contact__form {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.contact__form-title {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  margin: 0;
+}
+.contact__form-lead {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+.field { display: flex; flex-direction: column; gap: var(--space-2); }
+.field > label { font-size: var(--text-caption); font-weight: 800; color: var(--color-ink); }
+.field__req { color: var(--color-primary); }
+.field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+  background: var(--color-cream);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.field textarea { resize: vertical; min-height: 104px; line-height: 1.65; }
+.field input::placeholder,
+.field textarea::placeholder { color: var(--color-ink-muted); font-weight: 700; }
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(110, 30, 43, 0.12);
+}
+
+.contact__submit { justify-content: center; margin-top: var(--space-2); }
+.contact__submit[disabled] { opacity: 0.6; cursor: default; transform: none; }
+
+/* 스팸 로봇용 미끼 칸 — 사람 눈에는 안 보임 */
+.contact__form-hp { position: absolute; left: -9999px; }
+
+.contact__form-note {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+.contact__form-note:empty { display: none; }
+.contact__form-note.is-ok { color: var(--color-primary); }
+.contact__form-note.is-error { color: var(--color-primary-dark); }
 
 /* ---------- 푸터 ---------- */
 .footer {
@@ -666,6 +741,11 @@ button { font-family: inherit; cursor: pointer; }
   .album { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
   .menu__tab { padding: 12px 16px; font-size: var(--text-caption); }
   .album-toggle { width: 100%; }
+
+  /* 문의: 좁은 화면에서는 연락처 위 · 폼 아래로 쌓음 */
+  .contact__inner { grid-template-columns: 1fr; gap: var(--space-8); }
+  .contact__form { padding: var(--space-6); }
+  .field-row { grid-template-columns: 1fr; }
 
   /* 서비스 카드: 좁은 화면에서는 한 줄에 하나, 사진 왼쪽 · 설명 오른쪽 (설명 글이 길쭉하게 눌리지 않도록) */
   .menu__grid { grid-template-columns: 1fr; gap: var(--space-4); }
