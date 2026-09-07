@@ -781,6 +781,16 @@ body:not(.editing) .jitems .btn-add{display:none !important}
     });
   });
 
+  /* claude.ai 아티팩트/앱에서 실행 중이면 파일 저장(수락 시 iOS 앱은 공유 시트) */
+  function claudeSave(fname, blob) {
+    if (!(window.claude && typeof window.claude.use === "function")) return Promise.resolve(false);
+    return window.claude.use("downloads").then(function (dl) {
+      if (!dl || !dl.save) return false;
+      return dl.save({ filename: fname, data: blob }).then(function () { return true; },
+        function (e) { return (e && e.code === "declined") ? "declined" : false; });
+    }).catch(function () { return false; });
+  }
+
   document.getElementById("btn-send").addEventListener("click", function () {
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
@@ -788,40 +798,48 @@ body:not(.editing) .jitems .btn-add{display:none !important}
     var fname = "푸드벨_견적서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + ".png";
     var title = "푸드벨 시제 상차림 견적서 (" + custName() + ")";
     var text = buildText();
+    function done() { btn.disabled = false; btn.textContent = old; }
 
     renderImage().then(function (blob) {
-      function done() { btn.disabled = false; btn.textContent = old; }
       var file = blob ? new File([blob], fname, { type: "image/png" }) : null;
 
-      // 1) 모바일: 파일까지 공유 (카톡·문자·메일)
+      // 1) 일반 모바일 브라우저: 파일 첨부 공유 (카톡·문자·메일)
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: title, text: text })
-          .then(done, function (e) { if (e && e.name === "AbortError") return done(); shareTextOrSave(); });
+        navigator.share({ files: [file], title: title, text: text }).then(done, function (e) {
+          if (e && e.name === "AbortError") return done();
+          fallback();
+        });
         return;
       }
-      // 2) 모바일: 텍스트만 공유
-      if (navigator.share) {
-        navigator.share({ title: title, text: text })
-          .then(function () {
+      // 2) claude.ai 아티팩트 / iOS 앱: 이미지 저장 → (앱이면) 공유 시트
+      if (blob && window.claude && window.claude.use) {
+        copyText(text);
+        claudeSave(fname, blob).then(function (r) {
+          if (r === true) toast("견적서 이미지를 저장했습니다. 카톡·문자로 보내세요. (요약 문구도 복사됨)");
+          else if (r !== "declined") fallbackNoClaude();
+          done();
+        });
+        return;
+      }
+      // 3) 그 외
+      fallback();
+
+      function fallback() {
+        if (navigator.share) {
+          navigator.share({ title: title, text: text }).then(function () {
             if (file) { downloadBlob(blob, fname); toast("요약을 공유했습니다. 저장된 견적서 이미지도 함께 보내세요."); }
             done();
-          }, function (e) { if (e && e.name === "AbortError") return done(); shareTextOrSave(); });
-        return;
+          }, function (e) { if (e && e.name === "AbortError") return done(); fallbackNoClaude(); done(); });
+        } else { fallbackNoClaude(); done(); }
       }
-      // 3) PC: 이미지 저장 + 요약 복사
-      shareTextOrSave();
-
-      function shareTextOrSave() {
+      function fallbackNoClaude() {
         copyText(text);
-        if (file) {
-          downloadBlob(blob, fname);
-          toast("견적서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요.");
-        } else {
-          toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요.");
-        }
-        done();
+        if (file) { downloadBlob(blob, fname); toast("견적서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요."); }
+        else toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요.");
       }
-    });
+    }, function () { fallbackNoClaudeSimple(); });
+
+    function fallbackNoClaudeSimple() { copyText(text); toast("요약 문구를 복사했습니다."); done(); }
   });
 
   document.getElementById("btn-reset").addEventListener("click", function () {
