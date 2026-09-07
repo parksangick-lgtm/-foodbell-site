@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>푸드벨 시제 상차림 견적서</title>
-<meta name="description" content="푸드벨(박상익출장음식) 시제·제사 상차림 출장 견적서. 5열 진설도와 견적 내역이 담긴 A4 서식으로, 편집 후 인쇄·PDF로 보낼 수 있습니다.">
+<meta name="description" content="푸드벨(박상익출장음식) 시제·제사 상차림 출장 견적서. 5열 진설도와 견적 내역이 담긴 A4 서식으로, 편집 후 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏮</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
 :root{
   color-scheme: light;
@@ -210,6 +212,17 @@ body:not(.editing) .jitems .btn-add{display:none !important}
 }
 .toolbar button:hover{background:var(--band2); color:var(--ink)}
 .toolbar button[aria-pressed="true"]{background:var(--seal); color:var(--paper)}
+.toolbar button.primary{background:var(--seal); color:var(--paper); border-color:var(--seal); font-weight:var(--w-bold)}
+.toolbar button.primary:hover{background:var(--seal-dark); color:var(--paper)}
+.toolbar button[disabled]{opacity:.55; cursor:default}
+
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  z-index:60; max-width:88vw;
+  background:var(--ink); color:var(--paper); font-size:13px; line-height:1.5;
+  padding:11px 16px; border-radius:8px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
+}
+@media (max-width:700px){ .toast{bottom:80px} }
 .hint{
   max-width:880px; margin:0 auto 14px; font-size:12px; color:var(--ink-mute);
   line-height:1.6; padding-right:200px;
@@ -257,7 +270,7 @@ body:not(.editing) .jitems .btn-add{display:none !important}
   @page{ size:A4; margin:13mm; }
   body{padding:0; background:var(--paper); font-size:10.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:8mm}
-  .toolbar,.cta-bar,.hint,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add{display:none !important}
+  .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add{display:none !important}
   body.editing [data-edit]{background:transparent; box-shadow:none}
   section{break-inside:avoid}
   tr{break-inside:avoid}
@@ -267,14 +280,17 @@ body:not(.editing) .jitems .btn-add{display:none !important}
 </head>
 <body>
 
-<p class="hint"><b>안내</b><strong>편집</strong>을 켜면 제목·품목을 직접 고치고, 각 줄의 <b>✕</b> 로 삭제, <b>＋ 항목 추가</b> · <b>＋ 새 구분 추가</b> 로 늘릴 수 있습니다. <strong>공급가액</strong>을 넣으면 부가세(10% 별도)·합계가 자동 계산됩니다. <strong>인쇄 · PDF</strong> · <strong>복사</strong>(문자·메신저용)도 됩니다.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤 <strong>고객에게 보내기</strong> 를 누르면 견적서 이미지를 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
+  <button type="button" id="btn-send" class="primary">고객에게 보내기</button>
   <button type="button" id="btn-copy">복사</button>
   <button type="button" id="btn-print">인쇄 · PDF</button>
   <button type="button" id="btn-reset">초기화</button>
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <article class="sheet">
 
@@ -706,25 +722,104 @@ body:not(.editing) .jitems .btn-add{display:none !important}
     save();
   });
 
+  /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
+  var toastEl = document.getElementById("toast"), toastT;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.hidden = true; }, 3200);
+  }
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () { copyFallback(text); });
+    }
+    copyFallback(text); return Promise.resolve();
+  }
+  function copyFallback(text) {
+    var ta = el("textarea"); ta.value = text;
+    ta.style.position = "fixed"; ta.style.top = "-9999px";
+    body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); } catch (e) { window.prompt("아래 내용을 복사하세요", text); }
+    body.removeChild(ta);
+  }
+  function downloadBlob(blob, name) {
+    var a = el("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function custName() {
+    var dd = sheet.querySelector(".brief-row dd");
+    var t = dd ? dd.textContent.replace(/\s+/g, " ").replace(/(총무님)?\s*귀중/, "").trim() : "";
+    return t ? t.slice(0, 24) : "고객";
+  }
+
+  /* ---------- 견적서를 이미지(PNG blob)로 ---------- */
+  function renderImage() {
+    if (typeof html2canvas !== "function") return Promise.resolve(null);
+    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    return ready.then(function () {
+      var tall = sheet.scrollHeight > 3200;   // 아주 긴 견적서는 캔버스 한계를 피해 축소
+      return html2canvas(sheet, {
+        backgroundColor: "#FFFDF8", scale: tall ? 1.3 : 1.7,
+        useCORS: true, logging: false, windowWidth: sheet.scrollWidth
+      });
+    }).then(function (canvas) {
+      return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
+    }).catch(function () { return null; });
+  }
+
   document.getElementById("btn-print").addEventListener("click", function () {
     setEditing(false);
     window.print();
   });
 
   document.getElementById("btn-copy").addEventListener("click", function () {
-    var btn = this, text = buildText(), old = btn.textContent;
-    function flash(m) { btn.textContent = m; setTimeout(function () { btn.textContent = old; }, 1400); }
-    function fallback() {
-      var ta = el("textarea"); ta.value = text;
-      ta.style.position = "fixed"; ta.style.top = "-9999px";
-      body.appendChild(ta); ta.focus(); ta.select();
-      try { document.execCommand("copy"); flash("복사됨"); }
-      catch (e) { window.prompt("아래 내용을 복사하세요 (Ctrl+C 후 Enter)", text); }
-      body.removeChild(ta);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { flash("복사됨"); }, fallback);
-    } else { fallback(); }
+    var btn = this, old = btn.textContent;
+    copyText(buildText()).then(function () {
+      btn.textContent = "복사됨"; setTimeout(function () { btn.textContent = old; }, 1400);
+    });
+  });
+
+  document.getElementById("btn-send").addEventListener("click", function () {
+    var btn = this, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "준비 중…";
+    setEditing(false);
+    var fname = "푸드벨_견적서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + ".png";
+    var title = "푸드벨 시제 상차림 견적서 (" + custName() + ")";
+    var text = buildText();
+
+    renderImage().then(function (blob) {
+      function done() { btn.disabled = false; btn.textContent = old; }
+      var file = blob ? new File([blob], fname, { type: "image/png" }) : null;
+
+      // 1) 모바일: 파일까지 공유 (카톡·문자·메일)
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: title, text: text })
+          .then(done, function (e) { if (e && e.name === "AbortError") return done(); shareTextOrSave(); });
+        return;
+      }
+      // 2) 모바일: 텍스트만 공유
+      if (navigator.share) {
+        navigator.share({ title: title, text: text })
+          .then(function () {
+            if (file) { downloadBlob(blob, fname); toast("요약을 공유했습니다. 저장된 견적서 이미지도 함께 보내세요."); }
+            done();
+          }, function (e) { if (e && e.name === "AbortError") return done(); shareTextOrSave(); });
+        return;
+      }
+      // 3) PC: 이미지 저장 + 요약 복사
+      shareTextOrSave();
+
+      function shareTextOrSave() {
+        copyText(text);
+        if (file) {
+          downloadBlob(blob, fname);
+          toast("견적서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요.");
+        } else {
+          toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요.");
+        }
+        done();
+      }
+    });
   });
 
   document.getElementById("btn-reset").addEventListener("click", function () {
