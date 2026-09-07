@@ -122,8 +122,7 @@ table.quote td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-
 table.quote td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
 td.item-name{font-weight:var(--w-medium); color:var(--ink); white-space:nowrap}
 td.item-detail{color:var(--ink-mute); font-size:12.5px; line-height:1.6}
-tr.subtotal td{background:var(--band); font-size:12.5px; color:var(--ink-soft); border-bottom:1px solid var(--line-strong)}
-tr.subtotal td.n{font-weight:var(--w-bold); color:var(--ink)}
+table.quote td.n[data-label="수량"]{width:1%}
 
 /* ---------- 합계 ---------- */
 .totals{display:flex; flex-wrap:wrap; gap:20px; justify-content:space-between; align-items:flex-end; margin-top:22px}
@@ -134,11 +133,17 @@ tr.subtotal td.n{font-weight:var(--w-bold); color:var(--ink)}
 .sum-row span:last-child{font-variant-numeric:tabular-nums; color:var(--ink)}
 .sum-total{
   display:flex; justify-content:space-between; align-items:baseline; gap:16px;
-  margin-top:10px; padding:13px 16px; background:var(--seal); color:var(--paper);
+  padding:13px 16px; background:var(--seal); color:var(--paper);
 }
 .sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:14px; letter-spacing:.22em}
 .sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; font-variant-numeric:tabular-nums}
 .sum-total .val em{font-style:normal; font-size:15px; font-weight:var(--w-medium); margin-left:3px}
+.sum-total .val:has([data-k="total"]:empty) em{display:none}
+.sum-total + .sum-row{margin-top:12px}
+.sum-note{margin:8px 0 0; font-size:11px; color:var(--ink-mute); line-height:1.55}
+body.editing .sum-total [data-k="total"]{background:rgba(255,253,248,.16); box-shadow:inset 0 -1px 0 0 rgba(255,253,248,.55); color:var(--paper); min-width:4em; display:inline-block}
+body.editing .sum-total [data-k="total"]:focus{background:rgba(255,253,248,.28)}
+body.editing .sum-total [data-k="total"]:empty::before{content:"금액 입력"; color:rgba(255,253,248,.6); font-size:.62em; font-weight:var(--w-normal); letter-spacing:.02em}
 
 /* ---------- 절차 ---------- */
 .steps{display:grid; gap:12px}
@@ -169,7 +174,6 @@ body.editing [data-edit]{
 }
 body.editing [data-edit]:focus{background:rgba(110,30,43,.09); box-shadow:inset 0 -2px 0 0 var(--seal)}
 body.editing [data-edit]:empty{display:inline-block; min-width:2.6em}
-body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mute); font-size:.86em; font-weight:var(--w-normal)}
 :focus-visible{outline:2px solid var(--seal); outline-offset:2px}
 
 /* ---------- 도구막대 ---------- */
@@ -216,15 +220,12 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
   table.quote tr.item td{border:0; padding:0}
   td.item-name{grid-column:1; white-space:normal}
   td.item-detail{grid-column:1 / -1; margin-top:3px}
-  table.quote tr.item td.n{grid-column:2; text-align:right; font-size:12.5px; color:var(--ink-mute)}
-  table.quote tr.item td[data-label]::before{content:attr(data-label) " "; color:var(--gold-deep); font-size:11px}
-  table.quote tr.item td.amt{grid-column:1 / -1; text-align:right; font-weight:var(--w-bold); font-size:14px; color:var(--ink); margin-top:5px}
-  tr.subtotal{display:flex; justify-content:space-between; padding:9px 12px; background:var(--band)}
-  tr.subtotal td{border:0; padding:0; background:transparent}
+  table.quote tr.item td.n{grid-column:2; align-self:start; text-align:right; font-size:12.5px; color:var(--ink-mute)}
   .doc-title{letter-spacing:.3em; text-indent:.3em}
   .jrow{grid-template-columns:1fr; gap:6px}
   .jrow-label{text-align:left}
   .jrow-label small{display:inline; margin-left:6px}
+  .sum{max-width:none}
 }
 
 @media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
@@ -244,7 +245,7 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
 </head>
 <body>
 
-<p class="hint"><b>안내</b>상단 <strong>편집</strong>을 켜고 고객·행사 정보와 단가를 고치면 금액이 자동으로 다시 계산됩니다. <strong>인쇄 · PDF</strong>로 A4 견적서를 만들어 보내실 수 있습니다.</p>
+<p class="hint"><b>안내</b>상단 <strong>편집</strong>을 켜고 고객·행사 정보를 채운 뒤 <strong>합계 금액</strong>만 입력하면 공급가액·부가세·1인 환산이 자동 계산됩니다. <strong>인쇄 · PDF</strong>로 A4 견적서를 만들어 보내실 수 있습니다.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -345,113 +346,83 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
             <th scope="col">품목</th>
             <th scope="col">세부 구성</th>
             <th scope="col" class="n">수량</th>
-            <th scope="col" class="n">단가</th>
-            <th scope="col" class="n">금액</th>
           </tr>
         </thead>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="5" scope="colgroup">가. 제수 음식 — 5열 진설 기준</th></tr>
+          <tr class="grouprow"><th colspan="3" scope="colgroup">가. 제수 음식 — 5열 진설 기준</th></tr>
           <tr class="item">
             <td class="item-name">과실 · 조과</td>
             <td class="item-detail">대추 · 밤 · 배 · 감 · 사과, 약과 · 유과 · 다식</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">포 · 혜 · 나물</td>
             <td class="item-detail">북어포, 식혜, 삼색나물(고사리 · 도라지 · 시금치), 나박김치</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">탕 3종</td>
             <td class="item-detail">육탕 · 소탕 · 어탕</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">적 · 전</td>
             <td class="item-detail">육적 · 계적 · 어적, 육전 · 어전 · 동태전</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">반 · 갱 · 면</td>
             <td class="item-detail">메(밥), 탕국, 국수, 시접 일습</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
-          <tr class="subtotal"><td colspan="4">소계</td><td class="n" data-k="sub"></td></tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="5" scope="colgroup">나. 제례 집기 — 대여 · 설치 · 회수</th></tr>
+          <tr class="grouprow"><th colspan="3" scope="colgroup">나. 제례 집기 — 대여 · 설치 · 회수</th></tr>
           <tr class="item">
             <td class="item-name">병풍 · 제상 · 돗자리</td>
             <td class="item-detail">8폭 병풍, 교의, 3m 야외 돗자리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">제기 일습</td>
             <td class="item-detail">향로 · 향합 · 촛대 · 모사기 · 퇴주기 · 잔반</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">축문 · 지방</td>
             <td class="item-detail">축문판, 지방틀, 축문 용지, 제주(청주)</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
-          <tr class="subtotal"><td colspan="4">소계</td><td class="n" data-k="sub"></td></tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="5" scope="colgroup">다. 종친 음복 식사 — 참석 인원 기준</th></tr>
+          <tr class="grouprow"><th colspan="3" scope="colgroup">다. 종친 음복 식사 — 참석 인원 기준</th></tr>
           <tr class="item">
             <td class="item-name">음복 한상</td>
             <td class="item-detail">소고기무국, 수육, 모둠전, 삼색나물, 김치, 절편</td>
             <td class="n" data-label="수량"><span data-k="qty" data-per="1" data-raw="40">40</span> 인</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">음료 · 제주</td>
             <td class="item-detail">식혜, 생수, 청주, 종이컵 일습</td>
             <td class="n" data-label="수량"><span data-k="qty" data-per="1" data-raw="40">40</span> 인</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
-          <tr class="subtotal"><td colspan="4">소계</td><td class="n" data-k="sub"></td></tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="5" scope="colgroup">라. 출장 · 현장 세팅</th></tr>
+          <tr class="grouprow"><th colspan="3" scope="colgroup">라. 출장 · 현장 세팅</th></tr>
           <tr class="item">
             <td class="item-name">전국 출장 배송</td>
             <td class="item-detail">왕복 운송, 보온 · 보냉 이송, 정시 도착</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
           <tr class="item">
             <td class="item-name">현장 조리 · 세팅</td>
             <td class="item-detail">진설 세팅 및 음복 배식 (4시간), 행사 후 정리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="2">2</span> 인</td>
-            <td class="n" data-label="단가"><span data-edit data-t="num" data-k="price" data-raw="0"></span></td>
-            <td class="n amt" data-k="amt"></td>
           </tr>
-          <tr class="subtotal"><td colspan="4">소계</td><td class="n" data-k="sub"></td></tr>
         </tbody>
       </table>
     </div>
@@ -459,9 +430,10 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
     <div class="totals">
       <div class="per-head">참석 1인 환산 (부가세 포함)<strong data-k="perhead"></strong></div>
       <div class="sum">
+        <div class="sum-total"><span class="lab">합계</span><span class="val"><span data-edit data-t="num" data-k="total"></span><em>원</em></span></div>
         <div class="sum-row"><span>공급가액</span><span data-k="supply"></span></div>
         <div class="sum-row"><span>부가세 (10%)</span><span data-k="vat"></span></div>
-        <div class="sum-total"><span class="lab">합계</span><span class="val" data-k="total"><em></em></span></div>
+        <p class="sum-note">합계는 부가세 포함 금액입니다. 공급가액 · 부가세는 합계에서 자동 계산됩니다.</p>
       </div>
     </div>
   </section>
@@ -518,42 +490,28 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
 <script>
 (function () {
   "use strict";
-  var KEY = "foodbell-sije-quote-v1";
+  var KEY = "foodbell-sije-quote-v2";
   function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
-  function money(n) { return n ? fmt(n) : ""; }   /* 0 이면 빈칸 — 단가 기입 전까지 금액을 비워 둔다 */
+  function money(n) { return n ? fmt(n) : ""; }   /* 0 이면 빈칸 — 금액 기입 전까지 비워 둔다 */
   function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
+  function isMoney(el) { var k = el.getAttribute("data-k"); return k === "price" || k === "total"; }
   function each(list, fn) { Array.prototype.forEach.call(list, fn); }
 
   var editables = Array.prototype.slice.call(document.querySelectorAll("[data-edit]"));
   editables.forEach(function (el, i) { el.setAttribute("data-eid", "e" + i); });
 
   var peopleEl = document.querySelector('[data-k="people"]');
+  var totalEl  = document.querySelector('[data-k="total"]');
 
+  /* 합계(부가세 포함)는 직접 입력한다. 공급가액·부가세·1인 환산은 거기서 역산한다. */
   function recalc() {
-    var supply = 0;
-    each(document.querySelectorAll("tbody[data-group]"), function (g) {
-      var sub = 0;
-      each(g.querySelectorAll("tr.item"), function (tr) {
-        var q = tr.querySelector('[data-k="qty"]');
-        var p = tr.querySelector('[data-k="price"]');
-        var a = tr.querySelector('[data-k="amt"]');
-        if (!q || !p || !a) return;
-        var amt = raw(q) * raw(p);
-        a.textContent = money(amt);
-        sub += amt;
-      });
-      var subCell = g.querySelector('[data-k="sub"]');
-      if (subCell) subCell.textContent = money(sub);
-      supply += sub;
-    });
-
-    var vat = Math.round(supply * 0.1);
-    var total = supply + vat;
+    var total  = raw(totalEl);
+    var supply = total ? Math.round(total / 1.1) : 0;
+    var vat    = total - supply;
     var people = raw(peopleEl) || 1;
 
     document.querySelector('[data-k="supply"]').textContent = money(supply);
     document.querySelector('[data-k="vat"]').textContent = money(vat);
-    document.querySelector('[data-k="total"]').innerHTML = total ? fmt(total) + "<em>원</em>" : "<em></em>";
     document.querySelector('[data-k="perhead"]').textContent = total ? fmt(Math.round(total / people)) + " 원" : "";
   }
 
@@ -586,7 +544,7 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
       if (el.getAttribute("data-t") === "num") {
         var n = parseInt(String(v).replace(/[^0-9]/g, ""), 10) || 0;
         el.setAttribute("data-raw", String(n));
-        el.textContent = el.getAttribute("data-k") === "price" ? money(n) : fmt(n);
+        el.textContent = isMoney(el) ? money(n) : fmt(n);
       } else {
         el.textContent = v;
       }
@@ -614,7 +572,7 @@ body.editing [data-k="price"]:empty::before{content:"단가"; color:var(--ink-mu
     });
 
     el.addEventListener("blur", function () {
-      if (isNum) el.textContent = el.getAttribute("data-k") === "price" ? money(raw(el)) : fmt(raw(el));
+      if (isNum) el.textContent = isMoney(el) ? money(raw(el)) : fmt(raw(el));
       save();
     });
 
