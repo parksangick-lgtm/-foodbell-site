@@ -177,11 +177,7 @@ body.editing td[data-edit]:empty::before{content:"입력"; color:var(--ink-mute)
 :focus-visible{outline:2px solid var(--seal); outline-offset:2px}
 
 /* ---------- 편집용 항목 컨트롤 (편집 모드에서만 JS가 삽입) ---------- */
-.rowctl{
-  position:absolute; right:-4px; top:50%; transform:translate(100%,-50%);
-  display:flex; gap:3px;
-}
-body.editing td.n[data-label="수량"]{position:relative}
+.rowctl{display:inline-flex; gap:3px; margin-left:10px; vertical-align:middle}
 .btn-mini{
   font-family:var(--sans); font-size:12px; line-height:1; cursor:pointer;
   border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-mute);
