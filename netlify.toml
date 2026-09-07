@@ -9,6 +9,14 @@
   # 빌드 과정 없음
   command = "echo '정적 사이트 - 빌드 단계 없음'"
 
+# 견적서는 내부용 도구 — 저장소로는 세 컴퓨터가 공유하되, 웹에는 공개하지 않는다.
+# 공개하려면 아래 3줄을 지우면 됨 (그러면 /sije-quote.html 로 열림).
+[[redirects]]
+  from = "/sije-quote.html"
+  to = "/"
+  status = 404
+  force = true
+
 # HTML 은 캐시하지 않고 매번 최신 확인 → 배포하면 바로 반영됨
 [[headers]]
   for = "/*.html"
