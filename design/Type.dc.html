@@ -26,7 +26,7 @@
     <div style="display: flex; flex-direction: column; gap: 12px;">
       <div style="display: flex; align-items: baseline; gap: 10px;">
         <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">본문 램프</h2>
-        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">Pretendard · 굵기 700 / 800</span>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">Pretendard · 본문 굵기 400</span>
       </div>
       <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 8px 24px; display: flex; flex-direction: column;">
         <sc-for list="{{body}}" as="step" hint-placeholder-count="8">
@@ -35,7 +35,7 @@
               <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">{{step.name}}</div>
               <div style="font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A2318;">{{step.px}}px</div>
             </div>
-            <div style="flex-grow: 1; font-size: {{step.size}}px; font-weight: 700; line-height: 1.65;">시제·제사 음식을 정성껏 차려 드립니다</div>
+            <div style="flex-grow: 1; font-size: {{step.size}}px; font-weight: 400; line-height: 1.7;">시제·제사 음식을 정성껏 차려 드립니다</div>
             <div style="width: 180px; flex-shrink: 0; text-align: right; font-size: 13px; font-weight: 700; color: #2A2318;">{{step.use}}</div>
           </div>
         </sc-for>
@@ -58,6 +58,27 @@
             <div style="width: 180px; flex-shrink: 0; text-align: right; font-size: 13px; font-weight: 700; color: #2A2318;">{{step.use}}</div>
           </div>
         </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h2 style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin: 0;">글자 굵기</h2>
+        <span style="font-size: 14px; font-weight: 700; color: #2A2318;">세 단계만 쓴다 · --weight-normal / medium / bold</span>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E2D6BF; border-radius: 16px; padding: 8px 24px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: baseline; gap: 20px; padding: 14px 0; border-bottom: 1px solid #EDE4D3;">
+          <div style="width: 150px; flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--weight-normal<br><span style="font-weight: 700; color: #2A2318;">400</span></div>
+          <div style="flex-grow: 1; font-size: 17px; font-weight: 400; line-height: 1.7;">본문·설명문·주석·푸터 안내·입력칸 — 화면 대부분</div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 20px; padding: 14px 0; border-bottom: 1px solid #EDE4D3;">
+          <div style="width: 150px; flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--weight-medium<br><span style="font-weight: 700; color: #2A2318;">600</span></div>
+          <div style="flex-grow: 1; font-size: 17px; font-weight: 600; line-height: 1.7;">네비 · 버튼 · 탭 · 아이브로우 · 폼 라벨 · 강조 단어</div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 20px; padding: 14px 0;">
+          <div style="width: 150px; flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 13px; font-weight: 800; color: #6E1E2B;">--weight-bold<br><span style="font-weight: 700; color: #2A2318;">700</span></div>
+          <div style="flex-grow: 1; font-size: 17px; font-weight: 700; line-height: 1.7;">제목(h1~h3) · 섹션 타이틀 · 대표 전화번호 · 가격</div>
+        </div>
       </div>
     </div>
 
@@ -116,12 +137,12 @@ class Component extends DCLogic {
       { name: 'sm', px: 15, use: '카드 설명 · 버튼 글자' },
       { name: 'base', px: 16, use: '본문 기본' },
       { name: 'md', px: 17, use: '섹션 설명문' },
-      { name: 'lg', px: 18, use: '카드 제목' },
+      { name: 'lg', px: 18, use: '카드 제목 (명조)' },
       { name: 'xl', px: 20, use: '로고 · 헤더 전화번호' },
       { name: '3xl', px: 28, use: '대표 전화번호' }
     ];
     const display = [
-      { name: '2xl', px: 24, sample: '정성으로 차린 한 상', use: '작은 제목 (아직 안 씀)' },
+      { name: '2xl', px: 24, sample: '정성으로 차린 한 상', use: '문의 폼 제목' },
       { name: 'section', px: 35, sample: '제사·시제 상차림', use: '섹션 제목 (최대)' },
       { name: 'hero', px: 53, sample: '푸드벨 제사상', use: '히어로 제목 (최대)' }
     ];
