@@ -1,0 +1,65 @@
+# GitHub Pages 자동 배포
+# office 브랜치에 push 하면 저장소 전체를 그대로 게시한다.
+# (공개 저장소라 Actions·Pages 모두 무료·무제한 — 넷리파이 크레딧과 무관)
+#
+# 최초 1회: GitHub 저장소 → Settings → Pages → Build and deployment →
+#           Source 를 "GitHub Actions" 로 바꾸면 아래가 동작한다.
+#
+# 게시 주소: https://parksangick-lgtm.github.io/-foodbell-site/
+#           견적서: .../-foodbell-site/sije-quote.html
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [office]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 게시할 파일만 추리기 (개발용 파일 제외)
+        run: |
+          mkdir _site
+          rsync -a --exclude='.git' \
+                   --exclude='.github' \
+                   --exclude='_site' \
+                   --exclude='design' \
+                   --exclude='*.bat' \
+                   --exclude='*.ps1' \
+                   --exclude='*.command' \
+                   --exclude='*.py' \
+                   --exclude='*.md' \
+                   --exclude='*.zip' \
+                   --exclude='*.ico' \
+                   --exclude='netlify.toml' \
+                   ./ _site/
+          touch _site/.nojekyll
+
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+
+      - name: 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
