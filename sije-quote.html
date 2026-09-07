@@ -671,32 +671,37 @@ body:not(.editing) .jitems .btn-add{display:none !important}
   sheet.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("button.btn-mini");
     if (!b) return;
-    if (b.classList.contains("btn-del")) {
-      if (b.closest(".grouprow")) {           // 구분 전체 삭제
+    e.preventDefault();
+    var addRow = b.closest("tr.addrow");
+    var addGrp = b.closest(".addgroup");
+
+    if (b.classList.contains("btn-add")) {                       // 진설 태그 추가
+      var span = el("span", null, "품목");
+      span.setAttribute("data-edit", ""); span.setAttribute("data-t", "text");
+      b.parentElement.insertBefore(span, b);
+      span.contentEditable = "true"; span.focus();
+      try { document.getSelection().selectAllChildren(span); } catch (x) {}
+    } else if (b.classList.contains("btn-del")) {
+      if (b.closest(".grouprow")) {                              // 구분 전체 삭제
         var g = b.closest("tbody[data-group]");
         if (g && window.confirm("이 구분을 통째로 삭제할까요?")) g.remove();
-      } else {                                 // 항목 한 줄 삭제
+      } else {                                                    // 항목 한 줄 삭제
         var row = b.closest("tr.item");
         if (row) row.remove();
       }
-    } else if (b.parentElement.classList.contains("addrow")) {   // 항목 추가
-      var g2 = b.closest("tbody[data-group]");
+    } else if (addRow) {                                          // 항목 추가
+      var g2 = addRow.closest("tbody[data-group]");
       var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
-      g2.insertBefore(tr, b.closest("tr.addrow"));
-      setCE(true); addControls();
-      tr.querySelector(".item-name").focus();
-    } else if (b.parentElement.classList.contains("addgroup")) { // 구분 추가
+      g2.insertBefore(tr, addRow);
+      addControls(); setCE(true);
+      var nm = tr.querySelector(".item-name"); if (nm) nm.focus();
+    } else if (addGrp) {                                          // 구분 추가
       var tb = el("tbody"); tb.setAttribute("data-group", "");
       tb.innerHTML = '<tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">' +
                      nextGroupLabel() + '</th></tr><tr class="item">' + ROW_HTML + '</tr>';
       sheet.querySelector("table.quote").appendChild(tb);
-      setCE(true); addControls();
-      tb.querySelector(".grouprow th").focus();
-    } else if (b.classList.contains("btn-add")) {                // 진설 태그 추가
-      var span = el("span", null, "품목"); span.setAttribute("data-edit", ""); span.setAttribute("data-t", "text");
-      b.parentElement.insertBefore(span, b);
-      span.contentEditable = "true"; span.focus();
-      document.getSelection().selectAllChildren(span);
+      addControls(); setCE(true);
+      var gh = tb.querySelector(".grouprow th"); if (gh) gh.focus();
     }
     save();
   });
