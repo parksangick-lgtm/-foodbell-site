@@ -1,14 +1,14 @@
 /* 푸드벨 서비스 워커 — 오프라인 기본 지원 + 홈 화면 앱 실행
    내용을 크게 바꿨을 때는 아래 CACHE 버전 숫자를 올리세요. */
-const CACHE = 'foodbell-v1';
+const CACHE = 'foodbell-v3';
 
 /* 처음 설치할 때 미리 받아두는 최소한의 파일 (앱 껍데기) */
 const PRECACHE = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -40,10 +40,10 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put('/index.html', copy));
+          caches.open(CACHE).then((cache) => cache.put('./index.html', copy));
           return res;
         })
-        .catch(() => caches.match('/index.html', { ignoreSearch: true }))
+        .catch(() => caches.match('./index.html', { ignoreSearch: true }))
     );
     return;
   }

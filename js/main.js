@@ -3,7 +3,7 @@
    - 모바일 내비게이션 토글
    - 메뉴 카테고리 탭 전환
    - 맨 위로 버튼 표시/스크롤
-   - 문의 폼 보내기 (넷리파이 폼)
+   - 문의 폼 보내기 (Web3Forms — 이메일로 받음)
 ========================================================= */
 (function () {
   'use strict';
@@ -170,13 +170,19 @@
   }
 
   /* ---------- 문의 폼 보내기 ----------
-     넷리파이(Netlify) 폼 기능을 씁니다. 페이지를 새로 열지 않고 보내기 위해
-     fetch 로 넘기고, 결과는 버튼 아래 한 줄로 알려줍니다.
-     ※ 내 컴퓨터 미리보기(localhost)에서는 전송이 안 됩니다. 넷리파이에 올라가야 작동합니다. */
+     문의를 이메일로 받아주는 Web3Forms 로 보냅니다. 넷리파이 폼과 달리
+     어느 곳에 올려도(GitHub Pages 포함) 똑같이 작동합니다.
+
+     문의는 web3forms 에 등록한 이메일(parksangick@gmail.com)로 옵니다.
+     받는 주소를 바꾸려면 web3forms.com 에 로그인해서 설정에서 바꾸면 되고,
+     폼을 새로 만들었다면 아래 FORM_KEY 만 새 열쇠로 갈아끼우면 됩니다. */
+  var FORM_KEY = 'df6813aa-4b84-4e71-883d-b3838ed930ba';   // web3forms 열쇠 (공개용)
+
   var contactForm = document.getElementById('contactForm');
   var formNote = document.getElementById('formNote');
 
   if (contactForm && formNote) {
+    var useKey = FORM_KEY.length > 10;
     var isLocal = ['localhost', '127.0.0.1', ''].indexOf(window.location.hostname) !== -1;
 
     var setNote = function (text, kind) {
@@ -188,8 +194,16 @@
       e.preventDefault();
 
       var submitBtn = contactForm.querySelector('button[type="submit"]');
+      var data = new FormData(contactForm);
 
-      if (isLocal) {
+      /* 사람이 안 보는 칸이 채워져 있으면 로봇이므로 조용히 넘긴다. */
+      if (data.get('bot-field')) {
+        contactForm.reset();
+        setNote('문의가 접수되었습니다. 확인하는 대로 연락드리겠습니다.', 'ok');
+        return;
+      }
+
+      if (!useKey && isLocal) {
         setNote('미리보기에서는 전송되지 않습니다. 인터넷에 올린 주소에서 시험해보세요.', 'error');
         return;
       }
@@ -197,11 +211,21 @@
       submitBtn.disabled = true;
       setNote('보내는 중...');
 
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(new FormData(contactForm)).toString()
-      })
+      var sending;
+      if (useKey) {
+        data.append('access_key', FORM_KEY);
+        data.append('from_name', '푸드벨 홈페이지');
+        data.append('subject', '푸드벨 홈페이지 문의 — ' + (data.get('성함') || '') + ' ' + (data.get('연락처') || ''));
+        sending = fetch('https://api.web3forms.com/submit', { method: 'POST', body: data });
+      } else {
+        sending = fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(data).toString()
+        });
+      }
+
+      sending
         .then(function (res) {
           if (!res.ok) throw new Error(String(res.status));
           contactForm.reset();
