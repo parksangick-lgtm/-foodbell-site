@@ -10,7 +10,7 @@
 
 ## 컴퓨터 세 대를 오간다
 
-사무실 PC(`c:\gallerpark`), 노트북, 집 PC가 같은 저장소(`parksangick-lgtm/-foodbell-site`, 브랜치 **`office`**)를 공유한다.
+사무실 PC(c:\galleypark), 노트북, 집 PC가 같은 저장소(`parksangick-lgtm/-foodbell-site`, 브랜치 **`office`**)를 공유한다.
 
 - **작업 시작 전에 반드시 `git pull`** — 다른 컴퓨터에서 한 작업이 밀려 있을 수 있다.
 - 바탕화면 아이콘이 이 일을 대신한다: **푸드벨 시작**(`시작.bat` — pull + 미리보기 서버) / **푸드벨 저장**(`저장.bat` — pull + commit + push).
@@ -75,3 +75,17 @@ images/               실제 상차림 사진
 
 - 넷리파이(`astonishing-klepon-a382d5.netlify.app`)로 서비스 중이었으나 **무료 크레딧이 소진**되어 GitHub Pages 로 옮기는 중이다.
 - `.github/workflows/deploy-pages.yml` 은 있지만 아직 페이지가 뜨지 않는다(404). 저장소 Settings → Pages → Source 를 **GitHub Actions** 로 두었는지 확인이 필요하다.
+## 작업이 끝나면
+
+- **"5번"** 이라고 하면 그날 한 일을 옵시디언 `바이브코딩-위키` 폴더에
+  학습 노트로 저장한다. (번호를 이어받아 `17-`, `18-` 형태)
+
+## 확실하지 않을 때
+
+- 확실하지 않은 내용은 **"추정입니다"** 라고 표시한다.
+- 파일을 **지우거나 이름을 바꾸기 전에는 반드시 물어본다.**
+
+## 비밀로 둘 것
+
+- 배포 토큰·API 키를 코드나 `netlify.toml` 에 직접 쓰지 않는다.
+- 손님 이름·연락처는 예시 데이터에도 넣지 않는다.
