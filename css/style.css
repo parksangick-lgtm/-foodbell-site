@@ -20,18 +20,19 @@
   --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
   --font-display: 'Gowun Batang', serif;
 
-  /* 글자 크기 램프 — 새 글자는 반드시 이 안에서 고른다 */
-  --text-xs: 0.75rem;        /* 12px  배지, 저작권 */
-  --text-caption: 0.875rem;  /* 14px  아이브로우, 주석 */
-  --text-sm: 0.9375rem;      /* 15px  카드 설명, 버튼 */
-  --text-base: 1rem;         /* 16px  본문 */
-  --text-md: 1.0625rem;      /* 17px  섹션 설명 */
-  --text-lg: 1.125rem;       /* 18px  카드 제목 */
-  --text-xl: 1.25rem;        /* 20px  로고, 헤더 전화 */
-  --text-2xl: 1.5rem;        /* 24px  작은 제목 */
-  --text-3xl: 1.75rem;       /* 28px  대표 전화번호 */
-  --text-section: clamp(1.6rem, 3.4vw, 2.2rem);
-  --text-hero: clamp(2.1rem, 5vw, 3.3rem);
+  /* 글자 크기 램프 — 새 글자는 반드시 이 안에서 고른다.
+     시니어 손님이 주로 보는 사이트라 전체적으로 한 단계씩 크게 잡음(2026-09 조정). */
+  --text-xs: 0.8125rem;      /* 13px  배지, 저작권 */
+  --text-caption: 1rem;      /* 16px  아이브로우, 주석 */
+  --text-sm: 1.0625rem;      /* 17px  카드 설명, 버튼 */
+  --text-base: 1.125rem;     /* 18px  본문 */
+  --text-md: 1.1875rem;      /* 19px  섹션 설명 */
+  --text-lg: 1.3125rem;      /* 21px  카드 제목 */
+  --text-xl: 1.4375rem;      /* 23px  로고, 헤더 전화 */
+  --text-2xl: 1.75rem;       /* 28px  작은 제목 */
+  --text-3xl: 2.125rem;      /* 34px  대표 전화번호 */
+  --text-section: clamp(1.75rem, 3.6vw, 2.4rem);
+  --text-hero: clamp(2.2rem, 5.2vw, 3.4rem);
 
   /* 글자 굵기 — 세 단계만 쓴다.
      본문·설명 400 / 라벨·버튼·네비 600 / 제목·강조 숫자 700 */
@@ -218,8 +219,8 @@ button { font-family: inherit; cursor: pointer; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(100deg, rgba(26,14,12,0.92) 0%, rgba(26,14,12,0.8) 34%, rgba(26,14,12,0.52) 66%, rgba(26,14,12,0.4) 100%),
-    linear-gradient(180deg, rgba(26,14,12,0.12) 0%, rgba(26,14,12,0) 40%, rgba(26,14,12,0.55) 100%);
+    linear-gradient(100deg, rgba(26,14,12,0.72) 0%, rgba(26,14,12,0.6) 34%, rgba(26,14,12,0.38) 66%, rgba(26,14,12,0.26) 100%),
+    linear-gradient(180deg, rgba(26,14,12,0.08) 0%, rgba(26,14,12,0) 40%, rgba(26,14,12,0.4) 100%);
 }
 
 .hero__inner { position: relative; text-align: left; max-width: 680px; margin: 0; padding: 104px var(--space-6); }
@@ -235,25 +236,25 @@ button { font-family: inherit; cursor: pointer; }
   margin-bottom: var(--space-4);
 }
 .eyebrow--light {
-  background: rgba(0,0,0,0.28);
+  background: rgba(0,0,0,0.36);
   color: var(--color-cream-light);
   border: 1px solid rgba(240,223,192,0.55);
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
 }
 .hero__title {
   font-size: var(--text-hero);
   line-height: 1.4;
   font-weight: var(--weight-bold);
   color: var(--color-white);
-  text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+  text-shadow: 0 2px 16px rgba(0,0,0,0.65);
 }
 .hero__desc {
   margin: var(--space-6) 0 0;
   color: var(--color-cream-light);
   font-size: var(--text-lg);
-  font-weight: var(--weight-medium); /* 어두운 사진 위라 본문보다 한 단계 굵게 */
+  font-weight: var(--weight-medium); /* 사진 위라 본문보다 한 단계 굵게 */
   max-width: 520px;
-  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 10px rgba(0,0,0,0.7);
 }
 .hero__actions {
   display: flex;
