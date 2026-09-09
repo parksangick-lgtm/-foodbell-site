@@ -61,7 +61,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -74,6 +74,7 @@ body {
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 strong, b { font-weight: var(--weight-medium); }
@@ -654,8 +655,16 @@ button { font-family: inherit; cursor: pointer; }
 .contact__submit { justify-content: center; margin-top: var(--space-2); }
 .contact__submit[disabled] { opacity: 0.6; cursor: default; transform: none; }
 
-/* 스팸 로봇용 미끼 칸 — 사람 눈에는 안 보임 */
-.contact__form-hp { position: absolute; left: -9999px; }
+/* 스팸 로봇용 미끼 칸 — 사람 눈에는 안 보임 (화면 밖 배치는 모바일 가로 스크롤을 만들어 clip 방식으로 교체) */
+.contact__form-hp {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .contact__form-note {
   font-size: var(--text-sm);
