@@ -569,7 +569,12 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- 문의 ---------- */
 .contact { padding: var(--space-24) 0; background: var(--color-cream-deep); }
-.contact__inner { max-width: 560px; }
+.contact__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: var(--space-12);
+  align-items: center;
+}
 .contact__list { margin-top: var(--space-8); display: flex; flex-direction: column; gap: var(--space-6); }
 .contact__list li { display: flex; gap: var(--space-4); align-items: flex-start; }
 .contact__icon {
@@ -583,17 +588,49 @@ button { font-family: inherit; cursor: pointer; }
 .contact__list strong { display: block; font-size: var(--text-base); font-weight: var(--weight-medium); margin-bottom: var(--space-1); color: var(--color-ink); }
 .contact__list p { color: var(--color-ink-soft); font-size: var(--text-base); font-weight: var(--weight-normal); }
 .contact__list a:hover { color: var(--color-primary); }
-.phone-number {
-  display: inline-block;
-  font-size: var(--text-3xl);
+
+/* 전화 상담 카드 — 문의 폼이 있던 자리를 채우는 큰 전화 안내 */
+.contact__cta {
+  background: var(--color-cream-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-12) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+}
+.contact__cta-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--color-white);
+  color: var(--color-primary);
+  margin-bottom: var(--space-2);
+}
+.contact__cta-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-soft);
+}
+.contact__cta-number {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.2vw, 2.375rem);
   font-weight: var(--weight-bold);
   color: var(--color-primary);
   letter-spacing: 0.01em;
 }
-.phone-number:hover { color: var(--color-primary-dark); }
-.contact__list em { font-style: normal; color: var(--color-ink-muted); font-size: var(--text-caption); font-weight: var(--weight-normal); }
-
-.contact__actions { display: flex; gap: var(--space-4); margin-top: var(--space-8); flex-wrap: wrap; }
+.contact__cta-number:hover { color: var(--color-primary-dark); }
+.contact__cta-hours {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-normal);
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-4);
+}
 
 /* ---------- 푸터 ---------- */
 .footer {
@@ -667,6 +704,10 @@ button { font-family: inherit; cursor: pointer; }
   .album { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
   .menu__tab { padding: 12px 16px; font-size: var(--text-caption); }
   .album-toggle { width: 100%; }
+
+  /* 문의: 좁은 화면에서는 안내글 위 · 전화 카드 아래로 쌓음 */
+  .contact__inner { grid-template-columns: 1fr; gap: var(--space-8); }
+  .contact__cta { padding: var(--space-8) var(--space-6); }
 
   /* 서비스 카드: 좁은 화면에서는 한 줄에 하나, 사진 왼쪽 · 설명 오른쪽 (설명 글이 길쭉하게 눌리지 않도록) */
   .menu__grid { grid-template-columns: 1fr; gap: var(--space-4); }
