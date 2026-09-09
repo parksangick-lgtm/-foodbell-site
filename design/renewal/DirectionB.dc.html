@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #F7F2E9; color: #120C06;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+      -webkit-font-smoothing: antialiased; }
+    a { color: #6E1E2B; text-decoration: none; }
+    a:hover { color: #4E141E; }
+    h1, h2, h3 { margin: 0; font-family: 'Gowun Batang', serif; font-weight: 700; }
+    p { margin: 0; }
+    .wrap { width: 1140px; margin: 0 auto; }
+    .mark { font-family: 'Gowun Batang', serif; font-size: 14px; letter-spacing: 0.34em; color: #B08D57; }
+  </style>
+</helmet>
+
+<div style="width: 1240px; background: #F7F2E9; position: relative;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; z-index: 2;">
+    <div class="wrap" style="display: flex; align-items: center; justify-content: space-between; height: 84px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-family: 'Gowun Batang', serif; font-size: 24px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.02em; text-shadow: 0 1px 10px rgba(0,0,0,0.4);">푸드벨</span>
+        <span style="font-family: 'Gowun Batang', serif; font-size: 12px; color: #D6CBB9; letter-spacing: 0.22em;">祭禮</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 32px;">
+        <span style="font-size: 15px; color: rgba(255,255,255,0.92); text-shadow: 0 1px 8px rgba(0,0,0,0.5);">소개</span>
+        <span style="font-size: 15px; color: rgba(255,255,255,0.92); text-shadow: 0 1px 8px rgba(0,0,0,0.5);">서비스</span>
+        <span style="font-size: 15px; color: rgba(255,255,255,0.92); text-shadow: 0 1px 8px rgba(0,0,0,0.5);">갤러리</span>
+        <span style="font-size: 15px; color: rgba(255,255,255,0.92); text-shadow: 0 1px 8px rgba(0,0,0,0.5);">문의</span>
+        <span style="font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; color: #FFFFFF; text-shadow: 0 1px 8px rgba(0,0,0,0.5);">010-5353-3477</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; height: 660px; overflow: hidden;">
+    <img src="hero.jpg" alt="문중 시제 상차림" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18,12,6,0.42) 0%, rgba(18,12,6,0.05) 34%, rgba(18,12,6,0.12) 100%);"></div>
+  </div>
+
+  <div class="wrap" style="position: relative; margin-top: -172px; z-index: 3;">
+    <div style="width: 640px; background: #F7F2E9; padding: 52px 56px 48px;">
+      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 26px;">
+        <span style="width: 28px; height: 1px; background: #B08D57; display: block;"></span>
+        <span class="mark">時祭 · 祭祀 · 出張</span>
+      </div>
+      <h1 style="font-size: 46px; line-height: 1.34; letter-spacing: -0.01em;">
+        정성으로 차리는 한 상,<br><span style="color: #6E1E2B;">어디든</span> 찾아가겠습니다
+      </h1>
+      <p style="margin-top: 24px; font-size: 17px; line-height: 1.85; color: #2A2318;">
+        종중 시제와 묘사, 가정의 제사상부터 체육대회·모임·마을잔치 출장음식까지 정성을 다해 준비합니다.
+      </p>
+      <div style="display: flex; align-items: center; gap: 24px; margin-top: 36px;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; height: 54px; padding: 0 34px; background: #6E1E2B; color: #FFFFFF; font-size: 16px; font-weight: 600;">전화로 상담하기</span>
+        <span style="display: inline-flex; align-items: center; gap: 9px; font-size: 16px; color: #2A2318; border-bottom: 1px solid #120C06; padding-bottom: 4px;">
+          서비스 살펴보기
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#120C06" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"></path><path d="M13 6l6 6-6 6"></path></svg>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 96px 0 110px;">
+    <div class="wrap">
+      <h2 style="font-size: 35px; letter-spacing: -0.01em;">상황에 맞는 상차림</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 44px 40px; margin-top: 56px;">
+        <div>
+          <div style="position: relative;">
+            <img src="s1.jpg" alt="종중 시제·묘사 상차림" style="width: 100%; height: 340px; object-fit: cover; display: block;">
+            <span style="position: absolute; left: 0; bottom: 0; background: #6E1E2B; color: #FFFFFF; font-size: 14px; letter-spacing: 0.08em; padding: 9px 16px;">시제상차림</span>
+          </div>
+          <h3 style="font-size: 20px; margin-top: 22px; letter-spacing: -0.01em;">종중 시제·묘사 상차림</h3>
+          <p style="margin-top: 12px; font-size: 16px; line-height: 1.8; color: #2A2318;">문중 단위의 시제와 묘사를 우리 전통 예법에 맞춰 격식 있게 준비합니다.</p>
+          <p style="margin-top: 14px; font-size: 14px; color: #6B5E48;">규모에 따라 · 상담 후 안내</p>
+        </div>
+        <div style="margin-top: 64px;">
+          <div style="position: relative;">
+            <img src="g3.jpg" alt="가정 기제사상" style="width: 100%; height: 340px; object-fit: cover; display: block;">
+            <span style="position: absolute; left: 0; bottom: 0; background: #6E1E2B; color: #FFFFFF; font-size: 14px; letter-spacing: 0.08em; padding: 9px 16px;">기제사·제사상</span>
+          </div>
+          <h3 style="font-size: 20px; margin-top: 22px; letter-spacing: -0.01em;">가정 기제사상</h3>
+          <p style="margin-top: 12px; font-size: 16px; line-height: 1.8; color: #2A2318;">기일에 맞춘 기제사상을 가정 예법에 맞춰 정갈하게 준비합니다.</p>
+          <p style="margin-top: 14px; font-size: 14px; color: #6B5E48;">위(位) 수에 따라 · 상담 후 안내</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
