@@ -382,13 +382,6 @@ button { font-family: inherit; cursor: pointer; }
 .menu-card__body { padding: 16px 20px 24px; }
 .menu-card__body h3 { font-size: var(--text-lg); font-weight: var(--weight-bold); margin-bottom: var(--space-2); }
 .menu-card__body p { color: var(--color-ink-soft); font-size: var(--text-sm); font-weight: var(--weight-normal); min-height: 2.6em; }
-.menu-card__price {
-  display: inline-block;
-  margin-top: var(--space-2);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary-dark);
-  font-size: var(--text-base);
-}
 
 .menu__note {
   margin-top: var(--space-8);
@@ -734,7 +727,6 @@ button { font-family: inherit; cursor: pointer; }
   }
   .menu-card__body h3 { font-size: var(--text-base); margin-bottom: var(--space-1); }
   .menu-card__body p { min-height: 0; font-size: var(--text-sm); line-height: 1.55; }
-  .menu-card__price { margin-top: var(--space-2); }
   .lightbox { padding: var(--space-6); }
   .lightbox__nav { width: 40px; height: 40px; font-size: 1.3rem; }
   .lightbox__nav--prev { left: 8px; }
