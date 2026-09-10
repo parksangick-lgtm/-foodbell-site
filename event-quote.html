@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>푸드벨 시제 견적서</title>
-<meta name="description" content="푸드벨(박상익출장음식) 시제·제사 상차림 출장 견적서. 5열 진설도와 견적 내역이 담긴 A4 서식으로, 편집 후 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
+<title>푸드벨 행사 견적서</title>
+<meta name="description" content="푸드벨(박상익출장음식) 제실·문중 행사 단체 출장음식 견적서. 음식 구성과 천막·테이블 세팅 내역이 담긴 A4 서식으로, 편집 후 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏮</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛺</text></svg>">
 <meta name="theme-color" content="#6E1E2B">
-<link rel="apple-touch-icon" href="icons/quote-sije-180.png">
+<link rel="apple-touch-icon" href="icons/quote-event-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="시제 견적서">
+<meta name="apple-mobile-web-app-title" content="행사 견적서">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -80,12 +80,6 @@ body{
 .sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
 section + section{margin-top:34px}
 
-/* ---------- 고임 규격(7치/1자) 선택 — 편집 모드에서만 보임(body.editing) ---------- */
-.tier-switch{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-.tier-switch .tier-label{font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute)}
-.tier-btn{min-width:2.6em}
-.tier-btn[aria-pressed="true"]{background:var(--seal); color:var(--paper); border-color:var(--seal)}
-
 /* ---------- 봉행 개요 ---------- */
 .brief{border:1px solid var(--line); background:var(--band); margin:0}
 .brief-row{display:grid; grid-template-columns:104px 1fr; border-bottom:1px solid var(--line)}
@@ -99,13 +93,8 @@ section + section{margin-top:34px}
   .brief-row:last-child{grid-column:1 / -1; border-right:0}
 }
 
-/* ---------- 진설도 ---------- */
+/* ---------- 음식 구성 ---------- */
 .jinseol{border:1px solid var(--line-strong); background:var(--band); padding:16px 14px}
-.jinseol-shin{
-  text-align:center; font-family:var(--serif); font-weight:var(--w-bold); font-size:15px;
-  letter-spacing:.5em; text-indent:.5em; color:var(--paper); background:var(--seal);
-  padding:8px 0; margin-bottom:14px;
-}
 .jrow{display:grid; grid-template-columns:78px 1fr; gap:12px; align-items:center; padding:9px 0; border-bottom:1px dashed var(--gold)}
 .jrow:last-of-type{border-bottom:0}
 .jrow-label{font-family:var(--serif); font-weight:var(--w-bold); font-size:14.5px; color:var(--ink); line-height:1.35; text-align:right}
@@ -115,7 +104,6 @@ section + section{margin-top:34px}
   font-size:15px; padding:3px 9px; background:var(--paper);
   border:1px solid var(--line-strong); color:var(--ink); white-space:nowrap;
 }
-.jrow.altar .jitems span{background:var(--band2); border-style:dotted; color:var(--ink-soft)}
 .jinseol-rules{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px; padding-top:12px; border-top:1px solid var(--gold); font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft)}
 .jinseol-rules b{font-family:var(--serif); color:var(--gold-deep); font-weight:var(--w-bold); letter-spacing:.08em; margin-right:5px}
 
@@ -205,14 +193,14 @@ tr.addrow td{padding:6px 12px; border-bottom:1px solid var(--line); background:r
 tr.addrow .btn-mini{width:100%}
 .grouprow th{position:relative}
 .grouprow .btn-del{position:absolute; right:8px; top:50%; transform:translateY(-50%)}
-.addgroup{margin-top:10px; text-align:right}
+.addgroup,.addjrow{margin-top:10px; text-align:right}
 .jitems .btn-add{border-style:dashed; color:var(--gold-deep)}
 body:not(.editing) .rowctl,
 body:not(.editing) tr.addrow,
 body:not(.editing) .addgroup,
 body:not(.editing) .grouprow .btn-del,
 body:not(.editing) .jitems .btn-add,
-body:not(.editing) .tier-switch{display:none !important}
+body:not(.editing) .addjrow{display:none !important}
 
 /* ---------- 도구막대 ---------- */
 .toolbar{
@@ -284,7 +272,7 @@ body:not(.editing) .tier-switch{display:none !important}
   @page{ size:A4; margin:13mm; }
   body{padding:0; background:var(--paper); font-size:11.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:8mm}
-  .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add,.tier-switch{display:none !important}
+  .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add,.addjrow{display:none !important}
   body.editing [data-edit]{background:transparent; box-shadow:none}
   section{break-inside:avoid}
   tr{break-inside:avoid}
@@ -311,16 +299,16 @@ body:not(.editing) .tier-switch{display:none !important}
   <header class="masthead">
     <div class="brand">
       <h1 class="brand-name">푸드벨</h1>
-      <span class="brand-tag">전통 제례 · 시제 맞춤 출장음식 | 전국 출장 · 현장 세팅</span>
+      <span class="brand-tag" data-edit data-t="text">제실 · 문중 행사 단체 출장음식 | 전국 출장 · 천막 · 테이블 세팅</span>
       <a class="brand-tel" href="tel:01053533477">010-5353-3477</a>
     </div>
     <div class="doc-meta">
       <div>
-        <h2 class="doc-title">견적서</h2>
+        <h2 class="doc-title" data-edit data-t="text">견적서</h2>
         <dl class="meta-list">
-          <dt>견적번호</dt><dd data-edit data-t="text">FB-2026-1121</dd>
-          <dt>발행일</dt><dd data-edit data-t="text">2026년 9월 5일</dd>
-          <dt>유효기한</dt><dd data-edit data-t="text">2026년 9월 19일</dd>
+          <dt data-edit data-t="text">견적번호</dt><dd data-edit data-t="text">FB-2026-1121</dd>
+          <dt data-edit data-t="text">발행일</dt><dd data-edit data-t="text">2026년 9월 10일</dd>
+          <dt data-edit data-t="text">유효기한</dt><dd data-edit data-t="text">2026년 9월 24일</dd>
         </dl>
       </div>
       <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
@@ -335,68 +323,52 @@ body:not(.editing) .tier-switch{display:none !important}
 
   <hr class="rule-double">
 
-  <!-- ================= 봉행 개요 ================= -->
+  <!-- ================= 행사 개요 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">봉행 개요</h2><span class="hanja">奉行 槪要</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">행사 개요</h2><span class="hanja" data-edit data-t="text">行事 槪要</span></div>
     <dl class="brief">
-      <div class="brief-row"><dt>수신</dt><dd><span data-edit data-t="text">○○ 김씨 문중 종친회</span> 총무님 귀중</dd></div>
-      <div class="brief-row"><dt>행사 구분</dt><dd data-edit data-t="text">문중 묘제 · 야외 시제</dd></div>
-      <div class="brief-row"><dt>봉행 일시</dt><dd data-edit data-t="text">2026년 11월 21일 (토) 오전 10시</dd></div>
-      <div class="brief-row"><dt>봉행 장소</dt><dd data-edit data-t="text">충남 ○○군 ○○면 선산 묘역 (야외)</dd></div>
-      <div class="brief-row"><dt>상차림</dt><dd data-edit data-t="text">5열 진설 제수상 1상 + 종친 음복 식사</dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">수신</dt><dd><span data-edit data-t="text">○○ 문중 종친회</span> <span data-edit data-t="text">담당자님 귀중</span></dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">행사 구분</dt><dd data-edit data-t="text">제실 · 문중 행사 단체 상차림</dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">행사 일시</dt><dd data-edit data-t="text">2026년 11월 21일 (토) 오전 11시</dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">행사 장소</dt><dd data-edit data-t="text">충남 ○○군 ○○면 제실 마당 (야외)</dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">참석 인원</dt><dd><span data-edit data-t="num" data-k="head" data-raw="100">100</span> 명 · <span data-edit data-t="text">야외 천막 · 긴 테이블 단체 상차림</span></dd></div>
     </dl>
   </section>
 
-  <!-- ================= 진설 구성 ================= -->
+  <!-- ================= 음식 구성 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">제수 진설 구성</h2><span class="hanja">陳設 五列</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">음식 구성</h2><span class="hanja" data-edit data-t="text">飮食 構成</span></div>
     <div class="jinseol">
-      <div class="jinseol-shin">神位</div>
-
       <div class="jrow">
-        <div class="jrow-label">제1열<small>飯羹 반갱</small></div>
-        <div class="jitems"><span data-edit data-t="text">메 (밥)</span><span data-edit data-t="text">갱 (탕국)</span><span data-edit data-t="text">면 (국수)</span><span data-edit data-t="text">시접</span><span data-edit data-t="text">잔반</span></div>
+        <div class="jrow-label" data-edit data-t="text">밥 · 국</div>
+        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
       </div>
       <div class="jrow">
-        <div class="jrow-label">제2열<small>炙煎 적전</small></div>
-        <div class="jitems"><span data-edit data-t="text">육적</span><span data-edit data-t="text">계적</span><span data-edit data-t="text">어적</span><span data-edit data-t="text">육전</span><span data-edit data-t="text">어전</span><span data-edit data-t="text">동태전</span></div>
+        <div class="jrow-label" data-edit data-t="text">주요리</div>
+        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
       </div>
       <div class="jrow">
-        <div class="jrow-label">제3열<small>湯 탕</small></div>
-        <div class="jitems"><span data-edit data-t="text">육탕</span><span data-edit data-t="text">소탕</span><span data-edit data-t="text">어탕</span></div>
+        <div class="jrow-label" data-edit data-t="text">반찬 · 나물</div>
+        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
       </div>
       <div class="jrow">
-        <div class="jrow-label">제4열<small>脯醯 포혜</small></div>
-        <div class="jitems"><span data-edit data-t="text">북어포</span><span data-edit data-t="text">고사리</span><span data-edit data-t="text">도라지</span><span data-edit data-t="text">시금치</span><span data-edit data-t="text">침채 (나박김치)</span><span data-edit data-t="text">식혜</span></div>
+        <div class="jrow-label" data-edit data-t="text">김치 · 장류</div>
+        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
       </div>
       <div class="jrow">
-        <div class="jrow-label">제5열<small>果實 과실</small></div>
-        <div class="jitems"><span data-edit data-t="text">대추</span><span data-edit data-t="text">밤</span><span data-edit data-t="text">배</span><span data-edit data-t="text">감</span><span data-edit data-t="text">사과</span><span data-edit data-t="text">약과</span><span data-edit data-t="text">유과</span><span data-edit data-t="text">다식</span></div>
-      </div>
-      <div class="jrow altar">
-        <div class="jrow-label">향안<small>香案 향안</small></div>
-        <div class="jitems"><span data-edit data-t="text">향로 · 향합</span><span data-edit data-t="text">모사기</span><span data-edit data-t="text">촛대 한 쌍</span><span data-edit data-t="text">퇴주기</span></div>
+        <div class="jrow-label" data-edit data-t="text">후식 · 음료</div>
+        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
       </div>
 
       <div class="jinseol-rules">
-        <span><b>조율이시</b>대추 · 밤 · 배 · 감 순</span>
-        <span><b>홍동백서</b>붉은 과실 동편, 흰 과실 서편</span>
-        <span><b>어동육서</b>어물 동편, 육류 서편</span>
-        <span><b>좌포우혜</b>포는 왼편, 식혜는 오른편</span>
+        <span data-edit data-t="text"><b>안내</b>구성 품목은 상담 후 확정합니다. <strong>편집</strong>을 눌러 직접 채워 넣고 <strong>＋</strong> 로 품목을 더할 수 있습니다.</span>
       </div>
     </div>
   </section>
 
   <!-- ================= 견적 내역 ================= -->
   <section>
-    <div class="sec-head">
-      <h2 data-edit data-t="text">견적 내역</h2><span class="hanja">見積 內譯</span>
-      <div class="tier-switch" role="group" aria-label="고임 규격 선택">
-        <span class="tier-label">고임 규격</span>
-        <button type="button" class="btn-mini tier-btn" data-tier="7chi" title="가.제수 음식 수량을 7치 고임상 기준으로 채웁니다">7치 고임상</button>
-        <button type="button" class="btn-mini tier-btn" data-tier="1ja" title="가.제수 음식 수량을 1자 고임상 기준으로 채웁니다">1자 고임상</button>
-      </div>
-    </div>
+    <div class="sec-head"><h2 data-edit data-t="text">견적 내역</h2><span class="hanja" data-edit data-t="text">見積 內譯</span></div>
     <div class="qwrap">
       <table class="quote">
         <thead>
@@ -408,48 +380,38 @@ body:not(.editing) .tier-switch{display:none !important}
         </thead>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">가. 제수 음식 — 5열 진설 기준</th></tr>
+          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">가. 단체 음식 — 참석 인원 기준</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">과실 · 조과</td>
-            <td class="item-detail" data-edit data-t="text">대추 · 밤 · 배 · 감 · 사과, 약과 · 유과 · 다식</td>
-            <td class="n" data-label="수량"><span data-edit data-t="text">7치</span></td>
+            <td class="item-name" data-edit data-t="text">단체 식사 상차림</td>
+            <td class="item-detail" data-edit data-t="text">밥 · 국 · 반찬 · 주요리 — 구성은 위 「음식 구성」 참조</td>
+            <td class="n" data-label="수량" data-fill="head"><span data-edit data-t="text">100</span> 인</td>
           </tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">포 · 혜 · 나물</td>
-            <td class="item-detail" data-edit data-t="text">북어포, 식혜, 삼색나물(고사리 · 도라지 · 시금치), 나박김치</td>
-            <td class="n" data-label="수량"><span data-edit data-t="text">500g</span></td>
-          </tr>
-          <tr class="item">
-            <td class="item-name" data-edit data-t="text">탕 3종</td>
-            <td class="item-detail" data-edit data-t="text">육탕 · 소탕 · 어탕</td>
-            <td class="n" data-label="수량"><span data-edit data-t="text">1식</span></td>
-          </tr>
-          <tr class="item">
-            <td class="item-name" data-edit data-t="text">적 · 전</td>
-            <td class="item-detail" data-edit data-t="text">육적 · 계적 · 어적, 육전 · 어전 · 동태전</td>
-            <td class="n" data-label="수량"><span data-edit data-t="text">6개</span></td>
-          </tr>
-          <tr class="item">
-            <td class="item-name" data-edit data-t="text">반 · 갱 · 면</td>
-            <td class="item-detail" data-edit data-t="text">메(밥), 탕국, 국수, 시접 일습</td>
-            <td class="n" data-label="수량"><span data-edit data-t="text">1</span></td>
-          </tr>
-        </tbody>
-
-        <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">나. 제례 집기 — 대여 · 설치 · 회수</th></tr>
-          <tr class="item">
-            <td class="item-name" data-edit data-t="text">제기 일습</td>
-            <td class="item-detail" data-edit data-t="text">향로 · 향합 · 촛대 · 모사기 · 퇴주기 · 잔반</td>
+            <td class="item-name" data-edit data-t="text">음복 · 후식</td>
+            <td class="item-detail" data-edit data-t="text">행사 후 음복상과 후식 — 구성은 상담 후 확정</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">다. 종친 음복 · 음료</th></tr>
+          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">나. 천막 · 테이블 · 의자 — 설치 · 회수</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">음료 · 제주</td>
-            <td class="item-detail" data-edit data-t="text">식혜, 생수, 청주, 종이컵 일습</td>
+            <td class="item-name" data-edit data-t="text">천막 설치</td>
+            <td class="item-detail" data-edit data-t="text">야외 천막 설치 및 행사 후 회수</td>
+            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="2">2</span> 동</td>
+          </tr>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">테이블 · 의자</td>
+            <td class="item-detail" data-edit data-t="text">긴 테이블과 의자 배치, 행사 후 정리</td>
+            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+          </tr>
+        </tbody>
+
+        <tbody data-group>
+          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">다. 음료 · 식기</th></tr>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">음료 · 생수</td>
+            <td class="item-detail" data-edit data-t="text">생수 · 음료, 종이컵 · 수저 일습</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
@@ -462,8 +424,8 @@ body:not(.editing) .tier-switch{display:none !important}
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">현장 조리 · 세팅</td>
-            <td class="item-detail" data-edit data-t="text">진설 세팅 및 음복 배식 (4시간), 행사 후 정리</td>
+            <td class="item-name" data-edit data-t="text">현장 조리 · 배식</td>
+            <td class="item-detail" data-edit data-t="text">현장 세팅 및 배식, 행사 후 정리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="2">2</span> 인</td>
           </tr>
         </tbody>
@@ -475,51 +437,52 @@ body:not(.editing) .tier-switch{display:none !important}
         <div class="sum-row sum-row--input"><span>공급가액</span><span class="v"><span data-edit data-t="num" data-k="supply"></span><span class="won"> 원</span></span></div>
         <div class="sum-row"><span>부가세 (10% 별도)</span><span class="v" data-k="vat"></span></div>
         <div class="sum-total"><span class="lab">합계</span><span class="val"><span data-k="total"></span><em>원</em></span></div>
-        <p class="sum-note">공급가액을 입력하면 부가세(10%)와 합계가 자동 계산됩니다. 부가세는 별도 표기입니다.</p>
+        <p class="sum-note" data-edit data-t="text">공급가액을 입력하면 부가세(10%)와 합계가 자동 계산됩니다. 부가세는 별도 표기입니다.</p>
       </div>
     </div>
   </section>
 
   <!-- ================= 절차 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">진행 절차</h2><span class="hanja">進行 節次</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">진행 절차</h2><span class="hanja" data-edit data-t="text">進行 節次</span></div>
     <div class="steps">
       <div class="step">
         <div class="no" data-edit data-t="text">STEP 1</div>
         <h3 data-edit data-t="text">상담</h3>
-        <p>봉행 일시와 장소, 참석 인원, 가문의 진설 예법을 전화로 편히 알려주십시오.</p>
+        <p data-edit data-t="text">행사 일시와 장소, 참석 인원, 원하시는 음식 구성을 전화로 편히 알려주십시오.</p>
       </div>
       <div class="step">
         <div class="no" data-edit data-t="text">STEP 2</div>
         <h3 data-edit data-t="text">견적 확정</h3>
-        <p>종중 예산에 맞추어 제수 품목과 음복 식사 구성을 조율하고 최종 견적을 확정합니다.</p>
+        <p data-edit data-t="text">예산에 맞추어 음식 구성과 천막 · 테이블 세팅 범위를 조율하고 최종 견적을 확정합니다.</p>
       </div>
       <div class="step">
         <div class="no" data-edit data-t="text">STEP 3</div>
-        <h3 data-edit data-t="text">당일 배송 · 세팅</h3>
-        <p>약속된 시각에 정시 도착하여 진설을 마치고, 봉행 후 음복상까지 정성껏 준비합니다.</p>
+        <h3 data-edit data-t="text">당일 세팅 · 배식</h3>
+        <p data-edit data-t="text">약속된 시각에 도착하여 천막과 상을 세팅하고, 배식과 행사 후 정리까지 마칩니다.</p>
       </div>
     </div>
   </section>
 
   <!-- ================= 유의사항 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">유의사항</h2><span class="hanja">留意 事項</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">유의사항</h2><span class="hanja" data-edit data-t="text">留意 事項</span></div>
     <ul class="notes" data-list>
       <li data-edit data-t="text">본 견적은 발행일로부터 14일간 유효하며, 식자재 시세 변동 시 사전에 안내드린 후 조정됩니다.</li>
-      <li data-edit data-t="text">최종 금액은 참석 인원 확정 후 정산합니다. 인원 증감은 봉행일 <strong>3일 전</strong>까지 알려주시면 그대로 반영해 드립니다.</li>
-      <li data-edit data-t="text">제례 집기는 대여 품목으로 행사 종료 후 회수하며, 파손 시 실비로 청구될 수 있습니다.</li>
-      <li data-edit data-t="text">가문마다 진설 예법이 다릅니다. 가감하실 품목을 말씀해 주시면 1:1로 맞추어 드리며, 추가 비용은 사전에 안내드립니다.</li>
+      <li data-edit data-t="text">최종 금액은 참석 인원 확정 후 정산합니다. 인원 증감은 행사일 <strong>3일 전</strong>까지 알려주시면 그대로 반영해 드립니다.</li>
+      <li data-edit data-t="text">천막 · 테이블 · 의자는 대여 품목으로 행사 종료 후 회수하며, 파손 시 실비로 청구될 수 있습니다.</li>
+      <li data-edit data-t="text">음식 구성은 상담 후 확정합니다. 가감하실 품목을 말씀해 주시면 맞추어 드리며, 추가 비용은 사전에 안내드립니다.</li>
+      <li data-edit data-t="text">주차 · 전기 · 급수 등 현장 여건을 미리 알려주시면 준비에 반영합니다.</li>
       <li data-edit data-t="text">도서 · 산간 지역은 출장비가 별도로 산정될 수 있습니다.</li>
-      <li data-edit data-t="text">신선한 재료 준비를 위해 봉행일 기준 <strong>최소 3~7일 전</strong> 예약을 권해 드립니다. 음력 10월 시제 성수기에는 조기 마감될 수 있습니다.</li>
+      <li data-edit data-t="text">신선한 재료 준비를 위해 행사일 기준 <strong>최소 3~7일 전</strong> 예약을 권해 드립니다.</li>
     </ul>
   </section>
 
   <!-- ================= 맺음 ================= -->
   <div class="closing">
-    <p data-edit data-t="text">선조를 기리는 자리에 예를 다해 정성껏 모시겠습니다.</p>
+    <p data-edit data-t="text">귀한 자리에 정성껏 준비해 모시겠습니다.</p>
     <p class="sub" data-edit data-t="text">조정이 필요하신 부분이나 궁금하신 점은 언제든 편하게 연락 주십시오.</p>
-    <div class="sign">푸드벨 드림</div>
+    <div class="sign" data-edit data-t="text">푸드벨 드림</div>
     <a class="tel" href="tel:01053533477">010-5353-3477</a>
   </div>
 </article>
@@ -532,7 +495,7 @@ body:not(.editing) .tier-switch{display:none !important}
 <script>
 (function () {
   "use strict";
-  var KEY = "foodbell-sije-quote-v4";
+  var KEY = "foodbell-event-quote-v1";
   function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
   function money(n) { return n ? fmt(n) : ""; }
   function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
@@ -561,7 +524,7 @@ body:not(.editing) .tier-switch{display:none !important}
 
   /* ---------- 문자·메신저용 요약 ---------- */
   function buildText() {
-    var L = ["[푸드벨 시제 견적서]"];
+    var L = ["[푸드벨 행사 견적서]"];
     each(sheet.querySelectorAll(".meta-list dt"), function (dt) {
       L.push(dt.textContent.trim() + ": " + dt.nextElementSibling.textContent.trim());
     });
@@ -592,7 +555,7 @@ body:not(.editing) .tier-switch{display:none !important}
   /* ---------- 저장 / 복원 : 시트 전체 HTML (항목 추가·삭제까지 반영) ---------- */
   function serialize() {
     var c = sheet.cloneNode(true);
-    each(c.querySelectorAll(".rowctl, tr.addrow, .addgroup, .grouprow .btn-del, .jitems .btn-add"),
+    each(c.querySelectorAll(".rowctl, tr.addrow, .addgroup, .addjrow, .grouprow .btn-del, .jitems .btn-add, .jitems .btn-del"),
          function (n) { n.remove(); });
     each(c.querySelectorAll("[contenteditable]"), function (n) { n.removeAttribute("contenteditable"); });
     return c.innerHTML;
@@ -611,6 +574,10 @@ body:not(.editing) .tier-switch{display:none !important}
     '<td class="item-name" data-edit data-t="text">품목</td>' +
     '<td class="item-detail" data-edit data-t="text">세부 구성</td>' +
     '<td class="n" data-label="수량"><span data-edit data-t="text">수량</span></td>';
+
+  var JROW_HTML =
+    '<div class="jrow-label" data-edit data-t="text">구분</div>' +
+    '<div class="jitems"><span data-edit data-t="text">품목</span></div>';
 
   function nextGroupLabel() {
     var ko = "가나다라마바사아자차카타파하";
@@ -649,15 +616,29 @@ body:not(.editing) .tier-switch{display:none !important}
       var gb = el("button", "btn-mini", "＋ 새 구분 추가"); gb.type = "button";
       wrap.appendChild(gb); qw.parentNode.insertBefore(wrap, qw.nextSibling);
     }
-    // 진설 태그 추가 버튼
+    // 음식 구성 품목 추가 버튼
     each(sheet.querySelectorAll(".jitems"), function (ji) {
       if (ji.querySelector(".btn-add")) return;
       var b = el("button", "btn-mini btn-add", "＋"); b.type = "button"; b.title = "품목 추가";
       ji.appendChild(b);
     });
+    // 음식 구성 줄 삭제 버튼
+    each(sheet.querySelectorAll(".jrow"), function (jr) {
+      var ji = jr.querySelector(".jitems");
+      if (!ji || ji.querySelector(".btn-del")) return;
+      var b = el("button", "btn-mini btn-del", "줄 삭제"); b.type = "button"; b.title = "이 줄 삭제";
+      ji.appendChild(b);
+    });
+    // 음식 구성 줄 추가 버튼
+    var jn = sheet.querySelector(".jinseol");
+    if (jn && !(jn.nextElementSibling && jn.nextElementSibling.matches(".addjrow"))) {
+      var jw = el("div", "addjrow");
+      var jb = el("button", "btn-mini", "＋ 구성 줄 추가"); jb.type = "button";
+      jw.appendChild(jb); jn.parentNode.insertBefore(jw, jn.nextSibling);
+    }
   }
   function removeControls() {
-    each(sheet.querySelectorAll(".rowctl, tr.addrow, .addgroup, .grouprow .btn-del, .jitems .btn-add"),
+    each(sheet.querySelectorAll(".rowctl, tr.addrow, .addgroup, .addjrow, .grouprow .btn-del, .jitems .btn-add, .jitems .btn-del"),
          function (n) { n.remove(); });
   }
 
@@ -676,6 +657,13 @@ body:not(.editing) .tier-switch{display:none !important}
     else    { removeControls(); setCE(false); save(); }
   }
 
+  /* ---------- 참석 인원을 고치면 '인원 기준' 수량칸이 따라 바뀐다 ---------- */
+  function syncHead(n) {
+    each(sheet.querySelectorAll('td[data-fill="head"] span[data-edit]'), function (sp) {
+      sp.textContent = n ? String(n) : "";
+    });
+  }
+
   /* ---------- 이벤트 위임 (동적 항목까지 자동 처리) ---------- */
   sheet.addEventListener("focusin", function (e) {
     var t = e.target.closest && e.target.closest('[data-edit][data-t="num"]');
@@ -689,6 +677,7 @@ body:not(.editing) .tier-switch{display:none !important}
     if (t.getAttribute("data-t") === "num") {
       var n = parseInt(t.textContent.replace(/[^0-9]/g, ""), 10) || 0;
       t.setAttribute("data-raw", String(n));
+      if (t.getAttribute("data-k") === "head") syncHead(n);
       recalc();
     }
     save();
@@ -704,45 +693,38 @@ body:not(.editing) .tier-switch{display:none !important}
     var t = e.target.closest && e.target.closest('[data-edit]:not(td):not(li):not(p)');
     if (t) { e.preventDefault(); t.blur(); }
   });
-  /* "가.제수 음식" 5개 항목 수량칸을 고임 규격 기본값으로 한 번에 채운다.
-     둘 다 언제든 눌러 바꿀 수 있고, 채운 뒤에도 각 칸을 직접 고쳐 쓸 수 있다. */
-  var TIER_PRESETS = {
-    "7chi": ["7치", "500g", "1식", "6개", "1"],
-    "1ja":  ["1자", "700g", "1식", "8개", "1"]
-  };
-
   sheet.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("button.btn-mini");
     if (!b) return;
     e.preventDefault();
     var addRow = b.closest("tr.addrow");
     var addGrp = b.closest(".addgroup");
+    var addJ   = b.closest(".addjrow");
 
-    if (b.classList.contains("tier-btn")) {                       // 고임 규격 기본값 채우기
-      var preset = TIER_PRESETS[b.getAttribute("data-tier")];
-      var firstGroup = sheet.querySelector("tbody[data-group]");
-      if (firstGroup && preset) {
-        var spans = firstGroup.querySelectorAll("tr.item td[data-label='수량'] span[data-edit]");
-        each(spans, function (sp, i) { if (preset[i] != null) sp.textContent = preset[i]; });
-      }
-      each(sheet.querySelectorAll(".tier-btn"), function (tb) {
-        tb.setAttribute("aria-pressed", String(tb === b));
-      });
-      toast((b.getAttribute("data-tier") === "7chi" ? "7치" : "1자") + " 고임상 기준 수량으로 채웠습니다.");
-    } else if (b.classList.contains("btn-add")) {                 // 진설 태그 추가
+    if (b.classList.contains("btn-add")) {                        // 음식 구성 품목 추가
       var span = el("span", null, "품목");
       span.setAttribute("data-edit", ""); span.setAttribute("data-t", "text");
       b.parentElement.insertBefore(span, b);
       span.contentEditable = "true"; span.focus();
       try { document.getSelection().selectAllChildren(span); } catch (x) {}
     } else if (b.classList.contains("btn-del")) {
-      if (b.closest(".grouprow")) {                              // 구분 전체 삭제
+      var jrow = b.closest(".jrow");
+      if (jrow) {                                                // 음식 구성 한 줄 삭제
+        jrow.remove();
+      } else if (b.closest(".grouprow")) {                       // 구분 전체 삭제
         var g = b.closest("tbody[data-group]");
         if (g && window.confirm("이 구분을 통째로 삭제할까요?")) g.remove();
       } else {                                                    // 항목 한 줄 삭제
         var row = b.closest("tr.item");
         if (row) row.remove();
       }
+    } else if (addJ) {                                            // 음식 구성 줄 추가
+      var jn2 = sheet.querySelector(".jinseol");
+      var nr = el("div", "jrow"); nr.innerHTML = JROW_HTML;
+      jn2.insertBefore(nr, jn2.querySelector(".jinseol-rules"));
+      addControls(); setCE(true);
+      var lb = nr.querySelector(".jrow-label");
+      if (lb) { lb.focus(); try { document.getSelection().selectAllChildren(lb); } catch (x) {} }
     } else if (addRow) {                                          // 항목 추가
       var g2 = addRow.closest("tbody[data-group]");
       var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
@@ -787,7 +769,7 @@ body:not(.editing) .tier-switch{display:none !important}
   }
   function custName() {
     var dd = sheet.querySelector(".brief-row dd");
-    var t = dd ? dd.textContent.replace(/\s+/g, " ").replace(/(총무님)?\s*귀중/, "").trim() : "";
+    var t = dd ? dd.textContent.replace(/\s+/g, " ").replace(/(총무님|담당자님|귀하)?\s*귀중/, "").trim() : "";
     return t ? t.slice(0, 24) : "고객";
   }
 
@@ -833,7 +815,7 @@ body:not(.editing) .tier-switch{display:none !important}
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
     var fname = "푸드벨_견적서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + ".png";
-    var title = "푸드벨 시제 견적서 (" + custName() + ")";
+    var title = "푸드벨 행사 견적서 (" + custName() + ")";
     var text = buildText();
     function done() { btn.disabled = false; btn.textContent = old; }
 
