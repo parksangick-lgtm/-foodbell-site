@@ -3,6 +3,7 @@
 ========================================================= */
 
 :root {
+  color-scheme: light; /* 다크모드 기기에서도 브라우저가 색을 자동으로 반전하지 않도록 고정 */
   --color-primary: #6E1E2B;
   --color-primary-dark: #4E141E;
   --color-gold: #B08D57;
