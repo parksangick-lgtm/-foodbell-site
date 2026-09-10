@@ -3,6 +3,7 @@
 ========================================================= */
 
 :root {
+  color-scheme: light; /* 다크모드 기기에서도 브라우저가 색을 자동으로 반전하지 않도록 고정 */
   --color-primary: #6E1E2B;
   --color-primary-dark: #4E141E;
   --color-gold: #B08D57;
@@ -20,18 +21,19 @@
   --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
   --font-display: 'Gowun Batang', serif;
 
-  /* 글자 크기 램프 — 새 글자는 반드시 이 안에서 고른다 */
-  --text-xs: 0.75rem;        /* 12px  배지, 저작권 */
-  --text-caption: 0.875rem;  /* 14px  아이브로우, 주석 */
-  --text-sm: 0.9375rem;      /* 15px  카드 설명, 버튼 */
-  --text-base: 1rem;         /* 16px  본문 */
-  --text-md: 1.0625rem;      /* 17px  섹션 설명 */
-  --text-lg: 1.125rem;       /* 18px  카드 제목 */
-  --text-xl: 1.25rem;        /* 20px  로고, 헤더 전화 */
-  --text-2xl: 1.5rem;        /* 24px  작은 제목 */
-  --text-3xl: 1.75rem;       /* 28px  대표 전화번호 */
-  --text-section: clamp(1.6rem, 3.4vw, 2.2rem);
-  --text-hero: clamp(2.1rem, 5vw, 3.3rem);
+  /* 글자 크기 램프 — 새 글자는 반드시 이 안에서 고른다.
+     시니어 손님이 주로 보는 사이트라 전체적으로 한 단계씩 크게 잡음(2026-09 조정). */
+  --text-xs: 0.8125rem;      /* 13px  배지, 저작권 */
+  --text-caption: 1rem;      /* 16px  아이브로우, 주석 */
+  --text-sm: 1.0625rem;      /* 17px  카드 설명, 버튼 */
+  --text-base: 1.125rem;     /* 18px  본문 */
+  --text-md: 1.1875rem;      /* 19px  섹션 설명 */
+  --text-lg: 1.3125rem;      /* 21px  카드 제목 */
+  --text-xl: 1.4375rem;      /* 23px  로고, 헤더 전화 */
+  --text-2xl: 1.75rem;       /* 28px  작은 제목 */
+  --text-3xl: 2.125rem;      /* 34px  대표 전화번호 */
+  --text-section: clamp(1.75rem, 3.6vw, 2.4rem);
+  --text-hero: clamp(2.2rem, 5.2vw, 3.4rem);
 
   /* 글자 굵기 — 세 단계만 쓴다.
      본문·설명 400 / 라벨·버튼·네비 600 / 제목·강조 숫자 700 */
@@ -61,7 +63,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -74,6 +76,7 @@ body {
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 strong, b { font-weight: var(--weight-medium); }
@@ -217,8 +220,8 @@ button { font-family: inherit; cursor: pointer; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(100deg, rgba(26,14,12,0.92) 0%, rgba(26,14,12,0.8) 34%, rgba(26,14,12,0.52) 66%, rgba(26,14,12,0.4) 100%),
-    linear-gradient(180deg, rgba(26,14,12,0.12) 0%, rgba(26,14,12,0) 40%, rgba(26,14,12,0.55) 100%);
+    linear-gradient(100deg, rgba(26,14,12,0.5) 0%, rgba(26,14,12,0.4) 34%, rgba(26,14,12,0.24) 66%, rgba(26,14,12,0.14) 100%),
+    linear-gradient(180deg, rgba(26,14,12,0.05) 0%, rgba(26,14,12,0) 40%, rgba(26,14,12,0.28) 100%);
 }
 
 .hero__inner { position: relative; text-align: left; max-width: 680px; margin: 0; padding: 104px var(--space-6); }
@@ -234,25 +237,25 @@ button { font-family: inherit; cursor: pointer; }
   margin-bottom: var(--space-4);
 }
 .eyebrow--light {
-  background: rgba(0,0,0,0.28);
+  background: rgba(0,0,0,0.48);
   color: var(--color-cream-light);
   border: 1px solid rgba(240,223,192,0.55);
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
 }
 .hero__title {
   font-size: var(--text-hero);
   line-height: 1.4;
   font-weight: var(--weight-bold);
   color: var(--color-white);
-  text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6);
 }
 .hero__desc {
   margin: var(--space-6) 0 0;
   color: var(--color-cream-light);
   font-size: var(--text-lg);
-  font-weight: var(--weight-medium); /* 어두운 사진 위라 본문보다 한 단계 굵게 */
+  font-weight: var(--weight-medium); /* 사진 위라 본문보다 한 단계 굵게 */
   max-width: 520px;
-  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 3px 14px rgba(0,0,0,0.6);
 }
 .hero__actions {
   display: flex;
@@ -299,7 +302,7 @@ button { font-family: inherit; cursor: pointer; }
   margin-top: var(--space-12);
 }
 .feature-card {
-  background: var(--color-white);
+  background: var(--color-cream-light);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 28px 24px;
@@ -332,7 +335,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 12px 24px;
   border-radius: 999px;
   border: 1.5px solid var(--color-border);
-  background: var(--color-white);
+  background: var(--color-cream-light);
   font-weight: var(--weight-medium);
   font-size: var(--text-sm);
   color: var(--color-ink);
@@ -358,7 +361,7 @@ button { font-family: inherit; cursor: pointer; }
   gap: var(--space-6);
 }
 .menu-card {
-  background: var(--color-white);
+  background: var(--color-cream-light);
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -366,9 +369,15 @@ button { font-family: inherit; cursor: pointer; }
 }
 .menu-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
 .menu-card__thumb {
+  display: block;
+  width: 100%;
+  border: none;
+  padding: 0;
+  font: inherit;
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--color-cream-deep);
+  cursor: zoom-in;
 }
 .menu-card__thumb img {
   width: 100%;
@@ -380,13 +389,6 @@ button { font-family: inherit; cursor: pointer; }
 .menu-card__body { padding: 16px 20px 24px; }
 .menu-card__body h3 { font-size: var(--text-lg); font-weight: var(--weight-bold); margin-bottom: var(--space-2); }
 .menu-card__body p { color: var(--color-ink-soft); font-size: var(--text-sm); font-weight: var(--weight-normal); min-height: 2.6em; }
-.menu-card__price {
-  display: inline-block;
-  margin-top: var(--space-2);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary-dark);
-  font-size: var(--text-base);
-}
 
 .menu__note {
   margin-top: var(--space-8);
@@ -406,7 +408,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 12px 24px;
   border-radius: 999px;
   border: 1.5px solid var(--color-border);
-  background: var(--color-white);
+  background: var(--color-cream-light);
   color: var(--color-ink);
   font-family: var(--font-body);
   font-weight: var(--weight-medium);
@@ -569,9 +571,9 @@ button { font-family: inherit; cursor: pointer; }
 .contact { padding: var(--space-24) 0; background: var(--color-cream-deep); }
 .contact__inner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
   gap: var(--space-12);
-  align-items: start;
+  align-items: center;
 }
 .contact__list { margin-top: var(--space-8); display: flex; flex-direction: column; gap: var(--space-6); }
 .contact__list li { display: flex; gap: var(--space-4); align-items: flex-start; }
@@ -586,86 +588,49 @@ button { font-family: inherit; cursor: pointer; }
 .contact__list strong { display: block; font-size: var(--text-base); font-weight: var(--weight-medium); margin-bottom: var(--space-1); color: var(--color-ink); }
 .contact__list p { color: var(--color-ink-soft); font-size: var(--text-base); font-weight: var(--weight-normal); }
 .contact__list a:hover { color: var(--color-primary); }
-.phone-number {
-  display: inline-block;
-  font-size: var(--text-3xl);
+
+/* 전화 상담 카드 — 문의 폼이 있던 자리를 채우는 큰 전화 안내 */
+.contact__cta {
+  background: var(--color-cream-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-12) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+}
+.contact__cta-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--color-white);
+  color: var(--color-primary);
+  margin-bottom: var(--space-2);
+}
+.contact__cta-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-soft);
+}
+.contact__cta-number {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.2vw, 2.375rem);
   font-weight: var(--weight-bold);
   color: var(--color-primary);
   letter-spacing: 0.01em;
 }
-.phone-number:hover { color: var(--color-primary-dark); }
-.contact__list em { font-style: normal; color: var(--color-ink-muted); font-size: var(--text-caption); font-weight: var(--weight-normal); }
-
-.contact__actions { display: flex; gap: var(--space-4); margin-top: var(--space-8); flex-wrap: wrap; }
-
-/* ---------- 문의 폼 ---------- */
-.contact__form {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-.contact__form-title {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
-  margin: 0;
-}
-.contact__form-lead {
-  font-size: var(--text-sm);
+.contact__cta-number:hover { color: var(--color-primary-dark); }
+.contact__cta-hours {
+  font-size: var(--text-caption);
   font-weight: var(--weight-normal);
-  color: var(--color-ink-soft);
-  margin: 0;
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-4);
 }
-
-.field { display: flex; flex-direction: column; gap: var(--space-2); }
-.field > label { font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-ink); }
-.field__req { color: var(--color-primary); }
-.field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
-
-.field input,
-.field select,
-.field textarea {
-  width: 100%;
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-normal);
-  color: var(--color-ink);
-  background: var(--color-cream);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 12px 16px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.field textarea { resize: vertical; min-height: 104px; line-height: 1.65; }
-.field input::placeholder,
-.field textarea::placeholder { color: var(--color-ink-muted); font-weight: var(--weight-normal); }
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(110, 30, 43, 0.12);
-}
-
-.contact__submit { justify-content: center; margin-top: var(--space-2); }
-.contact__submit[disabled] { opacity: 0.6; cursor: default; transform: none; }
-
-/* 스팸 로봇용 미끼 칸 — 사람 눈에는 안 보임 */
-.contact__form-hp { position: absolute; left: -9999px; }
-
-.contact__form-note {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-normal);
-  color: var(--color-ink-soft);
-  margin: 0;
-}
-.contact__form-note:empty { display: none; }
-.contact__form-note.is-ok { color: var(--color-primary); }
-.contact__form-note.is-error { color: var(--color-primary-dark); }
 
 /* ---------- 푸터 ---------- */
 .footer {
@@ -674,8 +639,9 @@ button { font-family: inherit; cursor: pointer; }
   padding: var(--space-12) 0 var(--space-8);
 }
 .footer__inner { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
-.footer__brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); font-size: var(--text-lg); color: var(--color-white); }
-.footer__brand .logo__text em { color: var(--color-gold); }
+.footer__brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); font-size: var(--text-2xl); color: var(--color-white); }
+.footer__brand .logo__text,
+.footer__brand .logo__text em { color: inherit; }
 .footer__biz { font-size: var(--text-caption); font-weight: var(--weight-normal); line-height: 1.9; color: var(--color-on-dark-soft); }
 .footer__copy { font-size: var(--text-xs); font-weight: var(--weight-normal); color: var(--color-on-dark-dim); margin-top: var(--space-2); }
 
@@ -740,10 +706,9 @@ button { font-family: inherit; cursor: pointer; }
   .menu__tab { padding: 12px 16px; font-size: var(--text-caption); }
   .album-toggle { width: 100%; }
 
-  /* 문의: 좁은 화면에서는 연락처 위 · 폼 아래로 쌓음 */
+  /* 문의: 좁은 화면에서는 안내글 위 · 전화 카드 아래로 쌓음 */
   .contact__inner { grid-template-columns: 1fr; gap: var(--space-8); }
-  .contact__form { padding: var(--space-6); }
-  .field-row { grid-template-columns: 1fr; }
+  .contact__cta { padding: var(--space-8) var(--space-6); }
 
   /* 서비스 카드: 좁은 화면에서는 한 줄에 하나, 사진 왼쪽 · 설명 오른쪽 (설명 글이 길쭉하게 눌리지 않도록) */
   .menu__grid { grid-template-columns: 1fr; gap: var(--space-4); }
@@ -770,7 +735,6 @@ button { font-family: inherit; cursor: pointer; }
   }
   .menu-card__body h3 { font-size: var(--text-base); margin-bottom: var(--space-1); }
   .menu-card__body p { min-height: 0; font-size: var(--text-sm); line-height: 1.55; }
-  .menu-card__price { margin-top: var(--space-2); }
   .lightbox { padding: var(--space-6); }
   .lightbox__nav { width: 40px; height: 40px; font-size: 1.3rem; }
   .lightbox__nav--prev { left: 8px; }
