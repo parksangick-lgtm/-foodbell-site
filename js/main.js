@@ -3,7 +3,7 @@
    - 모바일 내비게이션 토글
    - 메뉴 카테고리 탭 전환
    - 맨 위로 버튼 표시/스크롤
-   - 문의 폼 보내기 (Web3Forms — 이메일로 받음)
+   - 사진 클릭 시 크게 보기 (서비스 카드 · 앨범 · 갤러리 공용 라이트박스)
 ========================================================= */
 (function () {
   'use strict';
@@ -140,6 +140,9 @@
   if (galleryGrid) wireGroup(galleryGrid, '.gallery__item', 'data-full');
   document.querySelectorAll('.album').forEach(function (album) {
     wireGroup(album, '.album__item', 'data-src');
+  });
+  document.querySelectorAll('.menu__grid').forEach(function (grid) {
+    wireGroup(grid, '.menu-card__thumb', 'data-full');
   });
 
   if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
