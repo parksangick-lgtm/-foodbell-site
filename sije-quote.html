@@ -18,24 +18,24 @@
 
   /* 사이트(css/style.css) 기반 — 문서 가독성을 위해 보조색을 진하게 조정 */
   --cream:#F7F2E9; --paper:#FFFDF8; --band:#F1EADB; --band2:#EDE4D3;
-  --ink:#120C06; --ink-soft:#221C12; --ink-mute:#453A28;
+  --ink:#120C06; --ink-soft:#1A1409; --ink-mute:#332A1A;
   --seal:#6E1E2B; --seal-light:#8A2836; --seal-dark:#4E141E;
-  --gold:#B08D57; --gold-deep:#6B5220;
+  --gold:#B08D57; --gold-deep:#5C4519;
   --line:#E2D6BF; --line-strong:#CBBB9C;
 
   --serif:'Gowun Batang','Nanum Myeongjo',serif;
   --sans:'Pretendard','Pretendard Variable','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
 
-  /* 굵기 3단계 — 본문 400 / 라벨 600 / 제목 700 */
-  --w-normal:400; --w-medium:600; --w-bold:700;
+  /* 굵기 3단계 — 본문 500 / 라벨 600 / 제목 700 (시니어 시인성 위해 본문도 medium) */
+  --w-normal:500; --w-medium:600; --w-bold:700;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
   margin:0;
   background:var(--cream); color:var(--ink);
-  font-family:var(--sans); font-weight:var(--w-normal); line-height:1.75;
-  font-size:15px;
+  font-family:var(--sans); font-weight:var(--w-normal); line-height:1.8;
+  font-size:17px;
   -webkit-font-smoothing:auto; -moz-osx-font-smoothing:auto;
   text-rendering:optimizeLegibility;
   padding:28px 16px 96px;
@@ -53,14 +53,14 @@ body{
 /* ---------- 표제 ---------- */
 .masthead{display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:flex-start}
 .brand{display:flex; flex-direction:column; gap:6px}
-.brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:30px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
-.brand-tag{font-size:12.5px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
-.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
+.brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
+.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
 .brand-tel:hover{color:var(--seal-light)}
 
 .doc-meta{display:flex; align-items:flex-start; gap:18px}
-.doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:22px; letter-spacing:.42em; color:var(--ink); margin:0 0 10px; text-indent:.42em}
-.meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:12.5px; line-height:1.6; margin:0}
+.doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.42em; color:var(--ink); margin:0 0 10px; text-indent:.42em}
+.meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
 .meta-list dt{color:var(--ink-mute); font-weight:var(--w-medium); letter-spacing:.04em}
 .meta-list dd{margin:0; font-variant-numeric:tabular-nums; color:var(--ink)}
 .seal{flex:none; width:64px; height:64px; transform:rotate(-4deg)}
@@ -69,17 +69,23 @@ body{
 .rule-double{border:0; height:4px; border-top:2px solid var(--seal); border-bottom:1px solid var(--line-strong); margin:22px 0 30px}
 
 /* ---------- 섹션 제목 ---------- */
-.sec-head{display:flex; align-items:baseline; gap:10px; margin:0 0 14px}
-.sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:17px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
-.sec-head .hanja{font-size:12px; color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
+.sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
+.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
 .sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
 section + section{margin-top:34px}
+
+/* ---------- 고임 규격(7치/1자) 선택 — 편집 모드에서만 보임(body.editing) ---------- */
+.tier-switch{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.tier-switch .tier-label{font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute)}
+.tier-btn{min-width:2.6em}
+.tier-btn[aria-pressed="true"]{background:var(--seal); color:var(--paper); border-color:var(--seal)}
 
 /* ---------- 봉행 개요 ---------- */
 .brief{border:1px solid var(--line); background:var(--band); margin:0}
 .brief-row{display:grid; grid-template-columns:104px 1fr; border-bottom:1px solid var(--line)}
-.brief-row dt{padding:11px 14px; background:var(--band2); font-size:12.5px; font-weight:var(--w-medium); color:var(--ink-soft); letter-spacing:.06em; border-right:1px solid var(--line); display:flex; align-items:center}
-.brief-row dd{margin:0; padding:11px 15px; font-size:14.5px; color:var(--ink); display:flex; align-items:center; flex-wrap:wrap; gap:5px}
+.brief-row dt{padding:11px 14px; background:var(--band2); font-size:14.5px; font-weight:var(--w-medium); color:var(--ink-soft); letter-spacing:.06em; border-right:1px solid var(--line); display:flex; align-items:center}
+.brief-row dd{margin:0; padding:11px 15px; font-size:16.5px; color:var(--ink); display:flex; align-items:center; flex-wrap:wrap; gap:5px}
 .brief-row:last-child{border-bottom:0}
 @media (min-width:640px){
   .brief{display:grid; grid-template-columns:1fr 1fr}
@@ -91,60 +97,60 @@ section + section{margin-top:34px}
 /* ---------- 진설도 ---------- */
 .jinseol{border:1px solid var(--line-strong); background:var(--band); padding:16px 14px}
 .jinseol-shin{
-  text-align:center; font-family:var(--serif); font-weight:var(--w-bold); font-size:14px;
+  text-align:center; font-family:var(--serif); font-weight:var(--w-bold); font-size:15px;
   letter-spacing:.5em; text-indent:.5em; color:var(--paper); background:var(--seal);
   padding:8px 0; margin-bottom:14px;
 }
 .jrow{display:grid; grid-template-columns:78px 1fr; gap:12px; align-items:center; padding:9px 0; border-bottom:1px dashed var(--gold)}
 .jrow:last-of-type{border-bottom:0}
-.jrow-label{font-family:var(--serif); font-weight:var(--w-bold); font-size:12.5px; color:var(--ink); line-height:1.35; text-align:right}
-.jrow-label small{display:block; font-size:11px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.08em}
+.jrow-label{font-family:var(--serif); font-weight:var(--w-bold); font-size:14.5px; color:var(--ink); line-height:1.35; text-align:right}
+.jrow-label small{display:block; font-size:13px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.08em}
 .jitems{display:flex; flex-wrap:wrap; gap:5px}
 .jitems span{
-  font-size:13px; padding:3px 9px; background:var(--paper);
+  font-size:15px; padding:3px 9px; background:var(--paper);
   border:1px solid var(--line-strong); color:var(--ink); white-space:nowrap;
 }
-.jrow.altar .jitems span{background:var(--band2); border-style:dotted; color:var(--ink-mute)}
-.jinseol-rules{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px; padding-top:12px; border-top:1px solid var(--gold); font-size:12px; font-weight:var(--w-medium); color:var(--ink-soft)}
+.jrow.altar .jitems span{background:var(--band2); border-style:dotted; color:var(--ink-soft)}
+.jinseol-rules{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px; padding-top:12px; border-top:1px solid var(--gold); font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft)}
 .jinseol-rules b{font-family:var(--serif); color:var(--gold-deep); font-weight:var(--w-bold); letter-spacing:.08em; margin-right:5px}
 
 /* ---------- 견적 표 ---------- */
 .qwrap{border:1px solid var(--line-strong); overflow-x:auto}
-table.quote{width:100%; border-collapse:collapse; font-size:13.5px}
+table.quote{width:100%; border-collapse:collapse; font-size:15.5px}
 table.quote thead th{
-  background:var(--band2); font-family:var(--serif); font-weight:var(--w-bold); font-size:12.5px;
-  color:var(--ink); letter-spacing:.08em; padding:10px 12px; text-align:left;
+  background:var(--band2); font-family:var(--serif); font-weight:var(--w-bold); font-size:14.5px;
+  color:var(--ink); letter-spacing:.08em; padding:11px 12px; text-align:left;
   border-bottom:1px solid var(--line-strong); white-space:nowrap;
 }
 table.quote thead th.n{text-align:right}
 .grouprow th{
-  background:var(--band); font-family:var(--serif); font-weight:var(--w-bold); font-size:13px;
-  color:var(--seal-dark); letter-spacing:.04em; padding:9px 12px; text-align:left;
+  background:var(--band); font-family:var(--serif); font-weight:var(--w-bold); font-size:15px;
+  color:var(--seal-dark); letter-spacing:.04em; padding:10px 12px; text-align:left;
   border-top:1px solid var(--line-strong); border-bottom:1px solid var(--line);
 }
-table.quote td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+table.quote td{padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top}
 table.quote td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
 td.item-name{font-weight:var(--w-medium); color:var(--ink); white-space:nowrap}
-td.item-detail{color:var(--ink-soft); font-size:13px; line-height:1.6}
+td.item-detail{color:var(--ink-soft); font-weight:var(--w-medium); font-size:15px; line-height:1.65}
 table.quote td.n[data-label="수량"]{width:1%}
 
 /* ---------- 합계 ---------- */
 .totals{display:flex; margin-top:22px}
 .sum{min-width:300px; width:min(360px, 100%); margin-left:auto}
-.sum-row{display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:13.5px; color:var(--ink-soft); border-bottom:1px solid var(--line)}
+.sum-row{display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft); border-bottom:1px solid var(--line)}
 .sum-row .v{font-variant-numeric:tabular-nums; color:var(--ink)}
 .sum-row--input{align-items:baseline}
-.sum-row--input .v{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px}
+.sum-row--input .v{font-family:var(--serif); font-weight:var(--w-bold); font-size:18px}
 .sum-row--input .v:has([data-k="supply"]:empty) .won{display:none}
 .sum-total{
   display:flex; justify-content:space-between; align-items:baseline; gap:16px;
   margin-top:12px; padding:13px 16px; background:var(--seal); color:var(--paper);
 }
-.sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:14px; letter-spacing:.22em}
-.sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; font-variant-numeric:tabular-nums}
-.sum-total .val em{font-style:normal; font-size:15px; font-weight:var(--w-medium); margin-left:3px}
+.sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.22em}
+.sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:27px; font-variant-numeric:tabular-nums}
+.sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
-.sum-note{margin:9px 0 0; font-size:11.5px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.55}
+.sum-note{margin:9px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.55}
 body.editing [data-k="supply"]{min-width:5em; display:inline-block; text-align:right}
 body.editing [data-k="supply"]:empty::before{content:"금액 입력"; color:var(--ink-mute); font-size:.82em; font-weight:var(--w-normal)}
 
@@ -152,21 +158,21 @@ body.editing [data-k="supply"]:empty::before{content:"금액 입력"; color:var(
 .steps{display:grid; gap:12px}
 @media (min-width:640px){ .steps{grid-template-columns:repeat(3,1fr)} }
 .step{border:1px solid var(--line); border-left:3px solid var(--gold); background:var(--band); padding:13px 15px}
-.step .no{font-family:var(--sans); font-size:11px; font-weight:var(--w-medium); letter-spacing:.18em; color:var(--gold-deep)}
-.step h3{font-family:var(--serif); font-size:14.5px; font-weight:var(--w-bold); color:var(--ink); margin:3px 0 5px}
-.step p{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.65}
+.step .no{font-family:var(--sans); font-size:13px; font-weight:var(--w-medium); letter-spacing:.18em; color:var(--gold-deep)}
+.step h3{font-family:var(--serif); font-size:16.5px; font-weight:var(--w-bold); color:var(--ink); margin:3px 0 5px}
+.step p{margin:0; font-size:15px; font-weight:var(--w-medium); color:var(--ink-soft); line-height:1.65}
 
 /* ---------- 유의사항 ---------- */
 ul.notes{margin:0; padding:0; list-style:none; display:grid; gap:7px}
-ul.notes li{position:relative; padding-left:15px; font-size:13px; color:var(--ink-soft); line-height:1.72}
+ul.notes li{position:relative; padding-left:15px; font-size:15px; font-weight:var(--w-medium); color:var(--ink-soft); line-height:1.75}
 ul.notes li::before{content:""; position:absolute; left:0; top:.68em; width:5px; height:5px; background:var(--gold-deep)}
 
 /* ---------- 맺음 ---------- */
 .closing{margin-top:36px; padding-top:24px; border-top:2px solid var(--seal); text-align:center}
-.closing p{font-family:var(--serif); font-size:15px; color:var(--ink); margin:0 0 4px; line-height:1.8}
-.closing .sub{font-family:var(--sans); font-size:12.5px; font-weight:var(--w-medium); color:var(--ink-mute)}
-.closing .sign{margin-top:18px; font-family:var(--serif); font-weight:var(--w-bold); font-size:17px; letter-spacing:.08em; color:var(--ink)}
-.closing .tel{display:inline-block; margin-top:8px; font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); text-decoration:none; font-variant-numeric:tabular-nums}
+.closing p{font-family:var(--serif); font-size:17px; color:var(--ink); margin:0 0 4px; line-height:1.8}
+.closing .sub{font-family:var(--sans); font-size:14.5px; font-weight:var(--w-medium); color:var(--ink-mute)}
+.closing .sign{margin-top:18px; font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; letter-spacing:.08em; color:var(--ink)}
+.closing .tel{display:inline-block; margin-top:8px; font-family:var(--serif); font-weight:var(--w-bold); font-size:22px; color:var(--seal); text-decoration:none; font-variant-numeric:tabular-nums}
 
 /* ---------- 편집 표시 ---------- */
 [data-edit]{outline:none}
@@ -183,8 +189,8 @@ body.editing td[data-edit]:empty::before{content:"입력"; color:var(--ink-mute)
 /* ---------- 편집용 항목 컨트롤 (편집 모드에서만 JS가 삽입) ---------- */
 .rowctl{display:inline-flex; gap:3px; margin-left:10px; vertical-align:middle}
 .btn-mini{
-  font-family:var(--sans); font-size:12px; line-height:1; cursor:pointer;
-  border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-mute);
+  font-family:var(--sans); font-size:13px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
   border-radius:3px; padding:4px 6px; white-space:nowrap;
 }
 .btn-mini:hover{border-color:var(--seal); color:var(--seal); background:#fff}
@@ -200,7 +206,8 @@ body:not(.editing) .rowctl,
 body:not(.editing) tr.addrow,
 body:not(.editing) .addgroup,
 body:not(.editing) .grouprow .btn-del,
-body:not(.editing) .jitems .btn-add{display:none !important}
+body:not(.editing) .jitems .btn-add,
+body:not(.editing) .tier-switch{display:none !important}
 
 /* ---------- 도구막대 ---------- */
 .toolbar{
@@ -209,7 +216,7 @@ body:not(.editing) .jitems .btn-add{display:none !important}
   box-shadow:0 6px 20px -10px rgba(20,12,6,.4);
 }
 .toolbar button{
-  font-family:var(--sans); font-size:12.5px; font-weight:var(--w-medium); color:var(--ink-soft);
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-soft);
   background:transparent; border:1px solid transparent; padding:6px 11px; cursor:pointer;
 }
 .toolbar button:hover{background:var(--band2); color:var(--ink)}
@@ -221,12 +228,12 @@ body:not(.editing) .jitems .btn-add{display:none !important}
 .toast{
   position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
   z-index:60; max-width:88vw;
-  background:var(--ink); color:var(--paper); font-size:13px; line-height:1.5;
+  background:var(--ink); color:var(--paper); font-size:14px; line-height:1.5;
   padding:11px 16px; border-radius:8px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
 }
 @media (max-width:700px){ .toast{bottom:80px} }
 .hint{
-  max-width:880px; margin:0 auto 14px; font-size:12.5px; font-weight:var(--w-medium); color:var(--ink-mute);
+  max-width:880px; margin:0 auto 14px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft);
   line-height:1.6; padding-right:200px;
 }
 .hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
@@ -257,7 +264,7 @@ body:not(.editing) .jitems .btn-add{display:none !important}
   table.quote tr.item td{border:0; padding:0}
   td.item-name{grid-column:1; white-space:normal}
   td.item-detail{grid-column:1 / -1; margin-top:3px}
-  table.quote tr.item td.n{grid-column:2; align-self:start; text-align:right; font-size:12.5px; color:var(--ink-mute)}
+  table.quote tr.item td.n{grid-column:2; align-self:start; text-align:right; font-size:14.5px; color:var(--ink-soft)}
   .doc-title{letter-spacing:.3em; text-indent:.3em}
   .jrow{grid-template-columns:1fr; gap:6px}
   .jrow-label{text-align:left}
@@ -270,9 +277,9 @@ body:not(.editing) .jitems .btn-add{display:none !important}
 /* ---------- 인쇄 ---------- */
 @media print{
   @page{ size:A4; margin:13mm; }
-  body{padding:0; background:var(--paper); font-size:10.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  body{padding:0; background:var(--paper); font-size:11.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:8mm}
-  .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add{display:none !important}
+  .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add,.tier-switch{display:none !important}
   body.editing [data-edit]{background:transparent; box-shadow:none}
   section{break-inside:avoid}
   tr{break-inside:avoid}
@@ -281,7 +288,6 @@ body:not(.editing) .jitems .btn-add{display:none !important}
 </style>
 </head>
 <body>
-
 <p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤 <strong>고객에게 보내기</strong> 를 누르면 견적서 이미지를 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다.</p>
 
 <div class="toolbar">
@@ -378,7 +384,14 @@ body:not(.editing) .jitems .btn-add{display:none !important}
 
   <!-- ================= 견적 내역 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">견적 내역</h2><span class="hanja">見積 內譯</span></div>
+    <div class="sec-head">
+      <h2 data-edit data-t="text">견적 내역</h2><span class="hanja">見積 內譯</span>
+      <div class="tier-switch" role="group" aria-label="고임 규격 선택">
+        <span class="tier-label">고임 규격</span>
+        <button type="button" class="btn-mini tier-btn" data-tier="7chi" title="가.제수 음식 수량을 7치 고임상 기준으로 채웁니다">7치 고임상</button>
+        <button type="button" class="btn-mini tier-btn" data-tier="1ja" title="가.제수 음식 수량을 1자 고임상 기준으로 채웁니다">1자 고임상</button>
+      </div>
+    </div>
     <div class="qwrap">
       <table class="quote">
         <thead>
@@ -394,27 +407,27 @@ body:not(.editing) .jitems .btn-add{display:none !important}
           <tr class="item">
             <td class="item-name" data-edit data-t="text">과실 · 조과</td>
             <td class="item-detail" data-edit data-t="text">대추 · 밤 · 배 · 감 · 사과, 약과 · 유과 · 다식</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">7치</span></td>
           </tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">포 · 혜 · 나물</td>
             <td class="item-detail" data-edit data-t="text">북어포, 식혜, 삼색나물(고사리 · 도라지 · 시금치), 나박김치</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">500g</span></td>
           </tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">탕 3종</td>
             <td class="item-detail" data-edit data-t="text">육탕 · 소탕 · 어탕</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">1식</span></td>
           </tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">적 · 전</td>
             <td class="item-detail" data-edit data-t="text">육적 · 계적 · 어적, 육전 · 어전 · 동태전</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">6개</span></td>
           </tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">반 · 갱 · 면</td>
             <td class="item-detail" data-edit data-t="text">메(밥), 탕국, 국수, 시접 일습</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">1</span></td>
           </tr>
         </tbody>
 
@@ -592,7 +605,7 @@ body:not(.editing) .jitems .btn-add{display:none !important}
   var ROW_HTML =
     '<td class="item-name" data-edit data-t="text">품목</td>' +
     '<td class="item-detail" data-edit data-t="text">세부 구성</td>' +
-    '<td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>';
+    '<td class="n" data-label="수량"><span data-edit data-t="text">수량</span></td>';
 
   function nextGroupLabel() {
     var ko = "가나다라마바사아자차카타파하";
@@ -686,6 +699,13 @@ body:not(.editing) .jitems .btn-add{display:none !important}
     var t = e.target.closest && e.target.closest('[data-edit]:not(td):not(li):not(p)');
     if (t) { e.preventDefault(); t.blur(); }
   });
+  /* "가.제수 음식" 5개 항목 수량칸을 고임 규격 기본값으로 한 번에 채운다.
+     둘 다 언제든 눌러 바꿀 수 있고, 채운 뒤에도 각 칸을 직접 고쳐 쓸 수 있다. */
+  var TIER_PRESETS = {
+    "7chi": ["7치", "500g", "1식", "6개", "1"],
+    "1ja":  ["1자", "700g", "1식", "8개", "1"]
+  };
+
   sheet.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("button.btn-mini");
     if (!b) return;
@@ -693,7 +713,18 @@ body:not(.editing) .jitems .btn-add{display:none !important}
     var addRow = b.closest("tr.addrow");
     var addGrp = b.closest(".addgroup");
 
-    if (b.classList.contains("btn-add")) {                       // 진설 태그 추가
+    if (b.classList.contains("tier-btn")) {                       // 고임 규격 기본값 채우기
+      var preset = TIER_PRESETS[b.getAttribute("data-tier")];
+      var firstGroup = sheet.querySelector("tbody[data-group]");
+      if (firstGroup && preset) {
+        var spans = firstGroup.querySelectorAll("tr.item td[data-label='수량'] span[data-edit]");
+        each(spans, function (sp, i) { if (preset[i] != null) sp.textContent = preset[i]; });
+      }
+      each(sheet.querySelectorAll(".tier-btn"), function (tb) {
+        tb.setAttribute("aria-pressed", String(tb === b));
+      });
+      toast((b.getAttribute("data-tier") === "7chi" ? "7치" : "1자") + " 고임상 기준 수량으로 채웠습니다.");
+    } else if (b.classList.contains("btn-add")) {                 // 진설 태그 추가
       var span = el("span", null, "품목");
       span.setAttribute("data-edit", ""); span.setAttribute("data-t", "text");
       b.parentElement.insertBefore(span, b);
@@ -712,7 +743,8 @@ body:not(.editing) .jitems .btn-add{display:none !important}
       var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
       g2.insertBefore(tr, addRow);
       addControls(); setCE(true);
-      var nm = tr.querySelector(".item-name"); if (nm) nm.focus();
+      var nm = tr.querySelector(".item-name");
+      if (nm) { nm.focus(); try { document.getSelection().selectAllChildren(nm); } catch (x) {} }
     } else if (addGrp) {                                          // 구분 추가
       var tb = el("tbody"); tb.setAttribute("data-group", "");
       tb.innerHTML = '<tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">' +
@@ -856,5 +888,6 @@ body:not(.editing) .jitems .btn-add{display:none !important}
   recalc();
 })();
 </script>
+
 </body>
 </html>
