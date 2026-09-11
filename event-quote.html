@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>푸드벨 행사 견적서</title>
-<meta name="description" content="푸드벨(박상익출장음식) 제실·문중 행사 단체 출장음식 견적서. 음식 구성과 천막·테이블 세팅 내역이 담긴 A4 서식으로, 편집 후 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
+<meta name="description" content="푸드벨(박상익출장음식) 단체·모임 행사 출장음식 견적서. 천막·테이블 세팅 내역이 담긴 A4 서식으로, 편집 후 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛺</text></svg>">
 <meta name="theme-color" content="#6E1E2B">
@@ -23,7 +23,7 @@
 
   /* 사이트(css/style.css) 기반 — 문서 가독성을 위해 보조색을 진하게 조정 */
   --cream:#F7F2E9; --paper:#FFFDF8; --band:#F1EADB; --band2:#EDE4D3;
-  --ink:#120C06; --ink-soft:#1A1409; --ink-mute:#332A1A;
+  --ink:#120C06; --ink-soft:#150F08; --ink-mute:#241C10;
   --seal:#6E1E2B; --seal-light:#8A2836; --seal-dark:#4E141E;
   --gold:#B08D57; --gold-deep:#5C4519;
   --line:#E2D6BF; --line-strong:#CBBB9C;
@@ -58,6 +58,9 @@ body{
 /* ---------- 표제 ---------- */
 .masthead{display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:flex-start}
 .brand{display:flex; flex-direction:column; gap:6px}
+.brand-perhead{font-size:14.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
+.brand-perhead .lab{color:var(--ink-mute); margin-right:3px}
+.brand-perhead:has([data-k="perhead"]:empty) .won{display:none}
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
 .brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
 .brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
@@ -80,7 +83,7 @@ body{
 .sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
 section + section{margin-top:34px}
 
-/* ---------- 봉행 개요 ---------- */
+/* ---------- 행사 개요 ---------- */
 .brief{border:1px solid var(--line); background:var(--band); margin:0}
 .brief-row{display:grid; grid-template-columns:104px 1fr; border-bottom:1px solid var(--line)}
 .brief-row dt{padding:11px 14px; background:var(--band2); font-size:14.5px; font-weight:var(--w-medium); color:var(--ink-soft); letter-spacing:.06em; border-right:1px solid var(--line); display:flex; align-items:center}
@@ -146,6 +149,16 @@ table.quote td.n[data-label="수량"]{width:1%}
 .sum-note{margin:9px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.55}
 body.editing [data-k="supply"]{min-width:5em; display:inline-block; text-align:right}
 body.editing [data-k="supply"]:empty::before{content:"금액 입력"; color:var(--ink-mute); font-size:.82em; font-weight:var(--w-normal)}
+body.editing [data-k="perhead"]{min-width:3.5em; display:inline-block}
+body.editing [data-k="perhead"]:empty::before{content:"금액 입력"; color:var(--ink-mute); font-size:.82em; font-weight:var(--w-normal)}
+
+/* ---------- 특이사항 ---------- */
+.remark-box{
+  border:1px solid var(--line-strong); background:var(--band); min-height:60px;
+  padding:12px 14px; font-size:15px; font-weight:var(--w-medium); color:var(--ink);
+  line-height:1.6; white-space:pre-wrap;
+}
+body.editing .remark-box:empty::before{content:"특이사항이 있으면 적어주세요 (없으면 비워두세요)"; color:var(--ink-mute); font-size:.9em; font-weight:var(--w-normal)}
 
 /* ---------- 절차 ---------- */
 .steps{display:grid; gap:12px}
@@ -270,18 +283,49 @@ body:not(.editing) .addjrow{display:none !important}
 /* ---------- 인쇄 ---------- */
 @media print{
   @page{ size:A4; margin:13mm; }
-  body{padding:0; background:var(--paper); font-size:11.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
-  .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:8mm}
+  body{padding:0; background:var(--paper); font-size:11.5pt; line-height:1.45; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:3mm}
   .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow,.addgroup,.grouprow .btn-del,.jitems .btn-add,.addjrow{display:none !important}
   body.editing [data-edit]{background:transparent; box-shadow:none}
-  section{break-inside:avoid}
   tr{break-inside:avoid}
   .closing{break-inside:avoid}
+  /* 한 장(A4)에 들어오도록 문서 사이 여백은 좁히고, 글자는 인쇄용으로 최대한 키움 */
+  .masthead{gap:9px}
+  .brand{gap:1px}
+  .brand-name{font-size:24px}
+  .brand-tag{font-size:13px}
+  .brand-perhead{font-size:12px}
+  .doc-title{font-size:18px; margin-bottom:4px}
+  .meta-list{font-size:13px}
+  .seal{width:44px; height:44px}
+  section + section{margin-top:7px}
+  .sec-head{margin-bottom:4px}
+  .rule-double{margin:5px 0 8px}
+  .brief-row dt, .brief-row dd{padding:3px 10px; font-size:14px}
+  table.quote{line-height:1.15; font-size:14px}
+  table.quote thead th{padding:3px 10px; font-size:13px}
+  .grouprow th{padding:3px 10px; font-size:14px}
+  table.quote td{padding:3px 10px}
+  td.item-detail{line-height:1.25; font-size:13.5px}
+  .totals{margin-top:4px}
+  .sum{min-width:0}
+  .sum-row{padding:2px 0; font-size:14px}
+  .sum-total{margin-top:4px; padding:4px 12px}
+  .sum-total .val{font-size:22px}
+  .sum-note{margin-top:2px; font-size:12px}
+  .remark-box{min-height:26px; padding:5px 10px; font-size:13px; line-height:1.25}
+  ul.notes{gap:2px}
+  ul.notes li{line-height:1.25; font-size:13.5px}
+  .closing{margin-top:8px; padding-top:6px}
+  .closing p{margin:0 0 2px; line-height:1.25; font-size:15px}
+  .closing .sub{font-size:12.5px}
+  .closing .sign{margin-top:5px; font-size:16px}
+  .closing .tel{margin-top:3px; font-size:18px}
 }
 </style>
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤, <strong>파일로 저장</strong>을 누르면 완성된 견적서를 기록용 이미지로 컴퓨터에 남겨둘 수 있고, <strong>고객에게 보내기</strong> 를 누르면 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤, <strong>파일로 저장</strong>을 누르면 완성된 견적서를 기록용 이미지로 컴퓨터에 남겨둘 수 있고, <strong>고객에게 보내기</strong> 를 누르면 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 입력 중인 내용은 이 컴퓨터에 자동 저장되니, <strong>새 손님</strong> 견적을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 이전 내용을 지워주세요.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -300,16 +344,17 @@ body:not(.editing) .addjrow{display:none !important}
   <header class="masthead">
     <div class="brand">
       <h1 class="brand-name">푸드벨</h1>
-      <span class="brand-tag" data-edit data-t="text">제실 · 문중 행사 단체 출장음식 | 전국 출장 · 천막 · 테이블 세팅</span>
+      <span class="brand-tag" data-edit data-t="text">단체 · 모임 행사 출장음식 | 전국 출장 · 천막 · 테이블 세팅</span>
       <a class="brand-tel" href="tel:01053533477">010-5353-3477</a>
+      <p class="brand-perhead"><span class="lab" data-edit data-t="text">1인당</span> <span data-edit data-t="num" data-k="perhead"></span><span class="won"> 원</span></p>
     </div>
     <div class="doc-meta">
       <div>
         <h2 class="doc-title" data-edit data-t="text">견적서</h2>
         <dl class="meta-list">
-          <dt data-edit data-t="text">견적번호</dt><dd data-edit data-t="text">FB-2026-1121</dd>
-          <dt data-edit data-t="text">발행일</dt><dd data-edit data-t="text">2026년 9월 10일</dd>
-          <dt data-edit data-t="text">유효기한</dt><dd data-edit data-t="text">2026년 9월 24일</dd>
+          <dt data-edit data-t="text">견적번호</dt><dd data-edit data-t="text" data-k="qno">FB-2026-1121</dd>
+          <dt data-edit data-t="text">발행일</dt><dd data-edit data-t="text" data-k="issue">2026년 9월 10일</dd>
+          <dt data-edit data-t="text">유효기한</dt><dd data-edit data-t="text" data-k="valid">2026년 9월 24일</dd>
         </dl>
       </div>
       <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
@@ -326,50 +371,19 @@ body:not(.editing) .addjrow{display:none !important}
 
   <!-- ================= 행사 개요 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">행사 개요</h2><span class="hanja" data-edit data-t="text">行事 槪要</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">행사 개요</h2></div>
     <dl class="brief">
-      <div class="brief-row"><dt data-edit data-t="text">수신</dt><dd><span data-edit data-t="text">○○ 문중 종친회</span> <span data-edit data-t="text">담당자님 귀중</span></dd></div>
-      <div class="brief-row"><dt data-edit data-t="text">행사 구분</dt><dd data-edit data-t="text">제실 · 문중 행사 단체 상차림</dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">수신</dt><dd><span data-edit data-t="text">○○ 단체</span> <span data-edit data-t="text">담당자님 귀중</span></dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">행사 구분</dt><dd data-edit data-t="text">단체 · 모임 행사 상차림</dd></div>
       <div class="brief-row"><dt data-edit data-t="text">행사 일시</dt><dd data-edit data-t="text">2026년 11월 21일 (토) 오전 11시</dd></div>
-      <div class="brief-row"><dt data-edit data-t="text">행사 장소</dt><dd data-edit data-t="text">충남 ○○군 ○○면 제실 마당 (야외)</dd></div>
+      <div class="brief-row"><dt data-edit data-t="text">행사 장소</dt><dd data-edit data-t="text">충남 ○○군 ○○면 행사장 (야외)</dd></div>
       <div class="brief-row"><dt data-edit data-t="text">참석 인원</dt><dd><span data-edit data-t="num" data-k="head" data-raw="100">100</span> 명 · <span data-edit data-t="text">야외 천막 · 긴 테이블 단체 상차림</span></dd></div>
     </dl>
   </section>
 
-  <!-- ================= 음식 구성 ================= -->
-  <section>
-    <div class="sec-head"><h2 data-edit data-t="text">음식 구성</h2><span class="hanja" data-edit data-t="text">飮食 構成</span></div>
-    <div class="jinseol">
-      <div class="jrow">
-        <div class="jrow-label" data-edit data-t="text">밥 · 국</div>
-        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
-      </div>
-      <div class="jrow">
-        <div class="jrow-label" data-edit data-t="text">주요리</div>
-        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
-      </div>
-      <div class="jrow">
-        <div class="jrow-label" data-edit data-t="text">반찬 · 나물</div>
-        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
-      </div>
-      <div class="jrow">
-        <div class="jrow-label" data-edit data-t="text">김치 · 장류</div>
-        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
-      </div>
-      <div class="jrow">
-        <div class="jrow-label" data-edit data-t="text">후식 · 음료</div>
-        <div class="jitems"><span data-edit data-t="text">상담 후 확정</span></div>
-      </div>
-
-      <div class="jinseol-rules">
-        <span data-edit data-t="text"><b>안내</b>구성 품목은 상담 후 확정합니다. <strong>편집</strong>을 눌러 직접 채워 넣고 <strong>＋</strong> 로 품목을 더할 수 있습니다.</span>
-      </div>
-    </div>
-  </section>
-
   <!-- ================= 견적 내역 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">견적 내역</h2><span class="hanja" data-edit data-t="text">見積 內譯</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">견적 내역</h2></div>
     <div class="qwrap">
       <table class="quote">
         <thead>
@@ -383,27 +397,17 @@ body:not(.editing) .addjrow{display:none !important}
         <tbody data-group>
           <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">가. 단체 음식 — 참석 인원 기준</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">단체 식사 상차림</td>
-            <td class="item-detail" data-edit data-t="text">밥 · 국 · 반찬 · 주요리 — 구성은 위 「음식 구성」 참조</td>
+            <td class="item-name" data-edit data-t="text">단체 식사 · 다과 후식</td>
+            <td class="item-detail" data-edit data-t="text">밥 · 국 · 반찬 · 주요리, 다과 · 후식 — 구성은 상담 후 확정</td>
             <td class="n" data-label="수량" data-fill="head"><span data-edit data-t="text">100</span> 인</td>
-          </tr>
-          <tr class="item">
-            <td class="item-name" data-edit data-t="text">음복 · 후식</td>
-            <td class="item-detail" data-edit data-t="text">행사 후 음복상과 후식 — 구성은 상담 후 확정</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
 
         <tbody data-group>
           <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">나. 천막 · 테이블 · 의자 — 설치 · 회수</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">천막 설치</td>
-            <td class="item-detail" data-edit data-t="text">야외 천막 설치 및 행사 후 회수</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="2">2</span> 동</td>
-          </tr>
-          <tr class="item">
-            <td class="item-name" data-edit data-t="text">테이블 · 의자</td>
-            <td class="item-detail" data-edit data-t="text">긴 테이블과 의자 배치, 행사 후 정리</td>
+            <td class="item-name" data-edit data-t="text">천막 · 테이블 · 의자 설치</td>
+            <td class="item-detail" data-edit data-t="text">야외 천막 2동, 긴 테이블 · 의자 배치, 행사 후 회수 · 정리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
@@ -412,7 +416,7 @@ body:not(.editing) .addjrow{display:none !important}
           <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">다. 음료 · 식기</th></tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">음료 · 생수</td>
-            <td class="item-detail" data-edit data-t="text">생수 · 음료, 종이컵 · 수저 일습</td>
+            <td class="item-detail" data-edit data-t="text">생수 · 음료, 일회용품 제공</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
@@ -443,39 +447,20 @@ body:not(.editing) .addjrow{display:none !important}
     </div>
   </section>
 
-  <!-- ================= 절차 ================= -->
+  <!-- ================= 특이사항 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">진행 절차</h2><span class="hanja" data-edit data-t="text">進行 節次</span></div>
-    <div class="steps">
-      <div class="step">
-        <div class="no" data-edit data-t="text">STEP 1</div>
-        <h3 data-edit data-t="text">상담</h3>
-        <p data-edit data-t="text">행사 일시와 장소, 참석 인원, 원하시는 음식 구성을 전화로 편히 알려주십시오.</p>
-      </div>
-      <div class="step">
-        <div class="no" data-edit data-t="text">STEP 2</div>
-        <h3 data-edit data-t="text">견적 확정</h3>
-        <p data-edit data-t="text">예산에 맞추어 음식 구성과 천막 · 테이블 세팅 범위를 조율하고 최종 견적을 확정합니다.</p>
-      </div>
-      <div class="step">
-        <div class="no" data-edit data-t="text">STEP 3</div>
-        <h3 data-edit data-t="text">당일 세팅 · 배식</h3>
-        <p data-edit data-t="text">약속된 시각에 도착하여 천막과 상을 세팅하고, 배식과 행사 후 정리까지 마칩니다.</p>
-      </div>
-    </div>
+    <div class="sec-head"><h2 data-edit data-t="text">특이사항</h2></div>
+    <p class="remark-box" data-edit data-t="text"></p>
   </section>
 
   <!-- ================= 유의사항 ================= -->
   <section>
-    <div class="sec-head"><h2 data-edit data-t="text">유의사항</h2><span class="hanja" data-edit data-t="text">留意 事項</span></div>
+    <div class="sec-head"><h2 data-edit data-t="text">유의사항</h2></div>
     <ul class="notes" data-list>
-      <li data-edit data-t="text">본 견적은 발행일로부터 14일간 유효하며, 식자재 시세 변동 시 사전에 안내드린 후 조정됩니다.</li>
-      <li data-edit data-t="text">최종 금액은 참석 인원 확정 후 정산합니다. 인원 증감은 행사일 <strong>3일 전</strong>까지 알려주시면 그대로 반영해 드립니다.</li>
+      <li data-edit data-t="text">본 견적은 발행일로부터 14일간 유효하며, 최종 금액은 참석 인원 확정 후 정산합니다. 인원 증감은 행사일 <strong>3일 전</strong>까지 알려주시면 반영해 드립니다.</li>
       <li data-edit data-t="text">천막 · 테이블 · 의자는 대여 품목으로 행사 종료 후 회수하며, 파손 시 실비로 청구될 수 있습니다.</li>
-      <li data-edit data-t="text">음식 구성은 상담 후 확정합니다. 가감하실 품목을 말씀해 주시면 맞추어 드리며, 추가 비용은 사전에 안내드립니다.</li>
-      <li data-edit data-t="text">주차 · 전기 · 급수 등 현장 여건을 미리 알려주시면 준비에 반영합니다.</li>
-      <li data-edit data-t="text">도서 · 산간 지역은 출장비가 별도로 산정될 수 있습니다.</li>
-      <li data-edit data-t="text">신선한 재료 준비를 위해 행사일 기준 <strong>최소 3~7일 전</strong> 예약을 권해 드립니다.</li>
+      <li data-edit data-t="text">음식 구성과 주차 · 전기 · 급수 등 현장 여건은 상담 후 확정합니다. 가감하실 품목과 추가 비용은 사전에 안내드립니다.</li>
+      <li data-edit data-t="text">도서 · 산간 지역은 출장비가 별도로 산정될 수 있으며, 신선한 재료 준비를 위해 행사일 기준 <strong>최소 3~7일 전</strong> 예약을 권해 드립니다.</li>
     </ul>
   </section>
 
@@ -500,7 +485,9 @@ body:not(.editing) .addjrow{display:none !important}
   function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
   function money(n) { return n ? fmt(n) : ""; }
   function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
-  function isMoney(el) { var k = el.getAttribute("data-k"); return k === "supply" || k === "total"; }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtDateKR(d) { return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일"; }
+  function isMoney(el) { var k = el.getAttribute("data-k"); return k === "supply" || k === "total" || k === "perhead"; }
   function each(list, fn) { Array.prototype.forEach.call(list, fn); }
 
   var sheet = document.querySelector(".sheet");
@@ -543,12 +530,17 @@ body:not(.editing) .addjrow{display:none !important}
                (qcell ? " (" + qcell.textContent.trim().replace(/\s+/g, " ") + ")" : ""));
       });
     });
+    var perhead = raw(sheet.querySelector('[data-k="perhead"]'));
+    if (perhead) L.push("", "1인당  " + fmt(perhead) + "원");
     var supply = raw(sheet.querySelector('[data-k="supply"]')), vat = Math.round(supply * 0.1);
     if (supply) {
       L.push("", "공급가액  " + fmt(supply) + "원",
                  "부가세(10% 별도)  " + fmt(vat) + "원",
                  "합계  " + fmt(supply + vat) + "원");
     }
+    var remarkEl = sheet.querySelector(".remark-box");
+    var remark = remarkEl ? remarkEl.textContent.trim() : "";
+    if (remark) L.push("", "[특이사항]", remark);
     L.push("", "문의  푸드벨  010-5353-3477");
     return L.join("\n");
   }
@@ -566,8 +558,25 @@ body:not(.editing) .addjrow{display:none !important}
   }
   function restore() {
     var html = null;
-    try { html = localStorage.getItem(KEY); } catch (e) { return; }
-    if (html) sheet.innerHTML = html;
+    try { html = localStorage.getItem(KEY); } catch (e) { return false; }
+    if (html) { sheet.innerHTML = html; return true; }
+    return false;
+  }
+  /* 저장된 내용이 없는 첫 화면일 때만: 견적번호 · 발행일 · 유효기한을 오늘 날짜 기준으로 채운다. */
+  function fillFreshDefaults() {
+    var d = new Date();
+    var issueEl = sheet.querySelector('[data-k="issue"]');
+    var validEl = sheet.querySelector('[data-k="valid"]');
+    var qnoEl = sheet.querySelector('[data-k="qno"]');
+    if (issueEl) issueEl.textContent = fmtDateKR(d);
+    if (validEl) {
+      var v = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 14);
+      validEl.textContent = fmtDateKR(v);
+    }
+    if (qnoEl) {
+      qnoEl.textContent = "FB-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+        "-" + pad2(d.getHours()) + pad2(d.getMinutes());
+    }
   }
 
   /* ---------- 편집 컨트롤 삽입 / 제거 ---------- */
@@ -812,6 +821,9 @@ body:not(.editing) .addjrow{display:none !important}
   }
 
   document.getElementById("btn-send").addEventListener("click", function () {
+    if (!raw(sheet.querySelector('[data-k="supply"]'))) {
+      if (!window.confirm("공급가액(금액)을 아직 안 넣으셨습니다. 그래도 보낼까요?")) return;
+    }
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
@@ -858,6 +870,9 @@ body:not(.editing) .addjrow{display:none !important}
 
   /* ---------- 견적서를 기록용 파일(이미지)로 내려받기 ---------- */
   document.getElementById("btn-save-file").addEventListener("click", function () {
+    if (!raw(sheet.querySelector('[data-k="supply"]'))) {
+      if (!window.confirm("공급가액(금액)을 아직 안 넣으셨습니다. 그래도 저장할까요?")) return;
+    }
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "저장 중…";
     setEditing(false);
@@ -888,7 +903,7 @@ body:not(.editing) .addjrow{display:none !important}
     setEditing(!body.classList.contains("editing"));
   });
 
-  restore();
+  if (!restore()) fillFreshDefaults();
   recalc();
 })();
 </script>
