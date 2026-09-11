@@ -841,17 +841,11 @@ body:not(.editing) .addjrow{display:none !important}
         });
         return;
       }
-      // 3) 그 외
+      // 3) 그 외(주로 PC): 파일 공유 창이 없으므로, 취소·실패와 상관없이
+      //    반드시 이미지 파일을 내려받고 문구를 복사해 둔다.
       fallback();
 
-      function fallback() {
-        if (navigator.share) {
-          navigator.share({ title: title, text: text }).then(function () {
-            if (file) { downloadBlob(blob, fname); toast("요약을 공유했습니다. 저장된 견적서 이미지도 함께 보내세요."); }
-            done();
-          }, function (e) { if (e && e.name === "AbortError") return done(); fallbackNoClaude(); done(); });
-        } else { fallbackNoClaude(); done(); }
-      }
+      function fallback() { fallbackNoClaude(); done(); }
       function fallbackNoClaude() {
         copyText(text);
         if (file) { downloadBlob(blob, fname); toast("견적서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요."); }
