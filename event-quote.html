@@ -281,10 +281,11 @@ body:not(.editing) .addjrow{display:none !important}
 </style>
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤 <strong>고객에게 보내기</strong> 를 누르면 견적서 이미지를 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤, <strong>파일로 저장</strong>을 누르면 완성된 견적서를 기록용 이미지로 컴퓨터에 남겨둘 수 있고, <strong>고객에게 보내기</strong> 를 누르면 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
+  <button type="button" id="btn-save-file">파일로 저장</button>
   <button type="button" id="btn-send" class="primary">고객에게 보내기</button>
   <button type="button" id="btn-copy">복사</button>
   <button type="button" id="btn-print">인쇄 · PDF</button>
@@ -859,6 +860,28 @@ body:not(.editing) .addjrow{display:none !important}
     }, function () { fallbackNoClaudeSimple(); });
 
     function fallbackNoClaudeSimple() { copyText(text); toast("요약 문구를 복사했습니다."); done(); }
+  });
+
+  /* ---------- 견적서를 기록용 파일(이미지)로 내려받기 ---------- */
+  document.getElementById("btn-save-file").addEventListener("click", function () {
+    var btn = this, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "저장 중…";
+    setEditing(false);
+    var d = new Date();
+    var ymd = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    var fname = "푸드벨_견적기록_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + "_" + ymd + ".png";
+    renderImage().then(function (blob) {
+      btn.disabled = false; btn.textContent = old;
+      if (blob) {
+        downloadBlob(blob, fname);
+        toast("견적서를 파일로 저장했습니다. (다운로드 폴더에서 확인하세요)");
+      } else {
+        toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+      }
+    }, function () {
+      btn.disabled = false; btn.textContent = old;
+      toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+    });
   });
 
   document.getElementById("btn-reset").addEventListener("click", function () {
