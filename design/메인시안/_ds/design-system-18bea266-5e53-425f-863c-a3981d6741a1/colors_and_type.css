@@ -1,0 +1,351 @@
+/* ============================================================================
+   박상익출장음식 — Colors & Typography Foundations
+   ============================================================================
+   Palette is drawn directly from the 제물상 photograph:
+     • 주칠 red lacquer bowls (목기)       → ritual accent
+     • Warm woodgrain backdrop              → tertiary surface
+     • White ritual cloth                   → bg
+     • 단청 pine green (traditional eaves)  → primary brand
+     • 한지 cream paper                     → soft bg
+     • 먹 ink charcoal                      → body text
+
+   Type pairs a classical Myeongjo display face (Gowun Batang) with a
+   workhorse Korean serif (Noto Serif KR) and Pretendard sans for UI.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Serif+KR:wght@300;400;500;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+
+:root {
+  /* ─────────────────────── PALETTE (raw tokens) ─────────────────────── */
+
+  /* Hanji — cream paper / surface */
+  --hanji-50:  #fdfbf6;
+  --hanji-100: #fbf7ef;   /* primary cream */
+  --hanji-200: #f3ecdc;
+  --hanji-300: #e8dcc4;
+  --hanji-400: #d6c4a3;
+
+  /* Ink — 먹 sumuk charcoal */
+  --ink-900: #14110d;
+  --ink-800: #1a1815;
+  --ink-700: #2c2924;     /* body text */
+  --ink-500: #5d564b;     /* muted text */
+  --ink-400: #7d7568;
+  --ink-300: #a89f8e;
+
+  /* Pine — 단청 traditional eaves green (primary brand) */
+  --pine-900: #1b2e22;
+  --pine-700: #2e4a36;    /* primary */
+  --pine-500: #4a6b50;
+  --pine-300: #8aa085;
+  --pine-100: #d6dfd4;
+
+  /* Sage — 애엽 secondary green */
+  --sage-700: #4d6b3f;
+  --sage-500: #6b8458;
+  --sage-300: #a3b893;
+
+  /* Wood — 목재 woodgrain warm */
+  --wood-800: #6b4a28;
+  --wood-600: #8c6435;
+  --wood-500: #a8794a;    /* mid camel */
+  --wood-400: #c39a6e;
+  --wood-300: #d9b88a;
+  --wood-200: #ebd5b3;
+
+  /* Jujube — 대추/주칠 lacquer red (sacred/ritual accent) */
+  --jujube-900: #5a0e0e;
+  --jujube-700: #8b1d1d;   /* primary red */
+  --jujube-500: #a82e2e;
+  --jujube-300: #c97c7c;
+
+  /* Persimmon — 감 orange (used very sparingly) */
+  --persimmon-500: #d97939;
+
+  /* ─────────────────────── SEMANTIC TOKENS ─────────────────────── */
+
+  /* Backgrounds */
+  --bg:            var(--hanji-100);      /* default page bg */
+  --bg-soft:       var(--hanji-50);
+  --bg-surface:    #ffffff;               /* cards, sheets */
+  --bg-sunken:     var(--hanji-200);      /* subtle wells */
+  --bg-inverse:    var(--ink-800);
+
+  /* Foreground / text */
+  --fg:            var(--ink-700);        /* body */
+  --fg-strong:     var(--ink-900);        /* headlines */
+  --fg-muted:      var(--ink-500);        /* secondary */
+  --fg-subtle:     var(--ink-400);        /* tertiary, captions */
+  --fg-inverse:    var(--hanji-100);
+
+  /* Brand / accent */
+  --accent:        var(--pine-700);       /* primary brand */
+  --accent-hover:  var(--pine-900);
+  --accent-soft:   var(--pine-100);
+  --accent-fg:     var(--hanji-100);
+
+  /* Sacred / ritual red — used for stamps, seal marks, special emphasis */
+  --seal:          var(--jujube-700);
+  --seal-strong:   var(--jujube-900);
+
+  /* Wood — tertiary warmth */
+  --wood:          var(--wood-500);
+  --wood-soft:     var(--wood-200);
+
+  /* Borders & dividers — keep them quiet, hand-drawn feel */
+  --border:        rgba(45, 41, 36, 0.14);
+  --border-strong: rgba(45, 41, 36, 0.28);
+  --rule:          rgba(45, 41, 36, 0.55);  /* horizontal rules, classical */
+
+  /* States */
+  --success:       #4a6b3f;
+  --warning:       #b8722a;
+  --danger:        var(--jujube-700);
+
+  /* ─────────────────────── TYPE FAMILIES ─────────────────────── */
+
+  --font-display: "Gowun Batang", "Noto Serif KR", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
+  --font-serif:   "Noto Serif KR", "Gowun Batang", "Apple SD Gothic Neo", serif;
+  --font-sans:    "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ─────────────────────── TYPE SCALE ─────────────────────── */
+
+  /* Display & headings use a slow, classical scale.
+     Body / UI uses a compact, dense scale to feel hansik-restrained. */
+
+  --fs-display-1: clamp(56px, 7.2vw, 96px);   /* hero brand statement */
+  --fs-display-2: clamp(40px, 4.8vw, 64px);   /* section openers */
+  --fs-h1:        clamp(32px, 3.4vw, 44px);
+  --fs-h2:        clamp(24px, 2.4vw, 32px);
+  --fs-h3:        20px;
+  --fs-h4:        18px;
+  --fs-body-lg:   18px;
+  --fs-body:      16px;
+  --fs-body-sm:   14px;
+  --fs-caption:   13px;
+  --fs-micro:     11px;
+
+  /* Line heights — Korean text needs generous leading at display sizes */
+  --lh-tight:   1.15;
+  --lh-snug:    1.35;
+  --lh-normal:  1.6;
+  --lh-loose:   1.85;
+
+  /* Letter spacing — Hangul reads best with very tight tracking at display */
+  --ls-tightest: -0.04em;
+  --ls-tight:    -0.02em;
+  --ls-normal:   -0.005em;
+  --ls-loose:    0.04em;
+  --ls-wide:     0.18em;   /* small caps / labels */
+
+  /* ─────────────────────── SPACING ─────────────────────── */
+
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* ─────────────────────── RADII ─────────────────────── */
+  /* Brand uses very subtle radii — most surfaces are square (paper, scrolls). */
+
+  --radius-0:    0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-pill: 999px;     /* used only for tags / pills */
+
+  /* ─────────────────────── ELEVATION ─────────────────────── */
+  /* Quiet shadows — a sheet of paper resting on wood, never floating high. */
+
+  --shadow-sm: 0 1px 2px rgba(45,41,36,0.06), 0 1px 1px rgba(45,41,36,0.04);
+  --shadow-md: 0 2px 4px rgba(45,41,36,0.06), 0 4px 12px rgba(45,41,36,0.06);
+  --shadow-lg: 0 4px 8px rgba(45,41,36,0.07), 0 16px 32px rgba(45,41,36,0.08);
+  --shadow-inset: inset 0 0 0 1px rgba(45,41,36,0.06);
+
+  /* ─────────────────────── MOTION ─────────────────────── */
+
+  --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast:    140ms;
+  --dur-base:    220ms;
+  --dur-slow:    420ms;
+}
+
+/* ============================================================================
+   SEMANTIC TYPE CLASSES
+   Use these directly: <h1 class="t-display">…</h1>
+   ============================================================================ */
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--ls-normal);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  word-break: keep-all;        /* keep Korean words intact at line breaks */
+  overflow-wrap: break-word;
+}
+
+/* DISPLAY — used at hero / cover moments only.
+   Gowun Batang at high weights reads as carved stone. */
+.t-display-1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-display-1);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tightest);
+  color: var(--fg-strong);
+}
+.t-display-2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-display-2);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  color: var(--fg-strong);
+}
+
+/* HEADINGS */
+h1, .t-h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-tight);
+  color: var(--fg-strong);
+  margin: 0;
+}
+h2, .t-h2 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-tight);
+  color: var(--fg-strong);
+  margin: 0;
+}
+h3, .t-h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: var(--fs-h3);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-normal);
+  color: var(--fg-strong);
+  margin: 0;
+}
+h4, .t-h4 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-normal);
+  color: var(--fg-strong);
+  margin: 0;
+}
+
+/* BODY */
+p, .t-body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: var(--lh-loose);
+  letter-spacing: var(--ls-normal);
+  color: var(--fg);
+  margin: 0;
+}
+.t-body-lg {
+  font-family: var(--font-serif);
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-loose);
+  letter-spacing: var(--ls-normal);
+  color: var(--fg);
+}
+.t-body-sm {
+  font-family: var(--font-serif);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg);
+}
+
+/* LABEL — small all-caps Latin or wide-tracked Hangul.
+   Used for section labels (제물상차림 / 출장요리 / etc) */
+.t-label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.t-label-ko {
+  /* Korean labels: keep size small, track wider, no caps */
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.32em;       /* generous Korean tracking */
+  color: var(--fg-muted);
+}
+
+/* CAPTION / META */
+.t-caption {
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-normal);
+  color: var(--fg-muted);
+}
+.t-micro {
+  font-family: var(--font-sans);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-loose);
+  color: var(--fg-subtle);
+}
+
+/* SEAL — Korean stamp imprint style. Use on dot/badge marks. */
+.t-seal {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--seal);
+  letter-spacing: 0.04em;
+}
+
+/* QUOTE — for tagline & testimonial moments */
+.t-quote {
+  font-family: var(--font-display);
+  font-style: italic;            /* italic Gowun Batang has a beautiful slant */
+  font-weight: 400;
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-loose);
+  color: var(--fg-strong);
+}
+
+/* CLASSICAL RULE — a thin horizontal divider as in 한지 documents */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: var(--space-8) 0;
+}
+.rule-double {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  height: 4px;
+  margin: var(--space-8) 0;
+}

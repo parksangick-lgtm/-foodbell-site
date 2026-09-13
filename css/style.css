@@ -3,7 +3,7 @@
 ========================================================= */
 
 :root {
-  color-scheme: light; /* 다크모드 기기에서도 브라우저가 색을 자동으로 반전하지 않도록 고정 */
+  color-scheme: only light; /* 다크모드 기기에서도 브라우저가 색을 자동으로 반전하지 않도록 고정 ("light" 만으로는 안 막힌다) */
   --color-primary: #6E1E2B;
   --color-primary-dark: #4E141E;
   --color-gold: #B08D57;
@@ -60,6 +60,12 @@
   --space-24: 100px;
 
   --container-w: 1140px;
+}
+
+/* 삼성 인터넷 대비: 사이트가 다크모드를 스스로 처리한다고 보이면 강제 반전을 건너뛴다(추정).
+   다크모드에서도 같은 밝은 화면을 쓴다고 한 번 더 적어 둔다. */
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: only light; }
 }
 
 * { box-sizing: border-box; }
