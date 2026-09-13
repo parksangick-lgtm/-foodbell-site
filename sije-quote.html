@@ -297,7 +297,7 @@ body:not(.editing) .tier-switch{display:none !important}
 </style>
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤, <strong>파일로 저장</strong>을 누르면 완성된 견적서를 기록용 이미지로 컴퓨터에 남겨둘 수 있고, <strong>고객에게 보내기</strong> 를 누르면 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>으로 고객·행사·품목·공급가액을 채운 뒤, <strong>파일로 저장</strong>을 누르면 완성된 견적서를 기록용 이미지로 컴퓨터에 남겨둘 수 있고, <strong>고객에게 보내기</strong> 를 누르면 문자·카톡으로 바로 보낼 수 있습니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 입력 중인 내용은 이 컴퓨터에 자동 저장되니, <strong>새 손님</strong> 견적을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 이전 내용을 지워주세요.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -323,9 +323,9 @@ body:not(.editing) .tier-switch{display:none !important}
       <div>
         <h2 class="doc-title">견적서</h2>
         <dl class="meta-list">
-          <dt>견적번호</dt><dd data-edit data-t="text">FB-2026-1121</dd>
-          <dt>발행일</dt><dd data-edit data-t="text">2026년 9월 5일</dd>
-          <dt>유효기한</dt><dd data-edit data-t="text">2026년 9월 19일</dd>
+          <dt>견적번호</dt><dd data-edit data-t="text" data-k="qno">FB-2026-1121</dd>
+          <dt>발행일</dt><dd data-edit data-t="text" data-k="issue">2026년 9월 5일</dd>
+          <dt>유효기한</dt><dd data-edit data-t="text" data-k="valid">2026년 9월 19일</dd>
         </dl>
       </div>
       <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
@@ -543,6 +543,8 @@ body:not(.editing) .tier-switch{display:none !important}
   function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
   function isMoney(el) { var k = el.getAttribute("data-k"); return k === "supply" || k === "total"; }
   function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtDateKR(d) { return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일"; }
 
   var sheet = document.querySelector(".sheet");
   var body  = document.body;
@@ -607,8 +609,25 @@ body:not(.editing) .tier-switch{display:none !important}
   }
   function restore() {
     var html = null;
-    try { html = localStorage.getItem(KEY); } catch (e) { return; }
-    if (html) sheet.innerHTML = html;
+    try { html = localStorage.getItem(KEY); } catch (e) { return false; }
+    if (html) { sheet.innerHTML = html; return true; }
+    return false;
+  }
+  /* 저장된 내용이 없는 첫 화면일 때만: 견적번호 · 발행일 · 유효기한을 오늘 날짜 기준으로 채운다. */
+  function fillFreshDefaults() {
+    var d = new Date();
+    var issueEl = sheet.querySelector('[data-k="issue"]');
+    var validEl = sheet.querySelector('[data-k="valid"]');
+    var qnoEl = sheet.querySelector('[data-k="qno"]');
+    if (issueEl) issueEl.textContent = fmtDateKR(d);
+    if (validEl) {
+      var v = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 14);
+      validEl.textContent = fmtDateKR(v);
+    }
+    if (qnoEl) {
+      qnoEl.textContent = "FB-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+        "-" + pad2(d.getHours()) + pad2(d.getMinutes());
+    }
   }
 
   /* ---------- 편집 컨트롤 삽입 / 제거 ---------- */
@@ -834,6 +853,9 @@ body:not(.editing) .tier-switch{display:none !important}
   }
 
   document.getElementById("btn-send").addEventListener("click", function () {
+    if (!raw(sheet.querySelector('[data-k="supply"]'))) {
+      if (!window.confirm("공급가액(금액)을 아직 안 넣으셨습니다. 그래도 보낼까요?")) return;
+    }
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
@@ -880,6 +902,9 @@ body:not(.editing) .tier-switch{display:none !important}
 
   /* ---------- 견적서를 기록용 파일(이미지)로 내려받기 ---------- */
   document.getElementById("btn-save-file").addEventListener("click", function () {
+    if (!raw(sheet.querySelector('[data-k="supply"]'))) {
+      if (!window.confirm("공급가액(금액)을 아직 안 넣으셨습니다. 그래도 저장할까요?")) return;
+    }
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "저장 중…";
     setEditing(false);
@@ -910,7 +935,7 @@ body:not(.editing) .tier-switch{display:none !important}
     setEditing(!body.classList.contains("editing"));
   });
 
-  restore();
+  if (!restore()) fillFreshDefaults();
   recalc();
 })();
 </script>
