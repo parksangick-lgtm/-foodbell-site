@@ -8,6 +8,8 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛺</text></svg>">
 <meta name="theme-color" content="#6E1E2B">
+<!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
+<meta name="color-scheme" content="only light">
 <link rel="apple-touch-icon" href="icons/quote-event-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,8 +20,10 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
+/* 삼성 인터넷 대비: 다크모드에서도 같은 밝은 화면을 쓴다고 한 번 더 적어 둔다(추정) */
+@media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
 :root{
-  color-scheme: light;
+  color-scheme: only light;
 
   /* 사이트(css/style.css) 기반 — 문서 가독성을 위해 보조색을 진하게 조정 */
   --cream:#F7F2E9; --paper:#FFFDF8; --band:#F1EADB; --band2:#EDE4D3;

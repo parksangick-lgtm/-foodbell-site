@@ -1,0 +1,73 @@
+/* Preview card shell — used by every file in preview/.
+   Each card is sized to be rendered at ~700px wide in the Design System tab.
+   Cards should fill their container completely (no outer padding here). */
+@import url('../colors_and_type.css');
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-serif);
+  overflow: hidden;
+}
+.card {
+  width: 100%;
+  min-height: 100%;
+  padding: 28px 32px;
+  background: var(--bg);
+}
+.card.dark {
+  background: var(--bg-inverse);
+  color: var(--fg-inverse);
+}
+.card.cream {
+  background: var(--hanji-100);
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.swatch-tile {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  position: relative;
+}
+.swatch-meta {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.swatch-meta .name {
+  font-weight: 600;
+  color: var(--fg-strong);
+  letter-spacing: 0;
+}
+.swatch-meta .hex {
+  color: var(--fg-muted);
+  font-feature-settings: "tnum";
+  letter-spacing: 0.04em;
+}
+.row {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.label-kicker {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
