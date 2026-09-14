@@ -5,18 +5,27 @@ title 푸드벨 사이트 - 저장 (GitHub 업로드)
 
 rem 더블클릭이 겹쳐 두 번 실행되면 커밋이 꼬일 수 있어, 창 하나만 돌게 막는다.
 set "LOCK=%TEMP%\foodbell-save.lock"
+rem 괄호 블록 안의 닫는 괄호를 cmd 가 블록의 끝으로 읽어버린다. 그래서 goto 로 쓴다.
+if exist "%LOCK%" goto :already_running
 mkdir "%LOCK%" 2>nul
-if errorlevel 1 (
-  echo ============================================
-  echo    푸드벨 사이트 - 저장 (GitHub 업로드)
-  echo ============================================
-  echo.
-  echo  ※ 이미 "저장" 창이 하나 더 열려 진행 중입니다.
-  echo     (두 번 누르신 것 같습니다 - 이 창만 닫으시고, 먼저 연 창에서 계속하세요)
-  echo.
-  pause
-  exit /b 1
-)
+goto :got_lock
+
+:already_running
+echo ============================================
+echo    푸드벨 사이트 - 저장
+echo ============================================
+echo.
+echo  ※ 이미 "저장" 창이 하나 더 열려 진행 중입니다.
+echo     두 번 누르신 것 같습니다 - 이 창만 닫으시고, 먼저 연 창에서 계속하세요.
+echo.
+echo  그런 창이 없는데도 이 메시지가 나오면 지난번 창이 비정상 종료된 것입니다.
+echo  아무 키나 누르면 그 잠금을 풀고 계속합니다.
+echo.
+pause
+rmdir /s /q "%LOCK%" 2>nul
+mkdir "%LOCK%" 2>nul
+
+:got_lock
 
 call :run
 set "RC=%ERRORLEVEL%"
@@ -71,7 +80,7 @@ git add -A
 git commit -m "%MSG%"
 if errorlevel 1 (
   echo.
-  echo  (바뀐 내용이 없어서 올릴 것이 없습니다. 종료합니다.)
+  echo  ^(바뀐 내용이 없어서 올릴 것이 없습니다. 종료합니다.^)
   echo.
   pause
   exit /b 0
@@ -84,7 +93,7 @@ git push
 if errorlevel 1 (
   echo.
   echo  !! 업로드 실패. 위 메시지를 확인하세요.
-  echo     ( 방금 만든 내용은 이 컴퓨터에 그대로 남아 있습니다. 다시 "저장"을 눌러 재시도하세요 )
+  echo     ^( 방금 만든 내용은 이 컴퓨터에 그대로 남아 있습니다. 다시 "저장"을 눌러 재시도하세요 ^)
   echo.
   pause
   exit /b 1
