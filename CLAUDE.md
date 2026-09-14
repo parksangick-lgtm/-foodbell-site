@@ -29,6 +29,27 @@
 - 없으면 `python -m http.server 8000`.
 - 휴대폰 화면 확인은 헤드리스 크롬으로 캡처한다. **사용자가 쓰던 크롬 창을 죽이지 말 것**(`taskkill chrome` 금지) — `--user-data-dir` 을 따로 주고 새 인스턴스로 띄운다.
 
+### 휴대폰 폭을 만드는 법 — `--window-size` 를 믿지 말 것
+
+헤드리스 크롬은 `--window-size=390` 을 줘도 뷰포트를 **약 485px** 로 잡는다. 그래서 390px 로
+잘렸다고 본 화면이 실제로는 485px 이었고, **없는 버그를 세 번 쫓았다**(사라진 버튼, 잘린 글자 2회).
+매번 사이트는 멀쩡했고 측정 방법이 틀렸다.
+
+- 폭은 **390px `<iframe>`** 이나 CDP `Emulation.setDeviceMetricsOverride` 로 만든다.
+- 캡처하기 전에 `document.documentElement.clientWidth` 를 **출력해서 390 인지 눈으로 확인**한다.
+- 외부로 나가는 폼 전송 시험은 **실제 크롬 창**에서 한다. 헤드리스(CORS 차단)와 `curl`(403)은
+  막혀서 사이트가 고장난 것처럼 보인다 — 진짜 크롬에서는 200 OK 였다.
+
+**"사이트가 깨졌다"고 말하기 전에, 확인 도구가 그 조건을 정말 만들었는지 숫자로 먼저 확인한다.**
+
+### css / js 를 고쳤으면 캐시 번호를 올린다
+
+`css/` 나 `js/` 를 고치면 `index.html` 의 `?v=` 숫자를 올린다. 크게 바뀌었으면 `sw.js` 의
+`CACHE = 'foodbell-vN'` 도 올린다. 안 올리면 손님 휴대폰은 **며칠째 옛 화면**을 본다(실제로 겪음).
+
+- 직접 올릴 때: `python 캐시버전올리기.py` (`--check` 를 붙이면 올리지 않고 보기만 한다)
+- `저장.bat` 이 저장할 때마다 이 점검을 자동으로 한다 — 안 올렸으면 물어본다.
+
 ## 화면 만들 때
 
 **값은 `css/style.css` 의 `:root` 에서만 고른다.** 새 색·새 크기를 즉석에서 만들지 않는다.
@@ -80,8 +101,11 @@ images/               실제 상차림 사진
 
 ## 배포
 
-- 넷리파이(`astonishing-klepon-a382d5.netlify.app`)로 서비스 중이었으나 **무료 크레딧이 소진**되어 GitHub Pages 로 옮기는 중이다.
-- `.github/workflows/deploy-pages.yml` 은 있지만 아직 페이지가 뜨지 않는다(404). 저장소 Settings → Pages → Source 를 **GitHub Actions** 로 두었는지 확인이 필요하다.
+- **현재 주소: `https://parksangick-lgtm.github.io/-foodbell-site/`** — GitHub Pages 로 정상 서비스 중이다(2026-09-14 확인). `office` 브랜치에 push 하면 `.github/workflows/deploy-pages.yml` 이 자동 배포한다.
+- 넷리파이(`astonishing-klepon-a382d5.netlify.app`)는 **무료 크레딧 소진으로 배포 중단** — 쓰지 않는다.
+- **배포 상태는 기억하지 말고 한 줄로 확인한다**: `curl -s -o /dev/null -w "%{http_code}" https://parksangick-lgtm.github.io/-foodbell-site/` → `200` 이면 정상.
+  (이 문서에 "404, 안 뜬다"고 적혀 있던 동안 사이트는 멀쩡히 떠 있었고, 그 낡은 기록 때문에
+  월 3만원짜리 유료 호스팅으로 옮길 뻔했다. 배포처를 바꾸면 이 줄부터 고친다.)
 ## 작업이 끝나면
 
 - **"5번"** 이라고 하면 그날 한 일을 옵시디언 `바이브코딩-위키` 폴더에
