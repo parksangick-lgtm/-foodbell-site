@@ -1,5 +1,6 @@
 ﻿# 바탕화면에 푸드벨 바로가기(아이콘)를 만든다.
-# 만들어지는 것: 푸드벨 시작 / 푸드벨 저장 / 푸드벨 홈페이지 / 푸드벨 시제 견적서 / 푸드벨 행사 견적서
+# 만들어지는 것: 푸드벨 시작 / 푸드벨 저장 / 푸드벨 홈페이지 / 푸드벨 시제 견적서 /
+#              푸드벨 행사 견적서 / 푸드벨 작업지시서
 # 바탕화면-바로가기.bat 이 이 파일을 실행한다. 각 컴퓨터에서 한 번만 하면 된다.
 
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -42,6 +43,8 @@ New-UrlLink '푸드벨 시제 견적서' "$site/sije-quote.html" `
     '시제 상차림 견적서 - 편집 · 인쇄 · 고객에게 보내기' '아이콘-시제.ico'
 New-UrlLink '푸드벨 행사 견적서' "$site/event-quote.html" `
     '제실 · 문중 행사 견적서 - 편집 · 인쇄 · 고객에게 보내기' '아이콘-행사.ico'
+New-UrlLink '푸드벨 작업지시서' "$site/sije-worksheet.html" `
+    '시제 작업지시서 - 준비 품목 점검 · 인쇄 (내부용)' '아이콘-시제.ico'
 
 Write-Host ''
 if (Test-Path (Join-Path $desktop '푸드벨 견적서.lnk')) {

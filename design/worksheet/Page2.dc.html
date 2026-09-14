@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; background: #F7F2E9; }
+    a { color: #6E1E2B; text-decoration: none; }
+    a:hover { color: #8A2836; }
+  </style>
+</helmet>
+
+<div style="width: 794px; height: 1123px; box-sizing: border-box; padding: 30px 34px 24px; background: #FFFDF8; font-family: 'Noto Sans KR', sans-serif; color: #120C06; display: flex; flex-direction: column; gap: 13px;">
+
+  <!-- ================= 이어지는 장 머리 ================= -->
+  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 18px;">
+    <div style="display: flex; align-items: baseline; gap: 12px;">
+      <span style="font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 26px; color: #6E1E2B;">푸드벨</span>
+      <span style="font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 22px; letter-spacing: 3px;">작업지시서</span>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 14px; font-size: 17px;">
+      <span style="color: #6B5E48;">견적번호</span>
+      <span style="font-weight: 600; border-bottom: 1px solid #D3C4A8; min-width: 150px; text-align: right;">FB-</span>
+    </div>
+  </div>
+
+  <div style="border-top: 2px solid #6E1E2B; border-bottom: 1px solid #D3C4A8; height: 3px;"></div>
+
+  <!-- ================= 준비 내역 (이어서) ================= -->
+  <div style="display: flex; flex-direction: column; gap: 7px;">
+    <div style="display: flex; align-items: baseline; gap: 10px;">
+      <span style="font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 26px;">준비 내역</span>
+      <span style="font-size: 15px; color: #8A6C3E;">(이어서)</span>
+      <span style="flex-grow: 1; border-bottom: 2px solid #B08D57; max-width: 44px;"></span>
+    </div>
+
+    <div style="border: 1px solid #D3C4A8; display: flex; flex-direction: column;">
+      <div style="display: grid; grid-template-columns: 190px minmax(0, 1fr) 100px; background: #EDE4D3; border-bottom: 1px solid #D3C4A8;">
+        <div style="padding: 10px 12px; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 21px; letter-spacing: 1px;">품목</div>
+        <div style="padding: 10px 12px; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 21px; letter-spacing: 1px;">세부 구성</div>
+        <div style="padding: 10px 12px; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 21px; letter-spacing: 1px; text-align: right;">수량</div>
+      </div>
+
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+        <div style="background: #F1EADB; border-top: 1px solid #D3C4A8; border-bottom: 1px solid #E2D6BF; padding: 9px 12px; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 22px; color: #4E141E;">{{g.title}}</div>
+
+        <sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2">
+          <div style="display: grid; grid-template-columns: 190px minmax(0, 1fr) 100px; border-bottom: 1px solid #E2D6BF;">
+            <div style="padding: 10px 12px; font-size: 22px; font-weight: 600; color: #120C06;">{{r.name}}</div>
+            <div style="padding: 10px 12px; font-size: 17px; font-weight: 400; color: #2A2318; line-height: 1.45;">{{r.detail}}</div>
+            <div style="padding: 10px 12px; font-size: 22px; font-weight: 700; color: #6E1E2B; text-align: right; white-space: nowrap;">{{r.qty}}</div>
+          </div>
+        </sc-for>
+
+        <sc-for list="{{g.blanks}}" as="b" hint-placeholder-count="3">
+          <div style="display: grid; grid-template-columns: 190px minmax(0, 1fr) 100px; border-bottom: 1px solid #E2D6BF; background: #FFFDF8;">
+            <div style="padding: 12px; border-right: 1px dotted #E2D6BF; min-height: 24px;"></div>
+            <div style="padding: 12px; border-right: 1px dotted #E2D6BF;"></div>
+            <div style="padding: 12px;"></div>
+          </div>
+        </sc-for>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ================= 가문 특이사항 ================= -->
+  <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
+    <div style="font-size: 20px; font-weight: 700; color: #6E1E2B;">가문 특이사항 · 가감 품목</div>
+    <div style="border: 1px solid #D3C4A8; flex-grow: 1; min-height: 80px; background: repeating-linear-gradient(#FFFDF8 0 39px, #EFE7D6 39px 40px);"></div>
+  </div>
+
+  <!-- ================= 맺음 ================= -->
+  <div style="border-top: 1px solid #D3C4A8; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
+    <div style="font-family: 'Gowun Batang', serif; font-size: 17px; color: #2A2318;">선조를 기리는 자리에 예를 다해 정성껏 모시겠습니다.</div>
+    <div style="font-size: 14px; color: #6B5E48; white-space: nowrap;">2 / 2</div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    function blanks(n) {
+      var out = [];
+      for (var i = 0; i < n; i++) out.push({ n: i });
+      return out;
+    }
+
+    return {
+      groups: [
+        {
+          title: '다. 종친 음복 · 음료',
+          blanks: blanks(3),
+          rows: [
+            { name: '음료 · 제주', qty: '1식', detail: '식혜, 생수, 청주, 종이컵 일습' }
+          ]
+        },
+        {
+          title: '라. 출장 · 현장 세팅',
+          blanks: blanks(2),
+          rows: [
+            { name: '전국 출장 배송', qty: '1식', detail: '왕복 운송, 보온 · 보냉 이송, 정시 도착' },
+            { name: '현장 조리 · 세팅', qty: '2인', detail: '진설 세팅 및 음복 배식(4시간), 행사 후 정리' }
+          ]
+        },
+        {
+          // 산신제 품목은 기존 자료(사이트 · 견적서)에 없어 비워 둔다.
+          // 지어내지 않고, 사용자가 알려주면 그때 채운다.
+          title: '마. 산신제',
+          blanks: blanks(5),
+          rows: []
+        }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
