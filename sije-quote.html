@@ -293,6 +293,19 @@ body:not(.editing) .tier-switch{display:none !important}
   section{break-inside:avoid}
   tr{break-inside:avoid}
   .closing{break-inside:avoid}
+
+  /* A4 한 장에 들어가도록 인쇄할 때만 여백·줄 간격을 줄인다 (글자 크기와 화면은 그대로) */
+  body{line-height:1.5}
+  .sheet{padding-top:4mm}
+  .rule-double{margin:12px 0 16px}
+  section + section{margin-top:20px}
+  .sec-head{margin-bottom:8px}
+  .brief-row dt,.brief-row dd{padding-top:6px; padding-bottom:6px}
+  table.quote thead th,table.quote td{padding-top:6px; padding-bottom:6px}
+  td.item-detail{line-height:1.45}
+  .totals{margin-top:12px}
+  .sum-row{padding:5px 0}
+  .sum-total{margin-top:8px; padding:9px 16px}
 }
 </style>
 </head>
@@ -371,6 +384,51 @@ body:not(.editing) .tier-switch{display:none !important}
             <th scope="col" class="n">수량</th>
           </tr>
         </thead>
+
+        <tbody data-group>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">과실 · 조과</td>
+            <td class="item-detail" data-edit data-t="text">대추 · 밤 · 배 · 감 · 사과, 약과 · 유과 · 다식</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">7치</span></td>
+          </tr>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">포 · 혜 · 나물</td>
+            <td class="item-detail" data-edit data-t="text">북어포, 식혜, 삼색나물(고사리 · 도라지 · 시금치), 나박김치</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">500g</span></td>
+          </tr>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">탕 3종</td>
+            <td class="item-detail" data-edit data-t="text">육탕 · 소탕 · 어탕</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">1식</span></td>
+          </tr>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">적 · 전</td>
+            <td class="item-detail" data-edit data-t="text">육적 · 계적 · 어적, 육전 · 어전 · 동태전</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">6개</span></td>
+          </tr>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">반 · 갱 · 면</td>
+            <td class="item-detail" data-edit data-t="text">메(밥), 탕국, 국수, 시접 일습</td>
+            <td class="n" data-label="수량"><span data-edit data-t="text">1</span></td>
+          </tr>
+        </tbody>
+
+        <tbody data-group>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">제기 일습</td>
+            <td class="item-detail" data-edit data-t="text">향로 · 향합 · 촛대 · 모사기 · 퇴주기 · 잔반</td>
+            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+          </tr>
+        </tbody>
+
+        <tbody data-group>
+          <tr class="item">
+            <td class="item-name" data-edit data-t="text">음료 · 제주</td>
+            <td class="item-detail" data-edit data-t="text">식혜, 생수, 청주, 종이컵 일습</td>
+            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
+          </tr>
+        </tbody>
+
       </table>
     </div>
 
@@ -436,7 +494,8 @@ body:not(.editing) .tier-switch{display:none !important}
     });
     L.push("", "[포함 내역]");
     each(sheet.querySelectorAll("tbody[data-group]"), function (g) {
-      L.push("■ " + g.querySelector(".grouprow th").textContent.trim());
+      var gth = g.querySelector(".grouprow th");
+      if (gth) L.push("■ " + gth.textContent.trim());
       each(g.querySelectorAll("tr.item"), function (tr) {
         var qcell = tr.querySelector('td[data-label="수량"]');
         L.push("  - " + tr.querySelector(".item-name").textContent.trim() +
