@@ -35,7 +35,6 @@ function New-UrlLink($name, $url, $desc, $icoName) {
 
 New-Link '푸드벨 시작' '시작.bat' '푸드벨 사이트 - 최신 받기 + 미리보기'
 New-Link '푸드벨 저장' '저장.bat' '푸드벨 사이트 - GitHub 에 올리기'
-New-Link '푸드벨 견적서' '견적서.bat' '시제 견적서 열기 - 손님별로 채워서 인쇄/전송'
 
 New-UrlLink '푸드벨 홈페이지' $site `
     '푸드벨 홈페이지 - 손님이 보는 화면' '아이콘.ico'
