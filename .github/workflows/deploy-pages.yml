@@ -5,8 +5,9 @@
 # 최초 1회: GitHub 저장소 → Settings → Pages → Build and deployment →
 #           Source 를 "GitHub Actions" 로 바꾸면 아래가 동작한다.
 #
-# 게시 주소: https://parksangick-lgtm.github.io/-foodbell-site/
-#           견적서: .../-foodbell-site/sije-quote.html
+# 게시 주소: https://foodbell.kr/   (2026-09-16 커스텀 도메인 연결)
+#           견적서: https://foodbell.kr/sije-quote.html
+#           옛 주소 https://parksangick-lgtm.github.io/-foodbell-site/ 는 위 주소로 자동으로 넘어온다.
 
 name: Deploy to GitHub Pages
 

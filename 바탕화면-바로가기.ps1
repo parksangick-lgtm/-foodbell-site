@@ -6,7 +6,7 @@
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
 $desktop = [Environment]::GetFolderPath('Desktop')
 $icon = Join-Path $repo '아이콘.ico'
-$site = 'https://parksangick-lgtm.github.io/-foodbell-site'
+$site = 'https://foodbell.kr'
 $shell = New-Object -ComObject WScript.Shell
 
 function New-Link($name, $bat, $desc) {

@@ -102,11 +102,18 @@ images/               실제 상차림 사진
 
 ## 배포
 
-- **현재 주소: `https://parksangick-lgtm.github.io/-foodbell-site/`** — GitHub Pages 로 정상 서비스 중이다(2026-09-14 확인). `office` 브랜치에 push 하면 `.github/workflows/deploy-pages.yml` 이 자동 배포한다.
+- **현재 주소: `https://foodbell.kr/`** — 가비아에서 산 도메인을 GitHub Pages 에 연결했다(2026-09-16).
+  `www.foodbell.kr` 과 옛 주소 `https://parksangick-lgtm.github.io/-foodbell-site/` 는 이 주소로 자동으로 넘어온다.
+  `office` 브랜치에 push 하면 `.github/workflows/deploy-pages.yml` 이 자동 배포한다.
 - 넷리파이(`astonishing-klepon-a382d5.netlify.app`)는 **무료 크레딧 소진으로 배포 중단** — 쓰지 않는다.
-- **배포 상태는 기억하지 말고 한 줄로 확인한다**: `curl -s -o /dev/null -w "%{http_code}" https://parksangick-lgtm.github.io/-foodbell-site/` → `200` 이면 정상.
+- **배포 상태는 기억하지 말고 한 줄로 확인한다**: `curl -s -o /dev/null -w "%{http_code}" https://foodbell.kr/` → `200` 이면 정상.
   (이 문서에 "404, 안 뜬다"고 적혀 있던 동안 사이트는 멀쩡히 떠 있었고, 그 낡은 기록 때문에
   월 3만원짜리 유료 호스팅으로 옮길 뻔했다. 배포처를 바꾸면 이 줄부터 고친다.)
+- **주소를 또 바꾸면 같이 고칠 곳** — 한 곳만 고치면 나머지가 낡은 채 남는다:
+  `바탕화면-바로가기.ps1` 의 `$site`(바탕화면 아이콘이 여는 주소 — **안 고치면 아이콘이 옛 주소를 연다**),
+  이 문서의 위 두 줄, `.github/workflows/deploy-pages.yml` 맨 위 주석.
+  목록을 믿지 말고 `grep -rn "옛주소" .` 로 판정한다 — `작업방법.md` 처럼 **저장소 이름**(`github.com/.../-foodbell-site`)이
+  걸리는 곳은 고치면 안 되므로, 걸린 줄마다 "사이트 주소인가, 저장소 이름인가"를 눈으로 갈라야 한다.
 ## 작업이 끝나면
 
 - **"5번"** 이라고 하면 그날 한 일을 옵시디언 `바이브코딩-위키` 폴더에
