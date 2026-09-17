@@ -1,0 +1,14 @@
+# 버셀에 올리지 않을 파일 — 손님이 보는 주소로 열리면 안 되는 것들.
+# .github/workflows/deploy-pages.yml 의 rsync 제외 목록과 같게 맞춘다.
+# 한쪽만 고치면 배포처마다 공개 범위가 달라진다.
+
+.github
+design
+*.bat
+*.ps1
+*.command
+*.py
+*.md
+*.zip
+*.ico
+netlify.toml
