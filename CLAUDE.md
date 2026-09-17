@@ -102,16 +102,34 @@ images/               실제 상차림 사진
 
 ## 배포
 
-- **현재 주소: `https://foodbell.kr/`** — 가비아에서 산 도메인을 GitHub Pages 에 연결했다(2026-09-16).
-  `www.foodbell.kr` 과 옛 주소 `https://parksangick-lgtm.github.io/-foodbell-site/` 는 이 주소로 자동으로 넘어온다.
-  `office` 브랜치에 push 하면 `.github/workflows/deploy-pages.yml` 이 자동 배포한다.
+- **현재 주소: `https://foodbell.kr/`** — 도메인은 가비아, 호스팅은 **버셀(Vercel)** 이다(2026-09-18 전환).
+  `www.foodbell.kr`, 한글 도메인 `푸드벨.kr`, 옛 주소 `https://parksangick-lgtm.github.io/-foodbell-site/`
+  는 모두 이 주소로 넘어온다.
+- **버셀 설정 세 가지** — 하나라도 어긋나면 고친 것이 손님 화면에 안 나온다:
+  - 요금제 **Pro(월 $20)**. 무료(Hobby)는 "서비스 판매를 광고하는 사이트"에 쓸 수 없다(버셀 약관).
+  - `Settings → Environments → Production → Branch Tracking` = **`office`**.
+    기본값은 `main` 이고, 그대로 두면 push 가 **미리보기로만** 가서 손님 화면이 영원히 안 바뀐다.
+  - **`.vercelignore`** 가 작업 파일을 막는다(`design/`, `*.py`, `*.bat`, `*.ps1`, `*.md`, `*.ico`, `netlify.toml`).
+    이 파일이 없으면 `foodbell.kr/CLAUDE.md` 처럼 작업 문서가 손님 주소로 열린다. 실제로 열렸던 적이 있다.
+- **깃허브 페이지는 되돌릴 곳으로 남겨 두었다** — `deploy-pages.yml` 도, 깃허브 Settings 의 도메인 설정도
+  지우지 않았다. 버셀에 문제가 생기면 가비아 DNS 를 아래로 되돌리면 5~10분 안에 복구된다.
+  ```
+  A      @     185.199.108.153 / .109.153 / .110.153 / .111.153   (4줄)
+  CNAME  www   parksangick-lgtm.github.io.
+  ```
+  현재 버셀 값은 `A @ 216.150.1.1` 과 `CNAME www f8f4734a59ae20f4.vercel-dns-017.com.` 이다.
+- **배포처를 전환할 때는 인증서 대기가 곧 다운타임이다.** 2026-09-18 전환에서 DNS 는 40초에 퍼졌는데
+  버셀 인증서가 **15분** 뒤에 나왔고, 그동안 대표 주소가 죽어 있었다(`SEC_E_WRONG_PRINCIPAL`).
+  전환 전에 **되돌릴 시각을 절대 시각으로 정해 적어두고**(예: "02:25 까지 안 되면 되돌린다") 시작한다.
 - 넷리파이(`astonishing-klepon-a382d5.netlify.app`)는 **무료 크레딧 소진으로 배포 중단** — 쓰지 않는다.
 - **배포 상태는 기억하지 말고 한 줄로 확인한다**: `curl -s -o /dev/null -w "%{http_code}" https://foodbell.kr/` → `200` 이면 정상.
   (이 문서에 "404, 안 뜬다"고 적혀 있던 동안 사이트는 멀쩡히 떠 있었고, 그 낡은 기록 때문에
   월 3만원짜리 유료 호스팅으로 옮길 뻔했다. 배포처를 바꾸면 이 줄부터 고친다.)
 - **주소를 또 바꾸면 같이 고칠 곳** — 한 곳만 고치면 나머지가 낡은 채 남는다:
   `바탕화면-바로가기.ps1` 의 `$site`(바탕화면 아이콘이 여는 주소 — **안 고치면 아이콘이 옛 주소를 연다**),
-  이 문서의 위 두 줄, `.github/workflows/deploy-pages.yml` 맨 위 주석.
+  이 문서의 위 두 줄, `.github/workflows/deploy-pages.yml` 맨 위 주석, `.vercelignore` 첫 주석.
+  (2026-09-18 버셀 전환에서는 주소가 그대로 `foodbell.kr` 이라 이 목록을 고칠 필요가 없었다 —
+  도메인을 먼저 붙여둔 덕이다. 바꿔야 했던 것은 **배포처 설명**뿐이었다.)
   목록을 믿지 말고 `grep -rn "옛주소" .` 로 판정한다 — `작업방법.md` 처럼 **저장소 이름**(`github.com/.../-foodbell-site`)이
   걸리는 곳은 고치면 안 되므로, 걸린 줄마다 "사이트 주소인가, 저장소 이름인가"를 눈으로 갈라야 한다.
 ## 작업이 끝나면
