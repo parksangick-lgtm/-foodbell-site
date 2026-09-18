@@ -99,12 +99,12 @@ git을 안 쓰는 폴더면 `ls -R` 과 대화 내용으로 정리한다.
 
 **먼저 스크립트를 찾는다.** 아래 순서로 있는 것을 쓴다.
 
-1. `~/.claude/skills/obsidian-save/obsidian_save.py` ← 설치돼 있으면 어느 폴더에서든 이걸 쓴다
-2. `src/obsidian_save.py` ← 유튜브 요약 저장소 안에서 작업 중일 때
+1. `.claude/skills/obsidian-save/obsidian_save.py` ← 이 저장소 안, 세 컴퓨터 공통이라 우선
+2. `~/.claude/skills/obsidian-save/obsidian_save.py` ← 개인 설치, 다른 프로젝트 폴더에서 작업 중일 때
 3. 둘 다 없으면 아래 "스크립트를 못 찾을 때" 로 간다
 
 ```bash
-python ~/.claude/skills/obsidian-save/obsidian_save.py \
+python .claude/skills/obsidian-save/obsidian_save.py \
   --title "회사홈페이지-첫화면과-메뉴-만들기" \
   --folder "바이브코딩-위키" \
   --tags "바이브코딩,학습,HTML" \
@@ -140,7 +140,7 @@ python ~/.claude/skills/obsidian-save/obsidian_save.py \
 "볼트를 찾지 못했습니다" 가 나올 때만 아래로 확인한 뒤 사용자에게 물어본다.
 
 ```bash
-python ~/.claude/skills/obsidian-save/obsidian_save.py --list-vaults
+python .claude/skills/obsidian-save/obsidian_save.py --list-vaults
 ```
 
 ### 스크립트를 못 찾을 때

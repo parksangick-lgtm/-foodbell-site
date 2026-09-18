@@ -51,11 +51,12 @@ python obsidian_save.py --set-vault auto      # 자동으로 찾은 볼트를 �
 
 ### 3. 저장 실행
 
-스크립트는 `~/.claude/skills/obsidian-save/obsidian_save.py`(설치된 경우) 또는
-`src/obsidian_save.py`(이 저장소 안) 에 있다. 있는 쪽을 쓴다.
+스크립트는 `.claude/skills/obsidian-save/obsidian_save.py`(이 저장소 안, 세 컴퓨터
+공통이라 우선) 또는 `~/.claude/skills/obsidian-save/obsidian_save.py`(개인 설치,
+다른 프로젝트 폴더에서 작업 중일 때) 에 있다. 있는 쪽을 쓴다.
 
 ```bash
-python ~/.claude/skills/obsidian-save/obsidian_save.py \
+python .claude/skills/obsidian-save/obsidian_save.py \
   --title "노트 제목" \
   --folder "유튜브 요약" \
   --tags "유튜브,요약,별빛마실" \
