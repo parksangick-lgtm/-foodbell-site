@@ -130,7 +130,6 @@ table.quote thead th.n{text-align:right}
 }
 table.quote td{padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top}
 table.quote td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
-td.item-name{font-weight:var(--w-medium); color:var(--ink); white-space:nowrap}
 td.item-detail{color:var(--ink-soft); font-weight:var(--w-medium); font-size:15px; line-height:1.65}
 table.quote td.n[data-label="수량"]{width:1%}
 
@@ -265,7 +264,6 @@ body:not(.editing) .addjrow{display:none !important}
   table.quote thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
   table.quote tr.item{display:grid; grid-template-columns:1fr auto; padding:11px 12px; border-bottom:1px solid var(--line)}
   table.quote tr.item td{border:0; padding:0}
-  td.item-name{grid-column:1; white-space:normal}
   td.item-detail{grid-column:1 / -1; margin-top:3px}
   table.quote tr.item td.n{grid-column:2; align-self:start; text-align:right; font-size:14.5px; color:var(--ink-soft)}
   .doc-title{letter-spacing:.3em; text-indent:.3em}
@@ -381,43 +379,38 @@ body:not(.editing) .addjrow{display:none !important}
       <table class="quote">
         <thead>
           <tr>
-            <th scope="col">품목</th>
             <th scope="col">세부 구성</th>
             <th scope="col" class="n">수량</th>
           </tr>
         </thead>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">가. 단체 음식 — 참석 인원 기준</th></tr>
+          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">가. 단체 음식 — 참석 인원 기준</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">단체 식사 · 다과 후식</td>
             <td class="item-detail" data-edit data-t="text">밥 · 국 · 반찬 · 주요리, 다과 · 후식 — 구성은 상담 후 확정</td>
             <td class="n" data-label="수량" data-fill="head"><span data-edit data-t="text">100</span> 인</td>
           </tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">나. 천막 · 테이블 · 의자 — 설치 · 회수</th></tr>
+          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">나. 천막 · 테이블 · 의자 — 설치 · 회수</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">천막 · 테이블 · 의자 설치</td>
             <td class="item-detail" data-edit data-t="text">야외 천막 2동, 긴 테이블 · 의자 배치, 행사 후 회수 · 정리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">다. 음료 · 식기</th></tr>
+          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">다. 음료 · 식기</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">음료 · 생수</td>
             <td class="item-detail" data-edit data-t="text">생수 · 음료, 일회용품 제공</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
           </tr>
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">라. 출장 · 현장 세팅</th></tr>
+          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">라. 출장 · 현장 세팅</th></tr>
           <tr class="item">
-            <td class="item-name" data-edit data-t="text">현장 조리 · 배식</td>
             <td class="item-detail" data-edit data-t="text">현장 세팅 및 배식, 행사 후 정리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="2">2</span> 인</td>
           </tr>
@@ -501,7 +494,8 @@ body:not(.editing) .addjrow{display:none !important}
       L.push("■ " + g.querySelector(".grouprow th").textContent.trim());
       each(g.querySelectorAll("tr.item"), function (tr) {
         var qcell = tr.querySelector('td[data-label="수량"]');
-        L.push("  - " + tr.querySelector(".item-name").textContent.trim() +
+        var ncell = tr.querySelector(".item-name") || tr.querySelector(".item-detail");
+        L.push("  - " + (ncell ? ncell.textContent.trim() : "") +
                (qcell ? " (" + qcell.textContent.trim().replace(/\s+/g, " ") + ")" : ""));
       });
     });
@@ -556,7 +550,6 @@ body:not(.editing) .addjrow{display:none !important}
 
   /* ---------- 편집 컨트롤 삽입 / 제거 ---------- */
   var ROW_HTML =
-    '<td class="item-name" data-edit data-t="text">품목</td>' +
     '<td class="item-detail" data-edit data-t="text">세부 구성</td>' +
     '<td class="n" data-label="수량"><span data-edit data-t="text">수량</span></td>';
 
@@ -715,11 +708,11 @@ body:not(.editing) .addjrow{display:none !important}
       var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
       g2.insertBefore(tr, addRow);
       addControls(); setCE(true);
-      var nm = tr.querySelector(".item-name");
+      var nm = tr.querySelector(".item-detail");
       if (nm) { nm.focus(); try { document.getSelection().selectAllChildren(nm); } catch (x) {} }
     } else if (addGrp) {                                          // 구분 추가
       var tb = el("tbody"); tb.setAttribute("data-group", "");
-      tb.innerHTML = '<tr class="grouprow"><th colspan="3" scope="colgroup" data-edit data-t="text">' +
+      tb.innerHTML = '<tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">' +
                      nextGroupLabel() + '</th></tr><tr class="item">' + ROW_HTML + '</tr>';
       sheet.querySelector("table.quote").appendChild(tb);
       addControls(); setCE(true);
