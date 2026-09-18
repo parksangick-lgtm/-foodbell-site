@@ -120,6 +120,13 @@ images/               실제 상차림 사진
 - **현재 주소: `https://foodbell.kr/`** — 도메인은 가비아, 호스팅은 **버셀(Vercel)** 이다(2026-09-18 전환).
   `www.foodbell.kr`, 한글 도메인 `푸드벨.kr`, 옛 주소 `https://parksangick-lgtm.github.io/-foodbell-site/`
   는 모두 이 주소로 넘어온다.
+- **한글 도메인 `푸드벨.kr` 은 버셀에 따로 등록해야 한다**(2026-09-18 추가). 버셀·가비아 어느 칸에도
+  한글로는 안 들어간다 — 영문 주소 **`xn--hy1bx1mqsv.kr`** 로 넣는다(외워지지 않으니 여기서 복사한다).
+  그 전에는 가비아 웹 포워딩(`A 121.254.178.231`)에 붙어 있었고, 포워딩은 인증서를 안 줘서
+  `https://푸드벨.kr` 이 **아예 안 열렸다**. 지금은 가비아 `A 216.150.1.1`(버셀) + 버셀 Domains 에서
+  `308 → foodbell.kr` 로 넘긴다. 되돌리려면 A 를 `121.254.178.231` 로 되돌린다(`http` 만 열린다).
+  버셀 `Add Existing` 창의 **`Redirect apex domains to www` 체크는 반드시 끈다** — 켜면
+  `www.푸드벨.kr` 이 생겨서 가비아에 DNS 를 하나 더 넣어야 한다.
 - **버셀 설정 세 가지** — 하나라도 어긋나면 고친 것이 손님 화면에 안 나온다:
   - 요금제 **Pro(월 $20)**. 무료(Hobby)는 "서비스 판매를 광고하는 사이트"에 쓸 수 없다(버셀 약관).
   - `Settings → Environments → Production → Branch Tracking` = **`office`**.
