@@ -18,7 +18,7 @@
 
 ## 컴퓨터 세 대를 오간다
 
-사무실 PC(c:\galleypark), 노트북, 집 PC가 같은 저장소(`parksangick-lgtm/-foodbell-site`, 브랜치 **`office`**)를 공유한다.
+사무실 PC와 집 PC(둘 다 `c:\galleypark`), 노트북이 같은 저장소(`parksangick-lgtm/-foodbell-site`, 브랜치 **`office`**)를 공유한다.
 
 - **작업 시작 전에 반드시 `git pull`** — 다른 컴퓨터에서 한 작업이 밀려 있을 수 있다.
 - 바탕화면 아이콘이 이 일을 대신한다: **푸드벨 시작**(`시작.bat` — pull + 미리보기 서버) / **푸드벨 저장**(`저장.bat` — pull + commit + push).
@@ -30,7 +30,7 @@
 
 | 컴퓨터 | 컴퓨터 이름(`hostname`) | 저장소 위치 | 커밋에 남는 이름 |
 | --- | --- | --- | --- |
-| **사무실 PC** | `박상익사무실1` | `C:\gallerpark` | `박상익(사무실)` |
+| **사무실 PC** | `박상익사무실1` | `c:\galleypark` | `박상익(사무실)` |
 | 집 PC | (집 PC에서 `hostname` 찍어 채우기) | `c:\galleypark` (추정) | `박상익(집)` 으로 바꾸기 |
 | 노트북 | (노트북에서 채우기) | `C:\Users\PARKS\foodbell-site` (추정) | `박상익(노트북)` 으로 바꾸기 |
 
