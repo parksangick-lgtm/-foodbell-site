@@ -155,14 +155,6 @@ body.editing [data-k="supply"]:empty::before{content:"금액 입력"; color:var(
 body.editing [data-k="perhead"]{min-width:3.5em; display:inline-block}
 body.editing [data-k="perhead"]:empty::before{content:"금액 입력"; color:var(--ink-mute); font-size:.82em; font-weight:var(--w-normal)}
 
-/* ---------- 특이사항 ---------- */
-.remark-box{
-  border:1px solid var(--line-strong); background:var(--band); min-height:60px;
-  padding:12px 14px; font-size:15px; font-weight:var(--w-medium); color:var(--ink);
-  line-height:1.6; white-space:pre-wrap;
-}
-body.editing .remark-box:empty::before{content:"특이사항이 있으면 적어주세요 (없으면 비워두세요)"; color:var(--ink-mute); font-size:.9em; font-weight:var(--w-normal)}
-
 /* ---------- 절차 ---------- */
 .steps{display:grid; gap:12px}
 @media (min-width:640px){ .steps{grid-template-columns:repeat(3,1fr)} }
@@ -308,7 +300,6 @@ body:not(.editing) .addjrow{display:none !important}
   .sum-total{margin-top:4px; padding:4px 12px}
   .sum-total .val{font-size:22px}
   .sum-note{margin-top:2px; font-size:12px}
-  .remark-box{min-height:26px; padding:5px 10px; font-size:14px; line-height:1.3}
   .closing{margin-top:8px; padding-top:6px}
   .closing .sign{margin-top:5px; font-size:16px}
   .closing .tel{margin-top:3px; font-size:18px}
@@ -401,15 +392,7 @@ body:not(.editing) .addjrow{display:none !important}
         </tbody>
 
         <tbody data-group>
-          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">다. 음료 · 식기</th></tr>
-          <tr class="item">
-            <td class="item-detail" data-edit data-t="text">생수 · 음료, 일회용품 제공</td>
-            <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="1">1</span> 식</td>
-          </tr>
-        </tbody>
-
-        <tbody data-group>
-          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">라. 출장 · 현장 세팅</th></tr>
+          <tr class="grouprow"><th colspan="2" scope="colgroup" data-edit data-t="text">다. 출장 · 현장 세팅</th></tr>
           <tr class="item">
             <td class="item-detail" data-edit data-t="text">현장 세팅 및 배식, 행사 후 정리</td>
             <td class="n" data-label="수량"><span data-edit data-t="num" data-k="qty" data-raw="2">2</span> 인</td>
@@ -428,12 +411,6 @@ body:not(.editing) .addjrow{display:none !important}
     </div>
   </section>
 
-  <!-- ================= 특이사항 ================= -->
-  <section>
-    <div class="sec-head"><h2 data-edit data-t="text">특이사항</h2></div>
-    <p class="remark-box" data-edit data-t="text"></p>
-  </section>
-
   <!-- ================= 맺음 ================= -->
   <div class="closing">
     <div class="sign" data-edit data-t="text">푸드벨 드림</div>
@@ -449,7 +426,7 @@ body:not(.editing) .addjrow{display:none !important}
 <script>
 (function () {
   "use strict";
-  var KEY = "foodbell-event-quote-v1";
+  var KEY = "foodbell-event-quote-v2";
   function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
   function money(n) { return n ? fmt(n) : ""; }
   function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
@@ -507,9 +484,6 @@ body:not(.editing) .addjrow{display:none !important}
                  "부가세(10% 별도)  " + fmt(vat) + "원",
                  "합계  " + fmt(supply + vat) + "원");
     }
-    var remarkEl = sheet.querySelector(".remark-box");
-    var remark = remarkEl ? remarkEl.textContent.trim() : "";
-    if (remark) L.push("", "[특이사항]", remark);
     L.push("", "문의  푸드벨  010-5353-3477");
     return L.join("\n");
   }
