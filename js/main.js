@@ -59,23 +59,23 @@
     toggleToTop();
   }
 
-  /* ---------- 카테고리별 사진 앨범 접기/펼치기 (기본: 펼침) ---------- */
+  /* ---------- 카테고리별 사진 앨범 — 처음 8장만 보이고 나머지는 "더 보기" ---------- */
   document.querySelectorAll('.album-toggle').forEach(function (btn) {
     var album = document.getElementById(btn.getAttribute('data-album'));
     if (!album) return;
     var label = btn.querySelector('.album-toggle__label');
-    var baseLabel = label ? label.textContent : '';
+    var total = album.querySelectorAll('.album__item').length;
 
     var sync = function () {
-      var open = !album.hidden;
-      btn.setAttribute('aria-expanded', String(open));
-      btn.classList.toggle('is-open', open);
-      if (label) label.textContent = open ? baseLabel + ' 접기' : baseLabel + ' 펼치기';
+      var collapsed = album.classList.contains('is-collapsed');
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.classList.toggle('is-open', !collapsed);
+      if (label) label.textContent = collapsed ? '사진 더 보기 (' + total + '장)' : '사진 접기';
     };
     sync();
 
     btn.addEventListener('click', function () {
-      album.hidden = !album.hidden;
+      album.classList.toggle('is-collapsed');
       sync();
     });
   });
