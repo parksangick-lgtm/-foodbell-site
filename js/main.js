@@ -160,6 +160,41 @@
     else if (e.key === 'ArrowRight') step(1);
   });
 
+  /* ---------- 컴퓨터에서 "전화로 문의하기" → 번호 복사 ---------- */
+  // 컴퓨터(마우스)는 전화를 걸 수 없으니 번호를 복사해 준다. 휴대폰은 그대로 전화가 걸린다.
+  var callBtn = document.querySelector('.contact__cta-btn');
+  if (callBtn && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    var toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.setAttribute('role', 'status');
+    document.body.appendChild(toast);
+    var toastTimer;
+
+    var showToast = function (msg) {
+      toast.textContent = msg;
+      toast.classList.add('is-show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('is-show'); }, 2500);
+    };
+
+    callBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var number = callBtn.getAttribute('href').replace('tel:', '');
+      var done = function () { showToast('전화번호가 복사되었습니다 (' + number + ')'); };
+      var fallback = function () {
+        var box = document.createElement('textarea');
+        box.value = number;
+        document.body.appendChild(box);
+        box.select();
+        document.execCommand('copy');
+        document.body.removeChild(box);
+        done();
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(number).then(done, fallback);
+      else fallback();
+    });
+  }
+
   /* ---------- 헤더 스크롤 그림자(선택적 시각 효과) ---------- */
   var header = document.getElementById('header');
   if (header) {
