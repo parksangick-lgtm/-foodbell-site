@@ -52,8 +52,21 @@
 | 이 저장소가 들고 다니는 스킬 | 하는 일 |
 | --- | --- |
 | `foodbell-site-dev` | 이 사이트를 고치고·확인하고·저장하는 작업 흐름 |
+| `foodbell-brand` | 색·서체·톤앤매너, 미리보기 카드·QR 규격 |
 | `task-observer` | 작업 중 스킬 개선점을 관찰해 기록 |
 | `coding-study` | 코딩 공부 기록 |
+
+**스킬을 고쳤으면 이 폴더의 사본도 같이 올린다.** 스킬 원본은
+`~/.claude/skills/` 에 있고 깃이 추적하지 않는다. 그래서 설치본만 고치고 저장을
+안 하면 이 폴더 사본이 조용히 낡고, **다른 PC 에서 `스킬설치.bat` 을 누르는 순간
+고친 것이 옛 버전으로 되돌아간다.** 실제로 2026-09-23 에 하루 만에 그렇게 됐다
+(옵시디언 사본에서도 같은 일이 있었다 — 아래 문단).
+
+확인은 한 줄이면 된다. 아무것도 안 나와야 정상이다:
+
+```bash
+for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/skills/$s"; done
+```
 
 **옵시디언 스킬(`obsidian-save`, `vibe-coding-save`, `vibe-coding-review`)은 여기
 없다. 일부러 뺐다.** 그 스킬들의 원본은 `C:\dev\park-obsidian-save` 이고 그쪽에도
