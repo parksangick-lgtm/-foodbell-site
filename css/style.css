@@ -33,7 +33,9 @@
   --text-2xl: 1.75rem;       /* 28px  작은 제목 */
   --text-3xl: 2.125rem;      /* 34px  대표 전화번호 */
   --text-section: clamp(1.75rem, 3.6vw, 2.4rem);
-  --text-hero: clamp(2rem, 3.6vw, 3rem);
+  /* 휴대폰 '글씨 크게' 설정에서 제목이 화면 밖으로 밀리지 않도록
+     화면 폭의 10% 를 넘지 않게 상한을 둔다 */
+  --text-hero: min(clamp(2rem, 3.6vw, 3rem), 10vw);
 
   /* 글자 굵기 — 세 단계만 쓴다.
      본문·설명 400 / 라벨·버튼·네비 600 / 제목·강조 숫자 700 */
@@ -243,6 +245,8 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hero__title {
   font-size: var(--text-hero);
+  /* 줄이 넘칠 때 한 글자만 남지 않도록 고르게 나눈다 */
+  text-wrap: balance;
   line-height: 1.25;
   letter-spacing: -0.02em;
   font-weight: var(--weight-bold);
