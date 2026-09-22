@@ -3,6 +3,7 @@
 # 한쪽만 고치면 배포처마다 공개 범위가 달라진다.
 
 .github
+.claude
 design
 *.bat
 *.ps1

@@ -40,6 +40,7 @@ jobs:
           mkdir _site
           rsync -a --exclude='.git' \
                    --exclude='.github' \
+                   --exclude='.claude' \
                    --exclude='_site' \
                    --exclude='design' \
                    --exclude='*.bat' \
