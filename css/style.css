@@ -652,8 +652,8 @@ button { font-family: inherit; cursor: pointer; }
   margin-bottom: var(--space-4);
 }
 
-/* 문자 단추 — 휴대폰에서만 보인다 (컴퓨터에서는 문자 앱이 없어 눌러도 소용없다) */
-.contact__cta-sms { display: none; }
+/* 문자·카카오톡 단추 — 휴대폰에서만 보인다 (컴퓨터에서는 문자·카톡 앱이 없어 눌러도 소용없다) */
+.contact__cta-sms, .contact__cta-kakao { display: none; }
 .contact__cta-note {
   font-size: var(--text-caption);
   color: var(--color-ink-muted);
@@ -759,7 +759,7 @@ button { font-family: inherit; cursor: pointer; }
   /* 문의: 좁은 화면에서는 안내글 위 · 전화 카드 아래로 쌓음 */
   .contact__inner { grid-template-columns: 1fr; gap: var(--space-8); }
   .contact__cta { padding: var(--space-8) var(--space-6); }
-  .contact__cta-sms { display: inline-flex; margin-top: var(--space-3); }
+  .contact__cta-sms, .contact__cta-kakao { display: inline-flex; margin-top: var(--space-3); }
 
   /* 서비스 카드: 좁은 화면에서는 한 줄에 하나, 사진 왼쪽 · 설명 오른쪽 (설명 글이 길쭉하게 눌리지 않도록) */
   .menu__grid { grid-template-columns: 1fr; gap: var(--space-4); }
