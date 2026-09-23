@@ -57,9 +57,16 @@
 | `coding-study` | 코딩 공부 기록 |
 | `design-taste-frontend` | 뻔한 AI 템플릿 디자인을 피하게 하는 화면 디자인 규칙 (외부 스킬) |
 | `redesign-existing-projects` | 있는 사이트를 점검하고 고급스럽게 다듬기 (외부 스킬) |
+| `grill-me` | `/grill-me` — 계획을 꼬치꼬치 캐물어 빈틈을 찾는다 (맷 포콕) |
+| `to-spec` | `/to-spec` — 대화를 작업 명세서로 정리해 이슈에 올린다. 먼저 `/setup-matt-pocock-skills` 한 번 (맷 포콕) |
+| `improve-codebase-architecture` | `/improve-codebase-architecture` — 코드 구조 점검 보고서 + 개선점 캐묻기 (맷 포콕) |
+| `setup-matt-pocock-skills` | 위 스킬들이 쓸 이슈 게시판·문서 위치를 정하는 첫 설정 (맷 포콕) |
+| `grilling` · `codebase-design` · `domain-modeling` | 위 스킬들이 안에서 쓰는 도우미 (맷 포콕) |
 
-**외부 스킬 두 개**는 남이 만든 것이다 — 원본 `github.com/leonxlnx/taste-skill`(MIT),
-2026-09-23 `c184364` 시점 사본. 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
+**외부 스킬**은 남이 만든 것이다 — 디자인 두 개는 원본 `github.com/leonxlnx/taste-skill`(MIT),
+2026-09-23 `c184364` 시점 사본. "맷 포콕" 일곱 개는 원본 `github.com/mattpocock/skills`(MIT),
+2026-09-23 `c55ee46` 시점 사본. 같은 저장소의 `tdd`·`diagnosing-bugs` 는 이미 있는
+superpowers 스킬(`test-driven-development`·`systematic-debugging`)과 겹쳐서 일부러 뺐다. 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
 `SKILL.md` 를 다시 복사해 온다. React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
 **이 사이트에서는 위 "화면 만들 때"·"사진" 규칙이 먼저다.**
 
