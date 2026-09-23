@@ -55,6 +55,13 @@
 | `foodbell-brand` | 색·서체·톤앤매너, 미리보기 카드·QR 규격 |
 | `task-observer` | 작업 중 스킬 개선점을 관찰해 기록 |
 | `coding-study` | 코딩 공부 기록 |
+| `design-taste-frontend` | 뻔한 AI 템플릿 디자인을 피하게 하는 화면 디자인 규칙 (외부 스킬) |
+| `redesign-existing-projects` | 있는 사이트를 점검하고 고급스럽게 다듬기 (외부 스킬) |
+
+**외부 스킬 두 개**는 남이 만든 것이다 — 원본 `github.com/leonxlnx/taste-skill`(MIT),
+2026-09-23 `c184364` 시점 사본. 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
+`SKILL.md` 를 다시 복사해 온다. React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
+**이 사이트에서는 위 "화면 만들 때"·"사진" 규칙이 먼저다.**
 
 **스킬을 고쳤으면 이 폴더의 사본도 같이 올린다.** 스킬 원본은
 `~/.claude/skills/` 에 있고 깃이 추적하지 않는다. 그래서 설치본만 고치고 저장을
