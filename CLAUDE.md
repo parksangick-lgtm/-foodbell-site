@@ -62,11 +62,16 @@
 | `improve-codebase-architecture` | `/improve-codebase-architecture` — 코드 구조 점검 보고서 + 개선점 캐묻기 (맷 포콕) |
 | `setup-matt-pocock-skills` | 위 스킬들이 쓸 이슈 게시판·문서 위치를 정하는 첫 설정 (맷 포콕) |
 | `grilling` · `codebase-design` · `domain-modeling` | 위 스킬들이 안에서 쓰는 도우미 (맷 포콕) |
+| `teach` | `/teach 주제` — 여러 날에 걸친 맞춤 수업 (맷 포콕). **이 폴더에서 쓰지 말 것** — 수업 파일(`lessons/*.html` 등)을 작업 폴더에 만들어 foodbell.kr 에 올라간다. `C:\dev\vibe-study` 를 VS Code 로 열고 쓴다 |
+| `web-design-guidelines` | "내 사이트 점검해줘" — 웹 화면 규칙과 대조 (Vercel, MIT). 쓸 때마다 규칙을 인터넷에서 새로 받아온다 |
+| `webapp-testing` | 브라우저 자동 시험·휴대폰 폭 캡처 (Anthropic, Apache-2.0). Playwright 필요 — 컴퓨터마다 `python -m pip install playwright` + `python -m playwright install chromium` 한 번 |
 
 **외부 스킬**은 남이 만든 것이다 — 디자인 두 개는 원본 `github.com/leonxlnx/taste-skill`(MIT),
 2026-09-23 `c184364` 시점 사본. "맷 포콕" 일곱 개는 원본 `github.com/mattpocock/skills`(MIT),
 2026-09-23 `c55ee46` 시점 사본. 같은 저장소의 `tdd`·`diagnosing-bugs` 는 이미 있는
-superpowers 스킬(`test-driven-development`·`systematic-debugging`)과 겹쳐서 일부러 뺐다. 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
+superpowers 스킬(`test-driven-development`·`systematic-debugging`)과 겹쳐서 일부러 뺐다.
+2026-09-24 추가: `teach`(mattpocock/skills `c55ee46`), `web-design-guidelines`(vercel-labs/agent-skills `063bee9`),
+`webapp-testing`(anthropics/skills `34040c9`). 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
 `SKILL.md` 를 다시 복사해 온다. React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
 **이 사이트에서는 위 "화면 만들 때"·"사진" 규칙이 먼저다.**
 
@@ -101,7 +106,8 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 잘렸다고 본 화면이 실제로는 485px 이었고, **없는 버그를 세 번 쫓았다**(사라진 버튼, 잘린 글자 2회).
 매번 사이트는 멀쩡했고 측정 방법이 틀렸다.
 
-- 폭은 **390px `<iframe>`** 이나 CDP `Emulation.setDeviceMetricsOverride` 로 만든다.
+- 폭은 **Playwright**(`webapp-testing` 스킬, `viewport={"width":390,...}, is_mobile=True`)로 만드는 것이 가장 쉽다.
+  없으면 **390px `<iframe>`** 이나 CDP `Emulation.setDeviceMetricsOverride`.
 - 캡처하기 전에 `document.documentElement.clientWidth` 를 **출력해서 390 인지 눈으로 확인**한다.
 - 외부로 나가는 폼 전송 시험은 **실제 크롬 창**에서 한다. 헤드리스(CORS 차단)와 `curl`(403)은
   막혀서 사이트가 고장난 것처럼 보인다 — 진짜 크롬에서는 200 OK 였다.
