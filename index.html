@@ -73,9 +73,11 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!-- 본문 글꼴 — 통짜(약 2.3MB) 대신 쓰는 글자만 조각으로 받는 dynamic-subset 을 씁니다. -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
-<link rel="stylesheet" href="css/style.css?v=34">
+<link rel="stylesheet" href="css/style.css?v=35">
 </head>
 <body>
+
+<a href="#top" class="skip-link">본문 바로가기</a>
 
 <!-- ============ 헤더 / 네비게이션 ============ -->
 <header class="header" id="header">
@@ -105,13 +107,13 @@
       <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg> 010-5353-3477
     </a>
 
-    <button class="nav__toggle" id="navToggle" aria-label="메뉴 열기" aria-expanded="false">
+    <button class="nav__toggle" id="navToggle" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="nav">
       <span></span><span></span><span></span>
     </button>
   </div>
 </header>
 
-<main id="top">
+<main id="top" tabindex="-1">
 
   <!-- ============ 히어로 — 왼쪽 글자판 · 오른쪽 사진 ============ -->
   <section class="hero">
@@ -185,13 +187,13 @@
       <p class="section-desc">규모와 격식, 인원에 따라 상차림 구성이 달라집니다. 자세한 사항은 문의 바랍니다.</p>
 
       <div class="menu__tabs" role="tablist" aria-label="서비스 카테고리">
-        <button class="menu__tab is-active" role="tab" aria-selected="true" data-target="sije">시제상차림</button>
-        <button class="menu__tab" role="tab" aria-selected="false" data-target="jesa">기제사·제사상차림</button>
-        <button class="menu__tab" role="tab" aria-selected="false" data-target="event">행사음식</button>
+        <button class="menu__tab is-active" type="button" role="tab" id="tab-sije" aria-selected="true" aria-controls="sije" data-target="sije">시제상차림</button>
+        <button class="menu__tab" type="button" role="tab" id="tab-jesa" aria-selected="false" aria-controls="jesa" tabindex="-1" data-target="jesa">기제사·제사상차림</button>
+        <button class="menu__tab" type="button" role="tab" id="tab-event" aria-selected="false" aria-controls="event" tabindex="-1" data-target="event">행사음식</button>
       </div>
 
       <!-- 시제상차림 -->
-      <div class="menu__panel is-active" id="sije" role="tabpanel">
+      <div class="menu__panel is-active" id="sije" role="tabpanel" aria-labelledby="tab-sije">
         <div class="menu__grid">
           <article class="menu-card">
             <button type="button" class="menu-card__thumb" data-full="images/sije-goim.jpg?v=1"><img src="images/sije-goim.jpg?v=1" alt="봉분 앞 제상에 대추·밤·감·배·사과를 줄지어 고여 차린 종중 시제 상차림" loading="lazy"></button>
@@ -258,7 +260,7 @@
       </div>
 
       <!-- 기제사·제사상차림 -->
-      <div class="menu__panel" id="jesa" role="tabpanel" hidden>
+      <div class="menu__panel" id="jesa" role="tabpanel" aria-labelledby="tab-jesa" hidden>
         <div class="menu__grid">
           <article class="menu-card">
             <button type="button" class="menu-card__thumb" data-full="images/menu-jesa-1.jpg"><img src="images/menu-jesa-1.jpg" alt="자택 실내에 흰 상보를 깔고 차린 가정 기제사상" loading="lazy"></button>
@@ -321,7 +323,7 @@
       </div>
 
       <!-- 행사음식 -->
-      <div class="menu__panel" id="event" role="tabpanel" hidden>
+      <div class="menu__panel" id="event" role="tabpanel" aria-labelledby="tab-event" hidden>
         <div class="menu__grid">
           <article class="menu-card">
             <button type="button" class="menu-card__thumb" data-full="images/menu-event-1.jpg"><img src="images/menu-event-1.jpg" alt="제실 마당에 천막을 치고 긴 테이블을 차린 문중 행사 현장" loading="lazy"></button>
@@ -496,17 +498,17 @@
 <a href="#top" class="to-top" id="toTop" aria-label="맨 위로"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M6 12l6-6 6 6"/></svg></a>
 
 <!-- ============ 갤러리 라이트박스 ============ -->
-<div class="lightbox" id="lightbox" hidden>
-  <button class="lightbox__close" id="lightboxClose" aria-label="닫기"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="사진 크게 보기" hidden>
+  <button class="lightbox__close" id="lightboxClose" type="button" aria-label="닫기"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
   <button class="lightbox__nav lightbox__nav--prev" id="lightboxPrev" type="button" aria-label="이전 사진"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5l-7 7 7 7"/></svg></button>
   <button class="lightbox__nav lightbox__nav--next" id="lightboxNext" type="button" aria-label="다음 사진"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5l7 7-7 7"/></svg></button>
   <figure class="lightbox__stage">
-    <img src="" alt="" id="lightboxImg" class="lightbox__img">
+    <img alt="" id="lightboxImg" class="lightbox__img">
     <figcaption class="lightbox__count" id="lightboxCount"></figcaption>
   </figure>
 </div>
 
-<script src="js/main.js?v=23"></script>
+<script src="js/main.js?v=24"></script>
 <script>
   /* 서비스 워커 등록 — 홈 화면 앱 실행 + 오프라인 기본 지원 */
   if ('serviceWorker' in navigator) {

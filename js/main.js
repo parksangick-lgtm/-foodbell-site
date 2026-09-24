@@ -30,22 +30,39 @@
   var tabs = document.querySelectorAll('.menu__tab');
   var panels = document.querySelectorAll('.menu__panel');
 
-  tabs.forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      var targetId = tab.getAttribute('data-target');
+  function selectTab(tab) {
+    var targetId = tab.getAttribute('data-target');
 
-      tabs.forEach(function (t) {
-        t.classList.remove('is-active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      tab.classList.add('is-active');
-      tab.setAttribute('aria-selected', 'true');
+    tabs.forEach(function (t) {
+      t.classList.remove('is-active');
+      t.setAttribute('aria-selected', 'false');
+      t.setAttribute('tabindex', '-1');
+    });
+    tab.classList.add('is-active');
+    tab.setAttribute('aria-selected', 'true');
+    tab.removeAttribute('tabindex');
 
-      panels.forEach(function (panel) {
-        var isTarget = panel.id === targetId;
-        panel.classList.toggle('is-active', isTarget);
-        panel.hidden = !isTarget;
-      });
+    panels.forEach(function (panel) {
+      var isTarget = panel.id === targetId;
+      panel.classList.toggle('is-active', isTarget);
+      panel.hidden = !isTarget;
+    });
+  }
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener('click', function () { selectTab(tab); });
+
+    // 키보드: 좌우 화살표로 탭을 옮긴다 (Tab 키는 탭 묶음을 한 번에 건너뛴다)
+    tab.addEventListener('keydown', function (e) {
+      var next = null;
+      if (e.key === 'ArrowRight') next = tabs[(i + 1) % tabs.length];
+      else if (e.key === 'ArrowLeft') next = tabs[(i - 1 + tabs.length) % tabs.length];
+      else if (e.key === 'Home') next = tabs[0];
+      else if (e.key === 'End') next = tabs[tabs.length - 1];
+      if (!next) return;
+      e.preventDefault();
+      selectTab(next);
+      next.focus();
     });
   });
 
@@ -90,6 +107,7 @@
 
   var group = [];
   var groupIndex = 0;
+  var returnFocus = null; // 사진 창을 닫으면 눌렀던 사진으로 초점을 되돌린다
 
   function renderLightbox() {
     var item = group[groupIndex];
@@ -106,17 +124,21 @@
     if (!lightbox || !lightboxImg || !items.length) return;
     group = items;
     groupIndex = start || 0;
+    returnFocus = document.activeElement;
     renderLightbox();
     lightbox.hidden = false;
     document.body.style.overflow = 'hidden';
+    if (lightboxClose) lightboxClose.focus();
   }
 
   function closeLightbox() {
     if (!lightbox) return;
     lightbox.hidden = true;
-    lightboxImg.src = '';
+    lightboxImg.removeAttribute('src');
     group = [];
     document.body.style.overflow = '';
+    if (returnFocus && returnFocus.focus) returnFocus.focus();
+    returnFocus = null;
   }
 
   function step(delta) {
@@ -158,6 +180,15 @@
     if (e.key === 'Escape') closeLightbox();
     else if (e.key === 'ArrowLeft') step(-1);
     else if (e.key === 'ArrowRight') step(1);
+    else if (e.key === 'Tab') {
+      // 사진 창이 열려 있는 동안 Tab 초점이 뒤쪽 페이지로 빠져나가지 않게 창 안의 버튼만 돈다
+      var btns = [lightboxClose, lightboxPrev, lightboxNext].filter(function (b) { return b && !b.hidden; });
+      if (!btns.length) return;
+      var at = btns.indexOf(document.activeElement);
+      var to = e.shiftKey ? (at <= 0 ? btns.length - 1 : at - 1) : (at + 1) % btns.length;
+      e.preventDefault();
+      btns[to].focus();
+    }
   });
 
   /* ---------- 컴퓨터에서 "전화로 문의하기" → 번호 복사 ---------- */
