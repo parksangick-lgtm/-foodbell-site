@@ -22,7 +22,7 @@ if errorlevel 1 (
   echo.
   pause
   exit /b 1
-)
+)q666
 
 echo.
 echo [3/3] 미리보기 서버를 켭니다.

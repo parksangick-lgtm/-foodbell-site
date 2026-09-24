@@ -94,6 +94,11 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 설치하면 **멀쩡한 최신 스킬이 조용히 옛 버전으로 되돌아간다.** 2026-09-22 에 사본을
 제거했다. 편의상 다시 복사해 넣지 말 것 — 스킬 하나의 주인은 저장소 하나다.
 
+`C:\dev\park-obsidian-save` 가 없는 컴퓨터에서는 깃허브 저장소 **`parksangick-lgtm/PARK..`**
+(이름이 정말 `PARK..` 다)를 그 자리로 내려받고 `스킬설치.bat` 을 실행한다:
+`git clone https://github.com/parksangick-lgtm/PARK...git C:\dev\park-obsidian-save`
+(주소 끝의 점 세 개는 저장소 이름 `PARK..` 와 `.git` 이 붙은 것이다). 노트북은 2026-09-25 에 설치했다.
+
 ## 미리보기
 
 - VSCode Live Server(포트 **5500**)가 이미 떠 있는 경우가 많다. `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5500/` 로 먼저 확인한다.
