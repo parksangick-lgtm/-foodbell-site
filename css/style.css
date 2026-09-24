@@ -258,6 +258,15 @@ main:focus:not(:focus-visible) { outline: none; }
   letter-spacing: 0.08em;
   margin-bottom: var(--space-4);
 }
+/* 누르면 아래 서비스 탭의 사진 모음으로 간다. 위아래 여백으로 누르는 자리를 44px 로 넓히되 줄 높이는 그대로 */
+.hero__eyebrow a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding-block: var(--space-4);
+}
+/* 첫 화면 윗줄에서 내려왔을 때 위에 붙은 머리글에 가리지 않게 */
+.album-toggle { scroll-margin-top: var(--space-24); }
 .hero__eyebrow::before {
   content: "";
   display: block;

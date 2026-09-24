@@ -73,7 +73,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!-- 본문 글꼴 — 통짜(약 2.3MB) 대신 쓰는 글자만 조각으로 받는 dynamic-subset 을 씁니다. -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
-<link rel="stylesheet" href="css/style.css?v=35">
+<link rel="stylesheet" href="css/style.css?v=36">
 </head>
 <body>
 
@@ -118,7 +118,7 @@
   <!-- ============ 히어로 — 왼쪽 글자판 · 오른쪽 사진 ============ -->
   <section class="hero">
     <div class="hero__text">
-      <p class="hero__eyebrow">시제상차림 · 제사상차림 · 출장음식</p>
+      <p class="hero__eyebrow"><a href="#album-sije" data-tab="tab-sije">시제상차림</a> · <a href="#album-jesa" data-tab="tab-jesa">제사상차림</a> · <a href="#album-event" data-tab="tab-event">출장음식</a></p>
       <h1 class="hero__title">정성을 다한 상차림,<br><span class="accent">어디든</span> 찾아가겠습니다</h1>
       <p class="hero__desc">
         종중 시제와 묘사, 가정의 제사상부터<br class="lg-only">
@@ -508,7 +508,7 @@
   </figure>
 </div>
 
-<script src="js/main.js?v=24"></script>
+<script src="js/main.js?v=25"></script>
 <script>
   /* 서비스 워커 등록 — 홈 화면 앱 실행 + 오프라인 기본 지원 */
   if ('serviceWorker' in navigator) {

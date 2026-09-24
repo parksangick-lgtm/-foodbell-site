@@ -66,6 +66,20 @@
     });
   });
 
+  /* ---------- 첫 화면 윗줄 — 누르면 그 탭을 열고 사진 모음을 모두 펼쳐 보여준다 ---------- */
+  document.querySelectorAll('.hero__eyebrow a[data-tab]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      var tab = document.getElementById(link.getAttribute('data-tab'));
+      var album = document.querySelector(link.getAttribute('href'));
+      if (!tab || !album) return;
+      e.preventDefault();
+      selectTab(tab);
+      var toggle = document.querySelector('[data-album="' + album.id + '"]');
+      if (album.classList.contains('is-collapsed') && toggle) toggle.click();
+      (toggle || album).scrollIntoView({ block: 'start' });
+    });
+  });
+
   /* ---------- 맨 위로 버튼 ---------- */
   var toTop = document.getElementById('toTop');
   if (toTop) {
