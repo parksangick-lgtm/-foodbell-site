@@ -8,7 +8,9 @@ cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}" || exit 0
 say() { printf '{"systemMessage": "%s"}\n' "$1"; exit 0; }
 
 # 저장.bat 이 돌고 있으면 겹치지 않게 이번엔 건너뛴다.
-[ -d "${TEMP:-/tmp}/foodbell-save.lock" ] && exit 0
+# 단, 10분 넘은 잠금은 창이 비정상 종료돼 남은 것이라 무시한다 (안 그러면 자동 저장이 조용히 영영 멈춘다).
+lock="${TEMP:-/tmp}/foodbell-save.lock"
+[ -d "$lock" ] && [ -z "$(find "$lock" -maxdepth 0 -mmin +10 2>/dev/null)" ] && exit 0
 
 # 병합·되돌리기가 진행 중이면 손대지 않는다.
 g=$(git rev-parse --git-dir 2>/dev/null) || exit 0
