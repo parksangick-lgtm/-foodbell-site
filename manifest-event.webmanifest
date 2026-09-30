@@ -1,0 +1,31 @@
+{
+  "name": "푸드벨 행사 견적서",
+  "short_name": "행사 견적서",
+  "id": "./event-quote.html",
+  "start_url": "./event-quote.html",
+  "scope": "./event-quote.html",
+  "display": "standalone",
+  "lang": "ko",
+  "background_color": "#F7F2E9",
+  "theme_color": "#6E1E2B",
+  "icons": [
+    {
+      "src": "icons/app-event-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/app-event-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/app-event-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

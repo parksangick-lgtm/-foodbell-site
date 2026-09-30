@@ -10,7 +10,8 @@
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
-<link rel="apple-touch-icon" href="icons/quote-sije-180.png">
+<link rel="manifest" href="manifest-sije.webmanifest">
+<link rel="apple-touch-icon" href="icons/app-sije-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="시제 견적서">
@@ -750,7 +751,7 @@ body:not(.editing) .tier-switch{display:none !important}
       var tall = sheet.scrollHeight > 3200;   // 아주 긴 견적서는 캔버스 한계를 피해 축소
       return html2canvas(sheet, {
         backgroundColor: "#FFFDF8", scale: tall ? 1.3 : 1.7,
-        useCORS: true, logging: false, windowWidth: sheet.scrollWidth
+        useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth
       });
     }).then(function (canvas) {
       return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });

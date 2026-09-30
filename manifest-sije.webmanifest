@@ -1,0 +1,31 @@
+{
+  "name": "푸드벨 시제 견적서",
+  "short_name": "시제 견적서",
+  "id": "./sije-quote.html",
+  "start_url": "./sije-quote.html",
+  "scope": "./sije-quote.html",
+  "display": "standalone",
+  "lang": "ko",
+  "background_color": "#F7F2E9",
+  "theme_color": "#6E1E2B",
+  "icons": [
+    {
+      "src": "icons/app-sije-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/app-sije-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/app-sije-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

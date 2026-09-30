@@ -10,7 +10,8 @@
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
-<link rel="apple-touch-icon" href="icons/quote-sije-180.png">
+<link rel="manifest" href="manifest-stmt.webmanifest">
+<link rel="apple-touch-icon" href="icons/app-stmt-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="거래명세서">
@@ -581,7 +582,7 @@ body:not(.editing) tr.addrow{display:none !important}
     return ready.then(function () {
       return html2canvas(sheet, {
         backgroundColor: "#FFFDF8", scale: 1.7,
-        useCORS: true, logging: false, windowWidth: sheet.scrollWidth
+        useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth
       });
     }).then(function (canvas) {
       return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
