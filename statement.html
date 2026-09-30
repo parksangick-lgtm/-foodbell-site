@@ -295,12 +295,16 @@ body:not(.editing) tr.addrow{display:none !important}
   <!-- ================= 거래 당사자 ================= -->
   <section>
     <div class="parties">
-      <div class="party">
+      <div class="party buyer">
         <h3>공급받는 자</h3>
         <dl>
-          <div class="prow"><dt>상호·성명</dt><dd><span data-edit data-t="text" data-k="cust">○○ 문중 종친회</span><span class="honor">귀하</span></dd></div>
-          <div class="prow"><dt>주소</dt><dd><span data-edit data-t="text"></span></dd></div>
-          <div class="prow"><dt>전화</dt><dd><span data-edit data-t="text"></span></dd></div>
+          <div class="prow"><dt>등록번호</dt><dd><span data-edit data-t="text" data-k="bReg"></span></dd></div>
+          <div class="prow"><dt>상호</dt><dd><span data-edit data-t="text" data-k="cust">○○ 문중 종친회</span><span class="honor">귀하</span></dd></div>
+          <div class="prow"><dt>대표</dt><dd><span data-edit data-t="text" data-k="bRep"></span><span class="in">(인)</span></dd></div>
+          <div class="prow"><dt>업태</dt><dd><span data-edit data-t="text" data-k="bType"></span></dd></div>
+          <div class="prow"><dt>종목</dt><dd><span data-edit data-t="text" data-k="bItem"></span></dd></div>
+          <div class="prow"><dt>주소</dt><dd><span data-edit data-t="text" data-k="bAddr"></span></dd></div>
+          <div class="prow"><dt>전화</dt><dd><span data-edit data-t="text" data-k="bTel"></span></dd></div>
         </dl>
       </div>
       <div class="party">
@@ -661,7 +665,25 @@ body:not(.editing) tr.addrow{display:none !important}
     setEditing(!body.classList.contains("editing"));
   });
 
+  /* 공급받는 자 칸을 공급자와 같은 7줄로 바꿨다(2026-10-01).
+     예전 저장본(상호·성명 / 주소 / 전화 3줄)은 새 칸으로 바꾸고 적어 둔 내용을 옮겨 담는다. */
+  var buyerHTML = sheet.querySelector(".party.buyer").outerHTML;
   if (!restore()) fillFreshDefaults();
+  if (!sheet.querySelector(".party.buyer")) {
+    var oldBuyer = sheet.querySelector(".party"), was = {};
+    if (oldBuyer) {
+      each(oldBuyer.querySelectorAll(".prow"), function (r) {
+        var sp = r.querySelector("[data-edit]");
+        if (sp) was[r.querySelector("dt").textContent.trim()] = sp.textContent;
+      });
+      oldBuyer.insertAdjacentHTML("beforebegin", buyerHTML);
+      oldBuyer.remove();
+      setText("cust", was["상호·성명"] || "");
+      setText("bAddr", was["주소"] || "");
+      setText("bTel", was["전화"] || "");
+      save();
+    }
+  }
   recalc();
 })();
 </script>
