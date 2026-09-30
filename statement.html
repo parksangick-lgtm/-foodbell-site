@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸드벨 거래명세서</title>
+<meta name="description" content="푸드벨(박상익출장음식) 거래명세서. 품목·수량·단가를 넣으면 공급가액·세액·합계가 자동 계산되고, 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<meta name="theme-color" content="#6E1E2B">
+<!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
+<meta name="color-scheme" content="only light">
+<link rel="apple-touch-icon" href="icons/quote-sije-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="거래명세서">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<style>
+@media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
+:root{
+  color-scheme: only light;
+
+  /* 견적서(sije-quote.html)와 같은 값 */
+  --cream:#F7F2E9; --paper:#FFFDF8; --band:#F1EADB; --band2:#EDE4D3;
+  --ink:#120C06; --ink-soft:#1A1409; --ink-mute:#332A1A;
+  --seal:#6E1E2B; --seal-light:#8A2836; --seal-dark:#4E141E;
+  --gold:#B08D57; --gold-deep:#5C4519;
+  --line:#E2D6BF; --line-strong:#CBBB9C;
+
+  --serif:'Gowun Batang','Nanum Myeongjo',serif;
+  --sans:'Pretendard','Pretendard Variable','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+
+  --w-normal:500; --w-medium:600; --w-bold:700;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--cream); color:var(--ink);
+  font-family:var(--sans); font-weight:var(--w-normal); line-height:1.8;
+  font-size:17px;
+  text-rendering:optimizeLegibility;
+  padding:28px 16px 96px;
+}
+@media (min-width:700px){ body{padding:44px 24px 64px} }
+
+/* ---------- 문서면 ---------- */
+.sheet{
+  max-width:880px; margin:0 auto; background:var(--paper);
+  border:1px solid var(--line); border-top:3px solid var(--seal);
+  box-shadow:0 1px 2px rgba(20,12,6,.05), 0 18px 44px -20px rgba(20,12,6,.28);
+  padding:clamp(26px,5vw,58px);
+}
+
+/* ---------- 표제 ---------- */
+.masthead{display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:flex-start}
+.brand{display:flex; flex-direction:column; gap:6px}
+.brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
+.brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
+.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.doc-meta{display:flex; align-items:flex-start; gap:18px}
+.doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.3em; color:var(--ink); margin:0 0 10px; text-indent:.3em}
+.meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
+.meta-list dt{color:var(--ink-mute); font-weight:var(--w-medium); letter-spacing:.04em}
+.meta-list dd{margin:0; font-variant-numeric:tabular-nums; color:var(--ink)}
+.seal{flex:none; width:64px; height:64px; transform:rotate(-4deg)}
+.rule-double{border:0; height:4px; border-top:2px solid var(--seal); border-bottom:1px solid var(--line-strong); margin:22px 0 30px}
+
+/* ---------- 섹션 제목 ---------- */
+.sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
+.sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
+.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
+section + section{margin-top:34px}
+
+/* ---------- 공급받는 자 / 공급자 ---------- */
+.parties{display:grid; gap:16px; align-items:start}
+@media (min-width:640px){ .parties{grid-template-columns:1fr 1fr} }
+.party{border:1px solid var(--line-strong); background:var(--paper)}
+.party h3{
+  margin:0; padding:8px 12px; background:var(--band2); border-bottom:1px solid var(--line-strong);
+  font-family:var(--serif); font-weight:var(--w-bold); font-size:15px; color:var(--ink);
+  letter-spacing:.3em; text-indent:.3em; text-align:center;
+}
+.party dl{margin:0}
+.prow{display:grid; grid-template-columns:86px 1fr; border-bottom:1px solid var(--line)}
+.prow:last-child{border-bottom:0}
+.prow dt{padding:8px 12px; background:var(--band); font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft); letter-spacing:.04em; border-right:1px solid var(--line); display:flex; align-items:center}
+.prow dd{margin:0; padding:8px 12px; font-size:15.5px; color:var(--ink); display:flex; align-items:center; flex-wrap:wrap; gap:4px; min-height:42px}
+.prow .regno{font-weight:var(--w-bold); font-variant-numeric:tabular-nums; letter-spacing:.02em}
+.prow .honor{color:var(--ink-mute); font-size:14.5px}
+/* 도장 — (인) 위에 겹쳐 찍는다. html2canvas 가 퍼센트 translate 를 잘못 옮겨서 margin 으로 가운데를 잡는다 */
+.in{position:relative; display:inline-block; margin-left:auto; margin-right:12px; color:var(--ink-mute); font-size:14.5px}
+.stamp{position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; transform:rotate(-3deg); pointer-events:none}
+
+/* ---------- 거래 내역 표 ---------- */
+.qwrap{border:1px solid var(--line-strong)}
+table.stmt{width:100%; border-collapse:collapse; font-size:15px}
+table.stmt thead th{
+  background:var(--band2); font-family:var(--serif); font-weight:var(--w-bold); font-size:14px;
+  color:var(--ink); letter-spacing:.04em; padding:9px 8px; text-align:center;
+  border-bottom:1px solid var(--line-strong); white-space:nowrap;
+}
+table.stmt td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+table.stmt td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+table.stmt td.c{text-align:center}
+table.stmt td.item-name{font-weight:var(--w-medium)}
+tr.addrow td{padding:6px 8px; background:rgba(176,141,87,.06)}
+tr.addrow .btn-mini{width:100%}
+
+/* ---------- 합계 ---------- */
+.totals{display:flex; margin-top:22px}
+.sum{min-width:300px; width:min(380px, 100%); margin-left:auto}
+.sum-row{display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft); border-bottom:1px solid var(--line)}
+.sum-row .v{font-variant-numeric:tabular-nums; color:var(--ink)}
+.sum-total{
+  display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+  margin-top:12px; padding:13px 16px; background:var(--seal); color:var(--paper);
+}
+.sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.16em}
+.sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:25px; font-variant-numeric:tabular-nums}
+.sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
+.sum-total .val:has([data-k="total"]:empty) em{display:none}
+.sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
+.sum-note{margin:4px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
+
+/* ---------- 인수자 ---------- */
+.receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
+.receiver .line{display:inline-block; width:150px; border-bottom:1px solid var(--ink-soft)}
+
+/* ---------- 편집 표시 ---------- */
+[data-edit]{outline:none}
+body.editing [data-edit]{background:rgba(176,141,87,.16); box-shadow:inset 0 -1px 0 0 var(--gold-deep); cursor:text}
+body.editing [data-edit]:focus{background:rgba(110,30,43,.09); box-shadow:inset 0 -2px 0 0 var(--seal)}
+body.editing [data-edit]:empty{display:inline-block; min-width:2.6em}
+body.editing td[data-edit]:empty::after,
+body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
+:focus-visible{outline:2px solid var(--seal); outline-offset:2px}
+
+.rowctl{display:inline-flex; margin-left:6px; vertical-align:middle}
+.btn-mini{
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
+  border-radius:3px; padding:6px 8px; white-space:nowrap;
+}
+.btn-mini:hover{border-color:var(--seal); color:var(--seal); background:#fff}
+.btn-del{color:var(--seal-dark); border-color:rgba(110,30,43,.35)}
+.btn-del:hover{background:var(--seal); color:var(--paper); border-color:var(--seal)}
+body:not(.editing) .rowctl,
+body:not(.editing) tr.addrow{display:none !important}
+
+/* ---------- 도구막대 ---------- */
+.toolbar{
+  position:fixed; top:14px; right:14px; z-index:40; display:flex; gap:4px;
+  background:var(--paper); border:1px solid var(--line-strong); padding:6px;
+  box-shadow:0 6px 20px -10px rgba(20,12,6,.4);
+}
+.toolbar button{
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-soft);
+  background:transparent; border:1px solid transparent; padding:6px 11px; cursor:pointer;
+}
+.toolbar button:hover{background:var(--band2); color:var(--ink)}
+.toolbar button[aria-pressed="true"]{background:var(--seal); color:var(--paper)}
+.toolbar button.primary{background:var(--seal); color:var(--paper); border-color:var(--seal); font-weight:var(--w-bold)}
+.toolbar button.primary:hover{background:var(--seal-dark); color:var(--paper)}
+.toolbar button[disabled]{opacity:.55; cursor:default}
+
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  z-index:60; max-width:88vw;
+  background:var(--ink); color:var(--paper); font-size:14px; line-height:1.5;
+  padding:11px 16px; border-radius:8px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
+}
+@media (max-width:700px){ .toast{bottom:80px} }
+.hint{
+  max-width:880px; margin:0 auto 14px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft);
+  line-height:1.6; padding-right:200px;
+}
+.hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
+@media (max-width:700px){ .hint{padding-right:0} }
+
+/* ---------- 모바일 고정 CTA ---------- */
+.cta-bar{
+  position:fixed; left:0; right:0; bottom:0; z-index:50; display:flex;
+  border-top:1px solid var(--line-strong); background:var(--paper);
+  box-shadow:0 -6px 20px -12px rgba(20,12,6,.45);
+}
+.cta-bar a{
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:15px 8px; font-family:var(--serif); font-weight:var(--w-bold); font-size:15px;
+  text-decoration:none; letter-spacing:.02em;
+}
+.cta-call{background:var(--seal); color:var(--paper)}
+.cta-sms{color:var(--ink); border-left:1px solid var(--line-strong)}
+@media (min-width:700px){ .cta-bar{display:none} }
+
+/* ---------- 좁은 화면: 표를 줄마다 카드로 ---------- */
+@media (max-width:620px){
+  table.stmt thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+  table.stmt, table.stmt tbody{display:block}
+  /* 한 줄 = 카드: 품목 / 월일·규격·수량 / 단가·공급가액·세액 / 비고 */
+  table.stmt tr.item{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; padding:12px; border-bottom:1px solid var(--line)}
+  table.stmt tr.item td{border:0; padding:0; text-align:left; white-space:normal; min-width:0}
+  table.stmt tr.item td.n{white-space:nowrap}
+  table.stmt tr.item td::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
+  table.stmt td.item-name{grid-column:1 / -1; order:-1; font-size:16.5px}
+  table.stmt td[data-label="비고"]{grid-column:1 / -1}
+  body:not(.editing) table.stmt td[data-label="비고"]:has(span:empty){display:none}
+  body.editing table.stmt tr.item td[data-edit], body.editing table.stmt td[data-label="비고"] span[data-edit]{display:block; min-height:44px; padding:4px 6px}
+  tr.addrow{display:block}
+  tr.addrow td{display:block}
+  .sum{max-width:none; min-width:0}
+  .receiver .line{width:120px}
+}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+
+/* ---------- 인쇄 (A4 한 장) ---------- */
+@media print{
+  @page{ size:A4; margin:13mm; }
+  body{padding:0; background:var(--paper); font-size:11.5pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:5mm}
+  .toolbar,.cta-bar,.hint,.toast,.rowctl,tr.addrow{display:none !important}
+  body.editing [data-edit]{background:transparent; box-shadow:none}
+  body.editing td[data-edit]:empty::after, body.editing span[data-edit]:empty::after{content:none}
+  .rule-double{margin:12px 0 16px}
+  section + section{margin-top:20px}
+  .sec-head{margin-bottom:8px}
+  .prow dt,.prow dd{padding-top:4px; padding-bottom:4px; min-height:0}
+  table.stmt thead th,table.stmt td{padding-top:6px; padding-bottom:6px}
+  tr{break-inside:avoid}
+  .totals{margin-top:12px}
+  .sum-row{padding:5px 0}
+  .sum-total{margin-top:8px; padding:9px 16px}
+  .receiver{margin-top:22px}
+}
+</style>
+</head>
+<body>
+<p class="hint"><b>안내</b><strong>편집</strong>으로 받는 분과 품목·규격·수량·단가를 채우면 공급가액·세액·합계가 자동으로 계산됩니다. <strong>고객에게 보내기</strong>를 누르면 문자·카톡으로 바로 보낼 수 있고, <strong>파일로 저장</strong>은 기록용 이미지를 남깁니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 입력 중인 내용은 이 기기에 자동 저장되니, <strong>새 손님</strong>을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 주세요.</p>
+
+<div class="toolbar">
+  <button type="button" id="btn-edit" aria-pressed="false">편집</button>
+  <button type="button" id="btn-save-file">파일로 저장</button>
+  <button type="button" id="btn-send" class="primary">고객에게 보내기</button>
+  <button type="button" id="btn-copy">복사</button>
+  <button type="button" id="btn-print">인쇄 · PDF</button>
+  <button type="button" id="btn-reset">초기화</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<article class="sheet">
+
+  <!-- ================= 표제 ================= -->
+  <header class="masthead">
+    <div class="brand">
+      <h1 class="brand-name">푸드벨</h1>
+      <span class="brand-tag">전통 제례 · 시제 맞춤 출장음식 | 전국 출장 · 현장 세팅</span>
+      <a class="brand-tel" href="tel:01053533477">010-5353-3477</a>
+    </div>
+    <div class="doc-meta">
+      <div>
+        <h2 class="doc-title">거래명세서</h2>
+        <dl class="meta-list">
+          <dt>문서번호</dt><dd data-edit data-t="text" data-k="dno">FB-20261001-0000</dd>
+          <dt>작성일자</dt><dd data-edit data-t="text" data-k="issue">2026년 10월 1일</dd>
+        </dl>
+      </div>
+      <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
+        <rect x="1.5" y="1.5" width="61" height="61" rx="4" fill="#6E1E2B"></rect>
+        <rect x="5.5" y="5.5" width="53" height="53" rx="2" fill="none" stroke="#FFFDF8" stroke-width="1.2" opacity=".6"></rect>
+        <text x="32" y="20" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">푸</text>
+        <text x="32" y="37.5" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">드</text>
+        <text x="32" y="55" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">벨</text>
+      </svg>
+    </div>
+  </header>
+
+  <hr class="rule-double">
+
+  <!-- ================= 거래 당사자 ================= -->
+  <section>
+    <div class="parties">
+      <div class="party">
+        <h3>공급받는 자</h3>
+        <dl>
+          <div class="prow"><dt>상호·성명</dt><dd><span data-edit data-t="text" data-k="cust">○○ 문중 종친회</span><span class="honor">귀하</span></dd></div>
+          <div class="prow"><dt>주소</dt><dd><span data-edit data-t="text"></span></dd></div>
+          <div class="prow"><dt>전화</dt><dd><span data-edit data-t="text"></span></dd></div>
+        </dl>
+      </div>
+      <div class="party">
+        <h3>공급자</h3>
+        <dl>
+          <div class="prow"><dt>등록번호</dt><dd><span class="regno">208-09-69358</span></dd></div>
+          <div class="prow"><dt>상호</dt><dd>박상익출장음식</dd></div>
+          <div class="prow"><dt>대표</dt><dd>박상익<span class="in">(인)<img class="stamp" src="images/stamp.png" alt="박상익출장음식 도장" width="56" height="56"></span></dd></div>
+          <div class="prow"><dt>업태</dt><dd>음식점업</dd></div>
+          <div class="prow"><dt>종목</dt><dd>출장음식</dd></div>
+          <div class="prow"><dt>주소</dt><dd>서울특별시 송파구 올림픽로34길 31</dd></div>
+          <div class="prow"><dt>전화</dt><dd>010-5353-3477</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 거래 내역 ================= -->
+  <section>
+    <div class="sec-head"><h2>거래 내역</h2><span class="hanja">去來 內譯</span></div>
+    <div class="qwrap">
+      <table class="stmt">
+        <colgroup>
+          <col style="width:8%"><col><col style="width:10%"><col style="width:7%">
+          <col style="width:12%"><col style="width:13%"><col style="width:11%"><col style="width:11%">
+        </colgroup>
+        <thead>
+          <tr><th>월/일</th><th>품목</th><th>규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>세액</th><th>비고</th></tr>
+        </thead>
+        <tbody>
+          <tr class="item">
+            <td class="c" data-label="월/일" data-edit data-t="text" data-k="md"></td>
+            <td class="item-name" data-label="품목" data-edit data-t="text">시제 상차림</td>
+            <td class="c" data-label="규격" data-edit data-t="text">1상</td>
+            <td class="n" data-label="수량" data-edit data-t="num" data-k="qty" data-raw="1">1</td>
+            <td class="n" data-label="단가" data-edit data-t="num" data-k="price"></td>
+            <td class="n" data-label="공급가액" data-k="amt"></td>
+            <td class="n" data-label="세액" data-k="tax"></td>
+            <td data-label="비고"><span data-edit data-t="text"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div class="sum">
+        <div class="sum-row"><span>공급가액 합계</span><span class="v" data-k="sumAmt"></span></div>
+        <div class="sum-row"><span>세액 합계 (10%)</span><span class="v" data-k="sumTax"></span></div>
+        <div class="sum-total"><span class="lab">합계금액</span><span class="val"><span data-k="total"></span><em>원</em></span></div>
+        <p class="sum-hangul" data-k="hangul"></p>
+        <p class="sum-note">수량 × 단가 = 공급가액, 세액은 공급가액의 10% 입니다.</p>
+      </div>
+    </div>
+
+    <div class="receiver">인수자 <span class="line"></span> (인)</div>
+  </section>
+
+</article>
+
+<nav class="cta-bar" aria-label="상담 연결">
+  <a class="cta-call" href="tel:01053533477">전화 상담</a>
+  <a class="cta-sms" href="sms:01053533477">문자 문의</a>
+</nav>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "foodbell-statement-v1";
+  function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
+  function money(n) { return n ? fmt(n) : ""; }
+  function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
+  function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtDateKR(d) { return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일"; }
+
+  /* 1100000 -> "일백일십만" (거래명세서·영수증에 쓰는 한글 금액) */
+  function hangul(n) {
+    var d = "영일이삼사오육칠팔구", u = ["", "십", "백", "천"], big = ["", "만", "억", "조"];
+    var s = "", g = 0;
+    while (n > 0) {
+      var part = n % 10000, ps = "";
+      for (var i = 0; part > 0; i++) {
+        var dg = part % 10;
+        if (dg) ps = d.charAt(dg) + u[i] + ps;
+        part = Math.floor(part / 10);
+      }
+      if (ps) s = ps + big[g] + s;
+      n = Math.floor(n / 10000); g++;
+    }
+    return s;
+  }
+
+  var sheet = document.querySelector(".sheet");
+  var body  = document.body;
+  var el = function (tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  };
+  function setText(k, v) { var e = sheet.querySelector('[data-k="' + k + '"]'); if (e) e.textContent = v; }
+
+  /* ---------- 줄마다 수량 × 단가 → 공급가액 · 세액(10%, 반올림), 합계 ---------- */
+  function recalc() {
+    var sa = 0, st = 0;
+    each(sheet.querySelectorAll("tr.item"), function (tr) {
+      var amt = raw(tr.querySelector('[data-k="qty"]')) * raw(tr.querySelector('[data-k="price"]'));
+      var tax = Math.round(amt * 0.1);
+      tr.querySelector('[data-k="amt"]').textContent = money(amt);
+      tr.querySelector('[data-k="tax"]').textContent = money(tax);
+      sa += amt; st += tax;
+    });
+    setText("sumAmt", money(sa));
+    setText("sumTax", money(st));
+    setText("total", money(sa + st));
+    setText("hangul", sa + st ? "금 " + hangul(sa + st) + " 원정 (부가세 포함)" : "");
+    return sa + st;
+  }
+
+  /* ---------- 문자·메신저용 요약 ---------- */
+  function buildText() {
+    var L = ["[푸드벨 거래명세서]"];
+    each(sheet.querySelectorAll(".meta-list dt"), function (dt) {
+      L.push(dt.textContent.trim() + ": " + dt.nextElementSibling.textContent.trim());
+    });
+    L.push("받는 분: " + custName(), "", "[거래 내역]");
+    each(sheet.querySelectorAll("tr.item"), function (tr) {
+      var c = function (lab) { var t = tr.querySelector('td[data-label="' + lab + '"]'); return t ? t.textContent.trim() : ""; };
+      if (!c("품목")) return;
+      L.push("- " + [c("월/일"), c("품목"), c("규격")].filter(Boolean).join(" ") +
+             (c("공급가액") ? "  " + c("수량") + " × " + c("단가") + " = " + c("공급가액") + "원 (세액 " + (c("세액") || "0") + "원)" : ""));
+    });
+    var total = recalc();
+    if (total) {
+      L.push("", "공급가액 합계  " + sheet.querySelector('[data-k="sumAmt"]').textContent + "원",
+                 "세액 합계  " + sheet.querySelector('[data-k="sumTax"]').textContent + "원",
+                 "합계금액  " + fmt(total) + "원 (금 " + hangul(total) + " 원정)");
+    }
+    L.push("", "박상익출장음식 · 대표 박상익 · 208-09-69358", "문의  푸드벨  010-5353-3477");
+    return L.join("\n");
+  }
+
+  /* ---------- 저장 / 복원 : 문서면 전체 HTML (줄 추가·삭제까지) ---------- */
+  function serialize() {
+    var c = sheet.cloneNode(true);
+    each(c.querySelectorAll(".rowctl, tr.addrow"), function (n) { n.remove(); });
+    each(c.querySelectorAll("[contenteditable]"), function (n) { n.removeAttribute("contenteditable"); });
+    return c.innerHTML;
+  }
+  function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) {} }
+  function restore() {
+    var html = null;
+    try { html = localStorage.getItem(KEY); } catch (e) { return false; }
+    if (html) { sheet.innerHTML = html; return true; }
+    return false;
+  }
+  /* 처음 여는 화면일 때만: 문서번호 · 작성일자 · 첫 줄 날짜를 오늘로 */
+  function fillFreshDefaults() {
+    var d = new Date();
+    setText("issue", fmtDateKR(d));
+    setText("dno", "FB-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+                   "-" + pad2(d.getHours()) + pad2(d.getMinutes()));
+    setText("md", (d.getMonth() + 1) + "/" + d.getDate());
+  }
+
+  /* ---------- 편집 모드: 줄 삭제 · 줄 추가 버튼 ---------- */
+  var ROW_HTML =
+    '<td class="c" data-label="월/일" data-edit data-t="text" data-k="md"></td>' +
+    '<td class="item-name" data-label="품목" data-edit data-t="text"></td>' +
+    '<td class="c" data-label="규격" data-edit data-t="text"></td>' +
+    '<td class="n" data-label="수량" data-edit data-t="num" data-k="qty"></td>' +
+    '<td class="n" data-label="단가" data-edit data-t="num" data-k="price"></td>' +
+    '<td class="n" data-label="공급가액" data-k="amt"></td>' +
+    '<td class="n" data-label="세액" data-k="tax"></td>' +
+    '<td data-label="비고"><span data-edit data-t="text"></span></td>';
+
+  function addControls() {
+    var tb = sheet.querySelector("table.stmt tbody");
+    each(tb.querySelectorAll("tr.item"), function (tr) {
+      if (tr.querySelector(".rowctl")) return;
+      var box = el("span", "rowctl");
+      var d = el("button", "btn-mini btn-del", "✕ 줄 삭제"); d.type = "button";
+      box.appendChild(d);
+      tr.querySelector('td[data-label="비고"]').appendChild(box);
+    });
+    if (!tb.querySelector("tr.addrow")) {
+      var ar = el("tr", "addrow"), td = el("td");
+      td.colSpan = 8;
+      var ab = el("button", "btn-mini", "＋ 줄 추가"); ab.type = "button";
+      td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
+    }
+  }
+  function removeControls() {
+    each(sheet.querySelectorAll(".rowctl, tr.addrow"), function (n) { n.remove(); });
+  }
+  function setCE(on) {
+    each(sheet.querySelectorAll("[data-edit]"), function (e) { e.contentEditable = on ? "true" : "false"; });
+  }
+
+  var btnEdit = document.getElementById("btn-edit");
+  function setEditing(on) {
+    body.classList.toggle("editing", on);
+    btnEdit.setAttribute("aria-pressed", String(on));
+    btnEdit.textContent = on ? "편집 완료" : "편집";
+    if (on) { addControls(); setCE(true); }
+    else    { removeControls(); setCE(false); save(); }
+  }
+
+  /* ---------- 입력 처리 (새로 추가한 줄까지) ---------- */
+  sheet.addEventListener("focusin", function (e) {
+    var t = e.target.closest && e.target.closest('[data-edit][data-t="num"]');
+    if (!t) return;
+    var r = t.getAttribute("data-raw");
+    t.textContent = (r && r !== "0") ? r : "";
+  });
+  sheet.addEventListener("input", function (e) {
+    var t = e.target.closest && e.target.closest("[data-edit]");
+    if (!t) return;
+    if (t.getAttribute("data-t") === "num") {
+      var n = parseInt(t.textContent.replace(/[^0-9]/g, ""), 10) || 0;
+      t.setAttribute("data-raw", String(n));
+      recalc();
+    }
+    save();
+  });
+  sheet.addEventListener("focusout", function (e) {
+    var t = e.target.closest && e.target.closest('[data-edit][data-t="num"]');
+    if (!t) return;
+    t.textContent = money(raw(t));
+    save();
+  });
+  sheet.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var t = e.target.closest && e.target.closest("[data-edit]");
+    if (t) { e.preventDefault(); t.blur(); }
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("button.btn-mini");
+    if (!b) return;
+    e.preventDefault();
+    if (b.classList.contains("btn-del")) {
+      var row = b.closest("tr.item");
+      if (row) row.remove();
+    } else if (b.closest("tr.addrow")) {
+      var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
+      b.closest("tr.addrow").parentNode.insertBefore(tr, b.closest("tr.addrow"));
+      addControls(); setCE(true);
+      tr.querySelector(".item-name").focus();
+    }
+    recalc(); save();
+  });
+
+  /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
+  var toastEl = document.getElementById("toast"), toastT;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.hidden = true; }, 3200);
+  }
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () { copyFallback(text); });
+    }
+    copyFallback(text); return Promise.resolve();
+  }
+  function copyFallback(text) {
+    var ta = el("textarea"); ta.value = text;
+    ta.style.position = "fixed"; ta.style.top = "-9999px";
+    body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); } catch (e) { window.prompt("아래 내용을 복사하세요", text); }
+    body.removeChild(ta);
+  }
+  function downloadBlob(blob, name) {
+    var a = el("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function custName() {
+    var c = sheet.querySelector('[data-k="cust"]');
+    var t = c ? c.textContent.replace(/\s+/g, " ").trim() : "";
+    return t ? t.slice(0, 24) : "고객";
+  }
+
+  /* ---------- 문서면을 이미지(PNG)로 ---------- */
+  function renderImage() {
+    if (typeof html2canvas !== "function") return Promise.resolve(null);
+    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    return ready.then(function () {
+      return html2canvas(sheet, {
+        backgroundColor: "#FFFDF8", scale: 1.7,
+        useCORS: true, logging: false, windowWidth: sheet.scrollWidth
+      });
+    }).then(function (canvas) {
+      return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
+    }).catch(function () { return null; });
+  }
+
+  document.getElementById("btn-print").addEventListener("click", function () {
+    setEditing(false);
+    window.print();
+  });
+
+  document.getElementById("btn-copy").addEventListener("click", function () {
+    var btn = this, old = btn.textContent;
+    copyText(buildText()).then(function () {
+      btn.textContent = "복사됨"; setTimeout(function () { btn.textContent = old; }, 1400);
+    });
+  });
+
+  document.getElementById("btn-send").addEventListener("click", function () {
+    if (!recalc() && !window.confirm("금액(단가)을 아직 안 넣으셨습니다. 그래도 보낼까요?")) return;
+    var btn = this, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "준비 중…";
+    setEditing(false);
+    var fname = "푸드벨_거래명세서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + ".png";
+    var title = "푸드벨 거래명세서 (" + custName() + ")";
+    var text = buildText();
+    function done() { btn.disabled = false; btn.textContent = old; }
+    function fallback() {
+      copyText(text);
+      if (fileBlob) { downloadBlob(fileBlob, fname); toast("거래명세서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요."); }
+      else toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요.");
+      done();
+    }
+    var fileBlob = null;
+    renderImage().then(function (blob) {
+      fileBlob = blob;
+      var file = blob ? new File([blob], fname, { type: "image/png" }) : null;
+      // 휴대폰: 공유창(카톡·문자·메일)으로 이미지를 넘긴다
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: title, text: text }).then(done, function (e) {
+          if (e && e.name === "AbortError") return done();
+          fallback();
+        });
+        return;
+      }
+      // PC: 공유창이 없으므로 이미지를 내려받고 문구를 복사해 둔다
+      fallback();
+    });
+  });
+
+  document.getElementById("btn-save-file").addEventListener("click", function () {
+    if (!recalc() && !window.confirm("금액(단가)을 아직 안 넣으셨습니다. 그래도 저장할까요?")) return;
+    var btn = this, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "저장 중…";
+    setEditing(false);
+    var d = new Date();
+    var ymd = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+    var fname = "푸드벨_거래명세서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + "_" + ymd + ".png";
+    renderImage().then(function (blob) {
+      btn.disabled = false; btn.textContent = old;
+      if (blob) { downloadBlob(blob, fname); toast("거래명세서를 파일로 저장했습니다. (다운로드 폴더에서 확인하세요)"); }
+      else toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+    });
+  });
+
+  document.getElementById("btn-reset").addEventListener("click", function () {
+    if (!window.confirm("입력하신 내용을 지우고 빈 거래명세서로 되돌릴까요?")) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    window.location.reload();
+  });
+
+  btnEdit.addEventListener("click", function () {
+    setEditing(!body.classList.contains("editing"));
+  });
+
+  if (!restore()) fillFreshDefaults();
+  recalc();
+})();
+</script>
+
+</body>
+</html>

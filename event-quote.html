@@ -134,7 +134,7 @@ td.item-detail{color:var(--ink-soft); font-weight:var(--w-medium); font-size:15p
 table.quote td.n[data-label="수량"]{width:1%}
 
 /* ---------- 합계 ---------- */
-.totals{display:flex; margin-top:22px}
+.totals{display:flex; flex-wrap:wrap; align-items:flex-end; gap:18px; margin-top:22px}
 .sum{min-width:300px; width:min(360px, 100%); margin-left:auto}
 .sum-row{display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft); border-bottom:1px solid var(--line)}
 .sum-row .v{font-variant-numeric:tabular-nums; color:var(--ink)}
@@ -150,6 +150,13 @@ table.quote td.n[data-label="수량"]{width:1%}
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-note{margin:9px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.55}
+/* 공급자 이름 + 도장 (합계 왼쪽, 좁은 화면에서는 합계 아래) */
+.issuer{font-family:var(--serif); color:var(--ink); line-height:1.6; padding:18px 0 20px 2px}
+.issuer .biz{font-weight:var(--w-bold); font-size:17px; letter-spacing:.04em; margin-right:10px}
+.issuer .rep{font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft); white-space:nowrap}
+.issuer .in{position:relative; display:inline-block; margin-left:8px; color:var(--ink-mute)}
+.issuer .stamp{position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px; transform:rotate(-3deg); pointer-events:none}
+@media (max-width:620px){ .issuer{order:1} }
 body.editing [data-k="supply"]{min-width:5em; display:inline-block; text-align:right}
 body.editing [data-k="supply"]:empty::before{content:"금액 입력"; color:var(--ink-mute); font-size:.82em; font-weight:var(--w-normal)}
 body.editing [data-k="perhead"]{min-width:3.5em; display:inline-block}
@@ -402,6 +409,10 @@ body:not(.editing) .addjrow{display:none !important}
     </div>
 
     <div class="totals">
+      <div class="issuer">
+        <span class="biz">박상익출장음식</span>
+        <span class="rep">대표 박상익<span class="in">(인)<img class="stamp" src="images/stamp.png" alt="박상익출장음식 도장" width="58" height="58"></span></span>
+      </div>
       <div class="sum">
         <div class="sum-row sum-row--input"><span>공급가액</span><span class="v"><span data-edit data-t="num" data-k="supply"></span><span class="won"> 원</span></span></div>
         <div class="sum-row"><span>부가세 (10% 별도)</span><span class="v" data-k="vat"></span></div>
@@ -845,7 +856,13 @@ body:not(.editing) .addjrow{display:none !important}
     setEditing(!body.classList.contains("editing"));
   });
 
+  /* 도장 줄은 예전에 저장해 둔 견적서에는 없다 — 불러온 뒤 없으면 끼워 넣는다 */
+  var issuerHTML = sheet.querySelector(".issuer").outerHTML;
   if (!restore()) fillFreshDefaults();
+  if (!sheet.querySelector(".issuer")) {
+    var totalsEl = sheet.querySelector(".totals");
+    if (totalsEl) totalsEl.insertAdjacentHTML("afterbegin", issuerHTML);
+  }
   recalc();
 })();
 </script>
