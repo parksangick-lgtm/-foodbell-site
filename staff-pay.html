@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸드벨 알바비 지급내역서</title>
+<meta name="description" content="푸드벨(박상익출장음식) 알바비 지급내역서. 행사별 알바 이름·전화번호·일당·계좌를 적으면 인원과 총 지급액이 자동 계산되고, 사진·인쇄로 사무실 직원에게 전달합니다.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<meta name="theme-color" content="#6E1E2B">
+<!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
+<meta name="color-scheme" content="only light">
+<link rel="manifest" href="manifest-pay.webmanifest">
+<link rel="apple-touch-icon" href="icons/app-pay-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="알바비">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<style>
+@media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
+:root{
+  color-scheme: only light;
+
+  /* 견적서(sije-quote.html)와 같은 값 */
+  --cream:#F7F2E9; --paper:#FFFDF8; --band:#F1EADB; --band2:#EDE4D3;
+  --ink:#120C06; --ink-soft:#1A1409; --ink-mute:#332A1A;
+  --seal:#6E1E2B; --seal-light:#8A2836; --seal-dark:#4E141E;
+  --gold:#B08D57; --gold-deep:#5C4519;
+  --line:#E2D6BF; --line-strong:#CBBB9C;
+
+  --serif:'Gowun Batang','Nanum Myeongjo',serif;
+  --sans:'Pretendard','Pretendard Variable','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+
+  --w-normal:500; --w-medium:600; --w-bold:700;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--cream); color:var(--ink);
+  font-family:var(--sans); font-weight:var(--w-normal); line-height:1.8;
+  font-size:17px;
+  text-rendering:optimizeLegibility;
+  padding:28px 16px 96px;
+}
+@media (min-width:700px){ body{padding:44px 24px 64px} }
+
+/* ---------- 문서면 ---------- */
+.sheet{
+  max-width:880px; margin:0 auto; background:var(--paper);
+  border:1px solid var(--line); border-top:3px solid var(--seal);
+  box-shadow:0 1px 2px rgba(20,12,6,.05), 0 18px 44px -20px rgba(20,12,6,.28);
+  padding:clamp(26px,5vw,58px);
+}
+
+/* ---------- 표제 ---------- */
+.masthead{display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:flex-start}
+.brand{display:flex; flex-direction:column; gap:6px}
+.brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
+.brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
+.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.doc-meta{display:flex; align-items:flex-start; gap:18px}
+.doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.3em; color:var(--ink); margin:0 0 10px; text-indent:.3em}
+.meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
+.meta-list dt{color:var(--ink-mute); font-weight:var(--w-medium); letter-spacing:.04em}
+.meta-list dd{margin:0; font-variant-numeric:tabular-nums; color:var(--ink)}
+.seal{flex:none; width:64px; height:64px; transform:rotate(-4deg)}
+.rule-double{border:0; height:4px; border-top:2px solid var(--seal); border-bottom:1px solid var(--line-strong); margin:22px 0 30px}
+
+/* ---------- 섹션 제목 ---------- */
+.sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
+.sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
+.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
+section + section{margin-top:34px}
+
+/* ---------- 공급받는 자 / 공급자 ---------- */
+.parties{display:grid; gap:16px; align-items:start}
+@media (min-width:640px){ .parties{grid-template-columns:1fr 1fr} }
+.party{border:1px solid var(--line-strong); background:var(--paper)}
+.party h3{
+  margin:0; padding:8px 12px; background:var(--band2); border-bottom:1px solid var(--line-strong);
+  font-family:var(--serif); font-weight:var(--w-bold); font-size:15px; color:var(--ink);
+  letter-spacing:.3em; text-indent:.3em; text-align:center;
+}
+.party dl{margin:0}
+.prow{display:grid; grid-template-columns:86px 1fr; border-bottom:1px solid var(--line)}
+.prow:last-child{border-bottom:0}
+.prow dt{padding:8px 12px; background:var(--band); font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft); letter-spacing:.04em; border-right:1px solid var(--line); display:flex; align-items:center}
+.prow dd{margin:0; padding:8px 12px; font-size:15.5px; color:var(--ink); display:flex; align-items:center; flex-wrap:wrap; gap:4px; min-height:42px}
+.prow .regno{font-weight:var(--w-bold); font-variant-numeric:tabular-nums; letter-spacing:.02em}
+.prow .honor{color:var(--ink-mute); font-size:14.5px}
+body.editing .prow dd > span[data-edit]{flex:1}   /* 편집할 때 입력 칸을 줄 끝까지 넓게 */
+/* 도장 — (인) 위에 겹쳐 찍는다. html2canvas 가 퍼센트 translate 를 잘못 옮겨서 margin 으로 가운데를 잡는다 */
+.in{position:relative; display:inline-block; margin-left:auto; margin-right:12px; color:var(--ink-mute); font-size:14.5px}
+.stamp{position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; transform:rotate(-3deg); pointer-events:none}
+
+/* ---------- 거래 내역 표 ---------- */
+.qwrap{border:1px solid var(--line-strong)}
+table.stmt{width:100%; border-collapse:collapse; font-size:15px}
+table.stmt thead th{
+  background:var(--band2); font-family:var(--serif); font-weight:var(--w-bold); font-size:14px;
+  color:var(--ink); letter-spacing:.04em; padding:9px 8px; text-align:center;
+  border-bottom:1px solid var(--line-strong); white-space:nowrap;
+}
+table.stmt td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+table.stmt td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+table.stmt td.c{text-align:center}
+table.stmt td.item-name{font-weight:var(--w-medium)}
+tr.addrow td{padding:6px 8px; background:rgba(176,141,87,.06)}
+tr.addrow .btn-mini{width:100%}
+
+/* ---------- 합계 ---------- */
+.totals{display:flex; margin-top:22px}
+.sum{min-width:300px; width:min(380px, 100%); margin-left:auto}
+.sum-row{display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft); border-bottom:1px solid var(--line)}
+.sum-row .v{font-variant-numeric:tabular-nums; color:var(--ink)}
+.sum-total{
+  display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+  margin-top:12px; padding:13px 16px; background:var(--seal); color:var(--paper);
+}
+.sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.16em}
+.sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:25px; font-variant-numeric:tabular-nums}
+.sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
+.sum-total .val:has([data-k="total"]:empty) em{display:none}
+.sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
+.sum-note{margin:4px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
+
+/* ---------- 인수자 ---------- */
+.receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
+.receiver .line{display:inline-block; width:150px; border-bottom:1px solid var(--ink-soft)}
+
+/* ---------- 편집 표시 ---------- */
+[data-edit]{outline:none}
+body.editing [data-edit]{background:rgba(176,141,87,.16); box-shadow:inset 0 -1px 0 0 var(--gold-deep); cursor:text}
+body.editing [data-edit]:focus{background:rgba(110,30,43,.09); box-shadow:inset 0 -2px 0 0 var(--seal)}
+body.editing [data-edit]:empty{display:inline-block; min-width:2.6em}
+body.editing td[data-edit]:empty::after,
+body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
+:focus-visible{outline:2px solid var(--seal); outline-offset:2px}
+
+.rowctl{display:inline-flex; margin-left:6px; vertical-align:middle}
+.btn-mini{
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
+  border-radius:3px; padding:6px 8px; white-space:nowrap;
+}
+.btn-mini:hover{border-color:var(--seal); color:var(--seal); background:#fff}
+.btn-del{color:var(--seal-dark); border-color:rgba(110,30,43,.35)}
+.btn-del:hover{background:var(--seal); color:var(--paper); border-color:var(--seal)}
+body:not(.editing) .rowctl,
+body:not(.editing) tr.addrow{display:none !important}
+
+/* ---------- 도구막대 ---------- */
+.toolbar{
+  position:fixed; top:14px; right:14px; z-index:40; display:flex; gap:4px;
+  background:var(--paper); border:1px solid var(--line-strong); padding:6px;
+  box-shadow:0 6px 20px -10px rgba(20,12,6,.4);
+}
+.toolbar button{
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-soft);
+  background:transparent; border:1px solid transparent; padding:6px 11px; cursor:pointer;
+}
+.toolbar button:hover{background:var(--band2); color:var(--ink)}
+.toolbar button[aria-pressed="true"]{background:var(--seal); color:var(--paper)}
+.toolbar button.primary{background:var(--seal); color:var(--paper); border-color:var(--seal); font-weight:var(--w-bold)}
+.toolbar button.primary:hover{background:var(--seal-dark); color:var(--paper)}
+.toolbar button[disabled]{opacity:.55; cursor:default}
+
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  z-index:60; max-width:88vw;
+  background:var(--ink); color:var(--paper); font-size:14px; line-height:1.5;
+  padding:11px 16px; border-radius:8px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
+}
+@media (max-width:699px){ .toast{bottom:calc(120px + env(safe-area-inset-bottom))} }
+.hint{
+  max-width:880px; margin:0 auto 14px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft);
+  line-height:1.6; padding-right:200px;
+}
+.hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
+@media (max-width:700px){ .hint{padding-right:0} }
+
+/* ---------- 휴대폰: 도구 버튼은 화면 아래 고정, 편집 칸은 손가락 크기 ----------
+   사장님이 쓰는 화면이라 아래 전화·문자 막대 대신 도구 버튼을 둔다 (2026-10-01 사용자 결정).
+   위에 고정하면 안내문 첫 줄을 가리고, 좁은 칸에서 버튼 글자가 쪼개졌다. */
+@media (max-width:699px){
+  body{padding-bottom:calc(128px + env(safe-area-inset-bottom))}
+  .toolbar{
+    top:auto; right:0; bottom:0; left:0;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+    border:0; border-top:1px solid var(--line-strong);
+    box-shadow:0 -6px 20px -12px rgba(20,12,6,.45);
+  }
+  .toolbar button{min-height:44px; font-size:14px; line-height:1.25; word-break:keep-all; padding:6px 4px; border:1px solid var(--line-strong)}
+  body.editing [data-edit]{min-height:44px}
+  body.editing span[data-edit], body.editing .meta-list dd{display:inline-flex; align-items:center; min-width:44px}
+  .btn-mini{min-height:44px; min-width:44px}
+  .doc-meta{gap:10px}
+  .meta-list{column-gap:8px}
+  .meta-list dt, .meta-list dd{white-space:nowrap}
+}
+@media (max-width:359px){ .seal{width:48px; height:48px} }   /* 아주 좁은 폰: 문서번호 자리를 만든다 */
+
+/* ---------- 좁은 화면: 표를 줄마다 카드로 ---------- */
+@media (max-width:620px){
+  table.stmt thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+  table.stmt, table.stmt tbody{display:block}
+  /* 한 줄 = 카드: 품목 / 월일·규격·수량 / 단가·공급가액·세액 / 비고 */
+  table.stmt tr.item{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; padding:12px; border-bottom:1px solid var(--line)}
+  table.stmt tr.item td{border:0; padding:0; text-align:left; white-space:normal; min-width:0}
+  table.stmt tr.item td.n{white-space:nowrap}
+  table.stmt tr.item td::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
+  table.stmt td.item-name{grid-column:1 / -1; order:-1; font-size:16.5px}
+  table.stmt td[data-label="비고"]{grid-column:1 / -1}
+  body:not(.editing) table.stmt td[data-label="비고"]:has(span:empty){display:none}
+  body.editing table.stmt tr.item td[data-edit], body.editing table.stmt td[data-label="비고"] span[data-edit]{display:block; min-height:44px; padding:4px 6px}
+  tr.addrow{display:block}
+  tr.addrow td{display:block}
+  .sum{max-width:none; min-width:0}
+  .receiver .line{width:120px}
+}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+
+/* ---------- 인쇄 (A4 한 장) ---------- */
+@media print{
+  @page{ size:A4; margin:13mm; }
+  body{padding:0; background:var(--paper); font-size:11.5pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:5mm}
+  .toolbar,.hint,.toast,.rowctl,tr.addrow{display:none !important}
+  body.editing [data-edit]{background:transparent; box-shadow:none}
+  body.editing td[data-edit]:empty::after, body.editing span[data-edit]:empty::after{content:none}
+  .rule-double{margin:12px 0 16px}
+  section + section{margin-top:20px}
+  .sec-head{margin-bottom:8px}
+  .prow dt,.prow dd{padding-top:4px; padding-bottom:4px; min-height:0}
+  table.stmt thead th,table.stmt td{padding-top:6px; padding-bottom:6px}
+  tr{break-inside:avoid}
+  .totals{margin-top:12px}
+  .sum-row{padding:5px 0}
+  .sum-total{margin-top:8px; padding:9px 16px}
+  .receiver{margin-top:22px}
+}
+
+/* ================= 알바비 지급내역서 전용 (거래명세서 스타일 위에 덧붙임) ================= */
+/* 제목이 "거래명세서"보다 길어서 글자 사이를 좁힌다 — 휴대폰에서 한 줄로 */
+.doc-title{letter-spacing:.12em; text-indent:.12em; white-space:nowrap}
+
+/* 전달 메모 — 직원에게 남기는 말. 비어 있으면 보기·사진·인쇄에서 숨긴다 */
+.memo{display:flex; gap:.8rem; align-items:baseline; padding:.55rem .8rem; margin:0 0 1rem;
+  background:rgba(110,30,43,.05); border-left:3px solid var(--seal)}
+.memo b{white-space:nowrap; color:var(--seal); font-weight:var(--w-bold)}
+.memo span{flex:1}
+body:not(.editing) .memo:has(span:empty){display:none}
+
+/* 표: 한 칸에 두 줄 — 위(행사·이름) + 아래 작게(날짜·전화번호) */
+table.stmt.pay .sub{display:block; font-size:.86em; color:var(--ink-mute); font-variant-numeric:tabular-nums}
+table.stmt.pay td.who b{display:block; font-weight:var(--w-medium)}
+table.stmt.pay td.who .sub{white-space:nowrap}
+table.stmt.pay td.acct{white-space:nowrap; font-variant-numeric:tabular-nums}
+table.stmt.pay td.memo-cell{color:var(--ink-soft)}
+
+/* 편집할 때: 두 줄 칸도 한 칸씩 따로 누르게, 빈 칸에는 무엇을 적을지 보여 준다 */
+body.editing table.stmt.pay td.event > [data-edit],
+body.editing table.stmt.pay td.who > [data-edit]{display:flex; align-items:center; margin-bottom:4px}
+body.editing table.stmt.pay [data-ph]:empty::after,
+body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
+
+@media (max-width:699px){
+  .doc-title{font-size:21px; letter-spacing:.06em; text-indent:.06em}
+  table.stmt.pay td.acct{white-space:normal}
+  /* 한 줄 = 카드: 이름·전화 / 번호·일당 / 행사 / 계좌 / 메모 */
+  table.stmt.pay td.who{order:0; grid-column:1 / -1; font-size:16.5px}
+  table.stmt.pay td.who .sub{font-size:15px}
+  table.stmt.pay td[data-label="번호"]{order:1}
+  table.stmt.pay td[data-label="일당"]{order:2; grid-column:span 2}
+  table.stmt.pay td.event{order:3; grid-column:1 / -1}
+  table.stmt.pay td.acct{order:4; grid-column:1 / -1}
+  table.stmt.pay td.memo-cell{order:5; grid-column:1 / -1}
+  /* 보기 화면에서는 빈 계좌·메모 칸을 숨긴다 (표가 아니라 카드라 칸이 어긋나지 않는다) */
+  body:not(.editing) table.stmt.pay td.acct:empty,
+  body:not(.editing) table.stmt.pay td.memo-cell:has(span:empty){display:none}
+}
+@media print{
+  body.editing table.stmt.pay [data-ph]:empty::after,
+  body.editing .memo [data-ph]:empty::after{content:none}
+}
+</style>
+</head>
+<body>
+<p class="hint"><b>안내</b>밖에서 <strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 입력한 내용은 이 기기에만 자동 저장되니, 새 내역을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 주세요.</p>
+
+<div class="toolbar">
+  <button type="button" id="btn-edit" aria-pressed="false">편집</button>
+  <button type="button" id="btn-save-file">파일로 저장</button>
+  <button type="button" id="btn-send" class="primary">직원에게 보내기</button>
+  <button type="button" id="btn-copy">복사</button>
+  <button type="button" id="btn-print">인쇄 · PDF</button>
+  <button type="button" id="btn-reset">초기화</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<article class="sheet">
+
+  <!-- ================= 표제 ================= -->
+  <header class="masthead">
+    <div class="brand">
+      <h1 class="brand-name">푸드벨</h1>
+      <span class="brand-tag">전통 제례 · 시제 맞춤 출장음식 | 전국 출장 · 현장 세팅</span>
+      <a class="brand-tel" href="tel:01053533477">010-5353-3477</a>
+    </div>
+    <div class="doc-meta">
+      <div>
+        <h2 class="doc-title">알바비 지급내역서</h2>
+        <dl class="meta-list">
+          <dt>문서번호</dt><dd data-edit data-t="text" data-k="dno">FB-20261003-0000</dd>
+          <dt>작성일자</dt><dd data-edit data-t="text" data-k="issue">2026년 10월 3일</dd>
+        </dl>
+      </div>
+      <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
+        <rect x="1.5" y="1.5" width="61" height="61" rx="4" fill="#6E1E2B"></rect>
+        <rect x="5.5" y="5.5" width="53" height="53" rx="2" fill="none" stroke="#FFFDF8" stroke-width="1.2" opacity=".6"></rect>
+        <text x="32" y="20" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">푸</text>
+        <text x="32" y="37.5" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">드</text>
+        <text x="32" y="55" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">벨</text>
+      </svg>
+    </div>
+  </header>
+
+  <hr class="rule-double">
+
+  <!-- ================= 지급 내역 (한 줄 = 알바 한 명 = 그 사람이 맡은 행사 한 건) ================= -->
+  <section>
+    <div class="sec-head"><h2>지급 내역</h2><span class="hanja">支給 內譯</span></div>
+
+    <p class="memo"><b>전달 메모</b><span data-edit data-t="text" data-k="memo" data-ph="직원에게 남길 말"></span></p>
+
+    <div class="qwrap">
+      <table class="stmt pay">
+        <colgroup>
+          <col style="width:6%"><col style="width:20%"><col style="width:18%"><col style="width:11%">
+          <col style="width:25%"><col>
+        </colgroup>
+        <thead>
+          <tr><th>번호</th><th>행사 (날짜)</th><th>이름 · 전화번호</th><th>일당</th><th>은행 · 계좌번호</th><th>메모</th></tr>
+        </thead>
+        <tbody>
+          <tr class="item">
+            <td class="c" data-label="번호" data-k="no"></td>
+            <td class="event" data-label="행사"><span class="sub" data-edit data-t="text" data-f="date" data-ph="날짜"></span><span data-edit data-t="text" data-f="event" data-ph="행사"></span></td>
+            <td class="who" data-label="이름 · 전화번호"><b data-edit data-t="text" data-f="name" data-ph="이름"></b><span class="sub" data-edit data-t="text" data-f="tel" data-ph="전화번호"></span></td>
+            <td class="n" data-label="일당" data-edit data-t="num" data-k="pay"></td>
+            <td class="acct" data-label="은행 · 계좌번호" data-edit data-t="text" data-f="acct" data-ph="은행 · 계좌번호"></td>
+            <td class="memo-cell" data-label="메모"><span data-edit data-t="text" data-f="memo" data-ph="메모"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div class="sum">
+        <div class="sum-row"><span>인원</span><span class="v" data-k="count"></span></div>
+        <div class="sum-total"><span class="lab">총 지급액</span><span class="val"><span data-k="total"></span><em>원</em></span></div>
+        <p class="sum-note">일당을 모두 더한 금액입니다. 모두 계좌이체, 세금 공제 없이 일당 그대로 보냅니다.</p>
+      </div>
+    </div>
+  </section>
+
+</article>
+
+<script>
+/* 알바비 지급내역서 — 거래명세서(statement.html)의 편집·저장·보내기 틀을 그대로 쓴다.
+   다른 점: 한 줄 = 알바 한 명 = 그 사람이 맡은 행사 한 건 / 일당만 더한다(공제 없음, 모두 계좌이체)
+            / 파일 이름은 작성일자로: 알바비지급내역서_2026-10-03 (사진·PDF 모두) */
+(function () {
+  "use strict";
+  var KEY = "foodbell-staffpay-v1";
+  var NAME = "알바비지급내역서";
+  function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
+  function money(n) { return n ? fmt(n) : ""; }
+  function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
+  function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtDateKR(d) { return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일"; }
+
+  var sheet = document.querySelector(".sheet");
+  var body  = document.body;
+  var el = function (tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  };
+  function setText(k, v) { var e = sheet.querySelector('[data-k="' + k + '"]'); if (e) e.textContent = v; }
+  function getText(k) { var e = sheet.querySelector('[data-k="' + k + '"]'); return e ? e.textContent.replace(/\s+/g, " ").trim() : ""; }
+  function field(tr, f) { var e = tr.querySelector('[data-f="' + f + '"]'); return e ? e.textContent.replace(/\s+/g, " ").trim() : ""; }
+
+  /* 작성일자 "2026년 10월 3일" → "2026-10-03" (못 읽으면 오늘) — 파일 이름에 쓴다 */
+  function ymd() {
+    var m = getText("issue").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if (m) return m[1] + "-" + pad2(+m[2]) + "-" + pad2(+m[3]);
+    var d = new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+  function fileBase() { return NAME + "_" + ymd(); }
+
+  /* ---------- 줄 번호 · 인원 · 총 지급액 ---------- */
+  function recalc() {
+    var sum = 0, count = 0;
+    each(sheet.querySelectorAll("tr.item"), function (tr, i) {
+      var no = tr.querySelector('[data-k="no"]');
+      if (no) no.textContent = String(i + 1);
+      var pay = raw(tr.querySelector('[data-k="pay"]'));
+      if (pay || field(tr, "name")) count++;
+      sum += pay;
+    });
+    setText("count", count ? count + "명" : "");
+    setText("total", money(sum));
+    return sum;
+  }
+
+  /* ---------- 문자·메신저용 요약 (복사) ---------- */
+  function buildText() {
+    var total = recalc();
+    var L = ["[푸드벨 알바비 지급내역서]", "작성일자: " + getText("issue")];
+    if (getText("memo")) L.push("전달 메모: " + getText("memo"));
+    L.push("", "[지급 내역]");
+    each(sheet.querySelectorAll("tr.item"), function (tr, i) {
+      var name = field(tr, "name"), pay = raw(tr.querySelector('[data-k="pay"]'));
+      if (!name && !pay) return;
+      var line = (i + 1) + ". " + [field(tr, "date"), field(tr, "event")].filter(Boolean).join(" ");
+      line += " — " + [name, field(tr, "tel")].filter(Boolean).join(" ");
+      line += " — " + (pay ? fmt(pay) + "원" : "일당 미입력");
+      if (field(tr, "acct")) line += " — " + field(tr, "acct");
+      if (field(tr, "memo")) line += " (메모: " + field(tr, "memo") + ")";
+      L.push(line);
+    });
+    L.push("", "인원 " + (getText("count") || "0명") + " · 총 지급액 " + fmt(total) + "원",
+           "(모두 계좌이체, 세금 공제 없이 일당 그대로)");
+    return L.join("\n");
+  }
+
+  /* ---------- 저장 / 복원 : 문서면 전체 HTML (줄 추가·삭제까지) ---------- */
+  function serialize() {
+    var c = sheet.cloneNode(true);
+    each(c.querySelectorAll(".rowctl, tr.addrow"), function (n) { n.remove(); });
+    each(c.querySelectorAll("[contenteditable]"), function (n) { n.removeAttribute("contenteditable"); });
+    return c.innerHTML;
+  }
+  function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) {} }
+  function restore() {
+    var html = null;
+    try { html = localStorage.getItem(KEY); } catch (e) { return false; }
+    if (html) { sheet.innerHTML = html; return true; }
+    return false;
+  }
+  /* 처음 여는 화면일 때만: 문서번호 · 작성일자를 오늘로 */
+  function fillFreshDefaults() {
+    var d = new Date();
+    setText("issue", fmtDateKR(d));
+    setText("dno", "FB-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+                   "-" + pad2(d.getHours()) + pad2(d.getMinutes()));
+  }
+
+  /* ---------- 편집 모드: 줄 삭제 · 줄 추가 버튼 ---------- */
+  var ROW_HTML =
+    '<td class="c" data-label="번호" data-k="no"></td>' +
+    '<td class="event" data-label="행사"><span class="sub" data-edit data-t="text" data-f="date" data-ph="날짜"></span>' +
+      '<span data-edit data-t="text" data-f="event" data-ph="행사"></span></td>' +
+    '<td class="who" data-label="이름 · 전화번호"><b data-edit data-t="text" data-f="name" data-ph="이름"></b>' +
+      '<span class="sub" data-edit data-t="text" data-f="tel" data-ph="전화번호"></span></td>' +
+    '<td class="n" data-label="일당" data-edit data-t="num" data-k="pay"></td>' +
+    '<td class="acct" data-label="은행 · 계좌번호" data-edit data-t="text" data-f="acct" data-ph="은행 · 계좌번호"></td>' +
+    '<td class="memo-cell" data-label="메모"><span data-edit data-t="text" data-f="memo" data-ph="메모"></span></td>';
+
+  function addControls() {
+    var tb = sheet.querySelector("table.stmt tbody");
+    each(tb.querySelectorAll("tr.item"), function (tr) {
+      if (tr.querySelector(".rowctl")) return;
+      var box = el("span", "rowctl");
+      var d = el("button", "btn-mini btn-del", "✕ 줄 삭제"); d.type = "button";
+      box.appendChild(d);
+      tr.querySelector("td.memo-cell").appendChild(box);
+    });
+    if (!tb.querySelector("tr.addrow")) {
+      var ar = el("tr", "addrow"), td = el("td");
+      td.colSpan = 6;
+      var ab = el("button", "btn-mini", "＋ 줄 추가 (한 사람)"); ab.type = "button";
+      td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
+    }
+  }
+  function removeControls() {
+    each(sheet.querySelectorAll(".rowctl, tr.addrow"), function (n) { n.remove(); });
+  }
+  function setCE(on) {
+    each(sheet.querySelectorAll("[data-edit]"), function (e) { e.contentEditable = on ? "true" : "false"; });
+  }
+
+  var btnEdit = document.getElementById("btn-edit");
+  function setEditing(on) {
+    body.classList.toggle("editing", on);
+    btnEdit.setAttribute("aria-pressed", String(on));
+    btnEdit.textContent = on ? "편집 완료" : "편집";
+    if (on) { addControls(); setCE(true); }
+    else    { removeControls(); setCE(false); save(); }
+  }
+
+  /* ---------- 입력 처리 (새로 추가한 줄까지) ---------- */
+  sheet.addEventListener("focusin", function (e) {
+    var t = e.target.closest && e.target.closest('[data-edit][data-t="num"]');
+    if (!t) return;
+    var r = t.getAttribute("data-raw");
+    t.textContent = (r && r !== "0") ? r : "";
+  });
+  sheet.addEventListener("input", function (e) {
+    var t = e.target.closest && e.target.closest("[data-edit]");
+    if (!t) return;
+    if (t.getAttribute("data-t") === "num") {
+      var n = parseInt(t.textContent.replace(/[^0-9]/g, ""), 10) || 0;
+      t.setAttribute("data-raw", String(n));
+    }
+    recalc();
+    save();
+  });
+  sheet.addEventListener("focusout", function (e) {
+    var t = e.target.closest && e.target.closest('[data-edit][data-t="num"]');
+    if (!t) return;
+    t.textContent = money(raw(t));
+    save();
+  });
+  sheet.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var t = e.target.closest && e.target.closest("[data-edit]");
+    if (t) { e.preventDefault(); t.blur(); }
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("button.btn-mini");
+    if (!b) return;
+    e.preventDefault();
+    if (b.classList.contains("btn-del")) {
+      var row = b.closest("tr.item");
+      if (row) row.remove();
+    } else if (b.closest("tr.addrow")) {
+      var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
+      b.closest("tr.addrow").parentNode.insertBefore(tr, b.closest("tr.addrow"));
+      addControls(); setCE(true);
+      tr.querySelector('[data-f="date"]').focus();
+    }
+    recalc(); save();
+  });
+
+  /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
+  var toastEl = document.getElementById("toast"), toastT;
+  function toast(msg, ms) {
+    toastEl.textContent = msg; toastEl.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.hidden = true; }, ms || 3200);
+  }
+  /* 사진을 클립보드에 넣는다 — PC 카카오톡 대화창에서 Ctrl+V 로 바로 붙는다 */
+  function copyImage(blob) {
+    if (!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem)) return Promise.resolve(false);
+    return navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+      .then(function () { return true; }, function () { return false; });
+  }
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () { copyFallback(text); });
+    }
+    copyFallback(text); return Promise.resolve();
+  }
+  function copyFallback(text) {
+    var ta = el("textarea"); ta.value = text;
+    ta.style.position = "fixed"; ta.style.top = "-9999px";
+    body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); } catch (e) { window.prompt("아래 내용을 복사하세요", text); }
+    body.removeChild(ta);
+  }
+  function downloadBlob(blob, name) {
+    var a = el("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  /* ---------- 문서면을 이미지(PNG)로 ---------- */
+  function renderImage() {
+    if (typeof html2canvas !== "function") return Promise.resolve(null);
+    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    return ready.then(function () {
+      return html2canvas(sheet, {
+        backgroundColor: "#FFFDF8", scale: 1.7,
+        useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth
+      });
+    }).then(function (canvas) {
+      return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
+    }).catch(function () { return null; });
+  }
+
+  /* 인쇄 · PDF: 저장 창에 뜨는 파일 이름이 문서 제목을 따르므로, 그동안만 제목을 날짜 이름으로 바꾼다 */
+  var pageTitle = document.title;
+  window.addEventListener("afterprint", function () { document.title = pageTitle; });
+  document.getElementById("btn-print").addEventListener("click", function () {
+    setEditing(false);
+    document.title = fileBase();
+    window.print();
+    setTimeout(function () { document.title = pageTitle; }, 1500);
+  });
+
+  document.getElementById("btn-copy").addEventListener("click", function () {
+    var btn = this, old = btn.textContent;
+    copyText(buildText()).then(function () {
+      btn.textContent = "복사됨"; setTimeout(function () { btn.textContent = old; }, 1400);
+    });
+  });
+
+  document.getElementById("btn-send").addEventListener("click", function () {
+    if (!recalc() && !window.confirm("일당을 아직 안 넣으셨습니다. 그래도 보낼까요?")) return;
+    var btn = this, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "준비 중…";
+    setEditing(false);
+    var fname = fileBase() + ".png";
+    var title = "푸드벨 알바비 지급내역서 (" + getText("issue") + ")";
+    var text = buildText();
+    function done() { btn.disabled = false; btn.textContent = old; }
+    function fallback() {
+      if (!fileBlob) { copyText(text); toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요."); return done(); }
+      downloadBlob(fileBlob, fname);
+      copyImage(fileBlob).then(function (ok) {
+        if (ok) toast("알바비 지급내역서 사진을 복사했습니다. 직원과의 카톡 대화창에서 Ctrl+V 로 붙여넣으세요. (다운로드 폴더에도 " + fname + " 저장됨)", 8000);
+        else { copyText(text); toast("사진(" + fname + ")을 저장하고 요약 문구를 복사했습니다. 카톡으로 직원에게 보내세요."); }
+        done();
+      });
+    }
+    var fileBlob = null;
+    renderImage().then(function (blob) {
+      fileBlob = blob;
+      var file = blob ? new File([blob], fname, { type: "image/png" }) : null;
+      // 휴대폰: 공유창(카톡·문자)으로 사진을 넘긴다. PC 공유 창에는 카카오톡 PC 가 안 나와서 쓰지 않는다
+      if (file && matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: title, text: text }).then(done, function (e) {
+          if (e && e.name === "AbortError") return done();
+          fallback();
+        });
+        return;
+      }
+      // PC: 사진을 내려받고 클립보드에도 넣어 둔다 (카톡 PC 대화창에 Ctrl+V)
+      fallback();
+    });
+  });
+
+  document.getElementById("btn-save-file").addEventListener("click", function () {
+    if (!recalc() && !window.confirm("일당을 아직 안 넣으셨습니다. 그래도 저장할까요?")) return;
+    var btn = this, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "저장 중…";
+    setEditing(false);
+    var fname = fileBase() + ".png";
+    renderImage().then(function (blob) {
+      btn.disabled = false; btn.textContent = old;
+      if (blob) { downloadBlob(blob, fname); toast(fname + " 으로 저장했습니다. (다운로드 폴더에서 확인하세요)"); }
+      else toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+    });
+  });
+
+  document.getElementById("btn-reset").addEventListener("click", function () {
+    if (!window.confirm("입력하신 내용을 지우고 빈 알바비 지급내역서로 되돌릴까요?")) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    window.location.reload();
+  });
+
+  btnEdit.addEventListener("click", function () {
+    setEditing(!body.classList.contains("editing"));
+  });
+
+  if (!restore()) fillFreshDefaults();
+  recalc();
+})();
+</script>
+
+
+</body>
+</html>

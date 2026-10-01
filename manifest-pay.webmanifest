@@ -1,0 +1,31 @@
+{
+  "name": "푸드벨 알바비 지급내역서",
+  "short_name": "알바비",
+  "id": "./staff-pay.html",
+  "start_url": "./staff-pay.html",
+  "scope": "./staff-pay.html",
+  "display": "standalone",
+  "lang": "ko",
+  "background_color": "#F7F2E9",
+  "theme_color": "#6E1E2B",
+  "icons": [
+    {
+      "src": "icons/app-pay-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/app-pay-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/app-pay-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
