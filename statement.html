@@ -125,6 +125,11 @@ tr.addrow .btn-mini{width:100%}
 }
 .sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.16em}
 .sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:25px; font-variant-numeric:tabular-nums}
+/* 큰 금액: 이름(합계금액)은 쪼개지 않고, 금액·원은 한 덩어리 — 자리가 모자라면 금액이 다음 줄 오른쪽으로 내려간다 */
+.sum-total{flex-wrap:wrap; row-gap:2px}
+.sum-total .lab{white-space:nowrap}
+.sum-total .val{margin-left:auto; white-space:nowrap}
+@media (max-width:420px){ .sum-total{padding-left:13px; padding-right:13px} .sum-total .lab{letter-spacing:.1em} .sum-total .val{font-size:23px} }
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
@@ -184,6 +189,8 @@ body:not(.editing) tr.addrow{display:none !important}
 }
 .hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
 @media (max-width:700px){ .hint{padding-right:0} }
+/* PC: 오른쪽 위 도구막대(약 470px)가 안내문 첫 줄 끝을 덮었다 → 안내문을 막대 아래에서 시작한다 */
+@media (min-width:701px){ .hint{padding-right:0; padding-top:30px} }
 
 /* ---------- 휴대폰: 도구 버튼은 화면 아래 고정, 편집 칸은 손가락 크기 ----------
    사장님이 쓰는 화면이라 아래 전화·문자 막대 대신 도구 버튼을 둔다 (2026-10-01 사용자 결정).
@@ -218,6 +225,9 @@ body:not(.editing) tr.addrow{display:none !important}
   table.stmt tr.item td::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
   table.stmt td.item-name{grid-column:1 / -1; order:-1; font-size:16.5px}
   table.stmt td[data-label="비고"]{grid-column:1 / -1}
+  /* 금액 세 칸을 한 줄에 셋 두면 큰 금액(예: 198,000,000)이 서로 겹치고 세액이 카드 밖으로 잘렸다
+     → 금액은 한 칸씩 한 줄로: 이름 왼쪽 · 금액 오른쪽 */
+  table.stmt tr.item td[data-label="단가"], table.stmt tr.item td[data-label="공급가액"], table.stmt tr.item td[data-label="세액"]{grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:12px; white-space:nowrap}
   body:not(.editing) table.stmt td[data-label="비고"]:has(span:empty){display:none}
   body.editing table.stmt tr.item td[data-edit], body.editing table.stmt td[data-label="비고"] span[data-edit]{display:block; min-height:44px; padding:4px 6px}
   tr.addrow{display:block}

@@ -125,6 +125,11 @@ tr.addrow .btn-mini{width:100%}
 }
 .sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.16em}
 .sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:25px; font-variant-numeric:tabular-nums}
+/* 큰 금액: 이름(합계금액)은 쪼개지 않고, 금액·원은 한 덩어리 — 자리가 모자라면 금액이 다음 줄 오른쪽으로 내려간다 */
+.sum-total{flex-wrap:wrap; row-gap:2px}
+.sum-total .lab{white-space:nowrap}
+.sum-total .val{margin-left:auto; white-space:nowrap}
+@media (max-width:420px){ .sum-total{padding-left:13px; padding-right:13px} .sum-total .lab{letter-spacing:.1em} .sum-total .val{font-size:23px} }
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
@@ -184,6 +189,8 @@ body:not(.editing) tr.addrow{display:none !important}
 }
 .hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
 @media (max-width:700px){ .hint{padding-right:0} }
+/* PC: 오른쪽 위 도구막대(약 470px)가 안내문 첫 줄 끝을 덮었다 → 안내문을 막대 아래에서 시작한다 */
+@media (min-width:701px){ .hint{padding-right:0; padding-top:30px} }
 
 /* ---------- 휴대폰: 도구 버튼은 화면 아래 고정, 편집 칸은 손가락 크기 ----------
    사장님이 쓰는 화면이라 아래 전화·문자 막대 대신 도구 버튼을 둔다 (2026-10-01 사용자 결정).
@@ -294,7 +301,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 </style>
 </head>
 <body>
-<p class="hint"><b>안내</b>밖에서 <strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 입력한 내용은 이 기기에만 자동 저장되니, 새 내역을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 주세요.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 입력한 내용은 이 기기에만 자동 저장되니, 새 내역을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 주세요.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>

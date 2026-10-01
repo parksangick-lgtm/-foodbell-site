@@ -158,6 +158,11 @@ table.quote td.n[data-label="수량"]{width:1%}
 }
 .sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.22em}
 .sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:27px; font-variant-numeric:tabular-nums}
+/* 큰 금액: 이름(합계금액)은 쪼개지 않고, 금액·원은 한 덩어리 — 자리가 모자라면 금액이 다음 줄 오른쪽으로 내려간다 */
+.sum-total{flex-wrap:wrap; row-gap:2px}
+.sum-total .lab{white-space:nowrap}
+.sum-total .val{margin-left:auto; white-space:nowrap}
+@media (max-width:420px){ .sum-total{padding-left:13px; padding-right:13px} .sum-total .lab{letter-spacing:.1em} .sum-total .val{font-size:23px} }
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-note{margin:9px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.55}
@@ -255,6 +260,8 @@ body:not(.editing) .tier-switch{display:none !important}
 }
 .hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
 @media (max-width:700px){ .hint{padding-right:0} }
+/* PC: 오른쪽 위 도구막대(약 470px)가 안내문 첫 줄 끝을 덮었다 → 안내문을 막대 아래에서 시작한다 */
+@media (min-width:701px){ .hint{padding-right:0; padding-top:30px} }
 
 /* ---------- 휴대폰: 도구 버튼은 화면 아래 고정, 편집 칸은 손가락 크기 ----------
    사장님이 쓰는 화면이라 아래 전화·문자 막대 대신 도구 버튼을 둔다 (2026-10-01 사용자 결정).
