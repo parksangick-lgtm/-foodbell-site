@@ -2,6 +2,7 @@
 # 만들어지는 것: 푸드벨 시작 / 푸드벨 저장 / 푸드벨 스킬설치 / 푸드벨 홈페이지 /
 #              푸드벨 시제 견적서 / 푸드벨 행사 견적서 / 푸드벨 작업지시서 / 푸드벨 거래명세서
 # 서류 아이콘은 바탕색으로 구별한다: 시제=버건디 / 행사=미색 / 작업지시서=먹색 / 거래명세서=황동
+# 작업 도구는 모양부터 다르게: 시작=초록 동그라미▶ / 저장=파란 구름↑ / 스킬설치=주황 톱니바퀴↓ / 홈페이지=버건디 제기
 # 바탕화면-바로가기.bat 이 이 파일을 실행한다. 각 컴퓨터에서 한 번만 하면 된다.
 
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -10,11 +11,13 @@ $icon = Join-Path $repo '아이콘.ico'
 $site = 'https://foodbell.kr'
 $shell = New-Object -ComObject WScript.Shell
 
-function New-Link($name, $bat, $desc) {
+function New-Link($name, $bat, $desc, $icoName) {
     $lnk = $shell.CreateShortcut((Join-Path $desktop ($name + '.lnk')))
     $lnk.TargetPath = Join-Path $repo $bat
     $lnk.WorkingDirectory = $repo
-    if (Test-Path $icon) { $lnk.IconLocation = "$icon,0" }
+    $ico = Join-Path $repo $icoName
+    if (-not (Test-Path $ico)) { $ico = $icon }
+    if (Test-Path $ico) { $lnk.IconLocation = "$ico,0" }
     $lnk.Description = $desc
     $lnk.Save()
     Write-Host ("  만듦: " + $name)
@@ -34,9 +37,9 @@ function New-UrlLink($name, $url, $desc, $icoName) {
     Write-Host ("  만듦: " + $name)
 }
 
-New-Link '푸드벨 시작' '시작.bat' '푸드벨 사이트 - 최신 받기 + 미리보기'
-New-Link '푸드벨 저장' '저장.bat' '푸드벨 사이트 - GitHub 에 올리기'
-New-Link '푸드벨 스킬설치' '스킬설치.bat' '작업 규칙(스킬)을 이 컴퓨터에 설치 - "푸드벨 시작" 을 누른 뒤에 한다'
+New-Link '푸드벨 시작' '시작.bat' '푸드벨 사이트 - 최신 받기 + 미리보기' '아이콘-시작.ico'
+New-Link '푸드벨 저장' '저장.bat' '푸드벨 사이트 - GitHub 에 올리기' '아이콘-저장.ico'
+New-Link '푸드벨 스킬설치' '스킬설치.bat' '작업 규칙(스킬)을 이 컴퓨터에 설치 - "푸드벨 시작" 을 누른 뒤에 한다' '아이콘-스킬설치.ico'
 
 New-UrlLink '푸드벨 홈페이지' $site `
     '푸드벨 홈페이지 - 손님이 보는 화면' '아이콘.ico'
