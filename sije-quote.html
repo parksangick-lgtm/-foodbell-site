@@ -87,7 +87,6 @@ section + section{margin-top:34px}
 
 /* ---------- 고임 규격(7치/1자) 선택 — 편집 모드에서만 보임(body.editing) ---------- */
 .tier-switch{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-.tier-switch .tier-label{font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute)}
 .tier-btn{min-width:2.6em}
 .tier-btn[aria-pressed="true"]{background:var(--seal); color:var(--paper); border-color:var(--seal)}
 
@@ -390,9 +389,11 @@ body:not(.editing) .tier-switch{display:none !important}
     <div class="sec-head">
       <h2 data-edit data-t="text">견적 내역</h2><span class="hanja">見積 內譯</span>
       <div class="tier-switch" role="group" aria-label="고임 규격 선택">
-        <span class="tier-label">고임 규격</span>
         <button type="button" class="btn-mini tier-btn" data-tier="7chi" title="가.제수 음식 수량을 7치 고임상 기준으로 채웁니다">7치 고임상</button>
         <button type="button" class="btn-mini tier-btn" data-tier="1ja" title="가.제수 음식 수량을 1자 고임상 기준으로 채웁니다">1자 고임상</button>
+        <button type="button" class="btn-mini tier-btn" data-tier="60man" title="가.제수 음식 수량을 60만원상 기준으로 채웁니다">60만원상</button>
+        <button type="button" class="btn-mini tier-btn" data-tier="40man" title="가.제수 음식 수량을 40만원상 기준으로 채웁니다">40만원상</button>
+        <button type="button" class="btn-mini tier-btn" data-tier="basic" title="가.제수 음식 수량을 일반상 기준으로 채웁니다">일반상</button>
       </div>
     </div>
     <div class="qwrap">
@@ -667,7 +668,10 @@ body:not(.editing) .tier-switch{display:none !important}
      둘 다 언제든 눌러 바꿀 수 있고, 채운 뒤에도 각 칸을 직접 고쳐 쓸 수 있다. */
   var TIER_PRESETS = {
     "7chi": ["7치", "500g", "1식", "6개", "1"],
-    "1ja":  ["1자", "700g", "1식", "8개", "1"]
+    "1ja":  ["1자", "700g", "1식", "8개", "1"],
+    "60man": ["5치 고임 · 5개", "500g", "1식", "6개", "1"],
+    "40man": ["5개", "500g", "1식", "6개", "1"],
+    "basic": ["3개", "500g", "1식", "6개", "1"]
   };
 
   sheet.addEventListener("click", function (e) {
@@ -687,7 +691,7 @@ body:not(.editing) .tier-switch{display:none !important}
       each(sheet.querySelectorAll(".tier-btn"), function (tb) {
         tb.setAttribute("aria-pressed", String(tb === b));
       });
-      toast((b.getAttribute("data-tier") === "7chi" ? "7치" : "1자") + " 고임상 기준 수량으로 채웠습니다.");
+      toast(b.textContent + " 기준 수량으로 채웠습니다.");
     } else if (b.classList.contains("btn-add")) {                 // 진설 태그 추가
       var span = el("span", null, "품목");
       span.setAttribute("data-edit", ""); span.setAttribute("data-t", "text");
