@@ -886,10 +886,21 @@ body:not(.editing) .tier-switch{display:none !important}
 
   /* 도장 줄은 예전에 저장해 둔 견적서에는 없다 — 불러온 뒤 없으면 끼워 넣는다 */
   var issuerHTML = sheet.querySelector(".issuer").outerHTML;
+  /* 수량 채우기 버튼 줄도 예전 저장본에는 옛 버튼이 들어 있다 — 늘 이 파일의 것으로 바꿔 끼운다(눌린 표시는 유지) */
+  var tierHTML = sheet.querySelector(".tier-switch").outerHTML;
   if (!restore()) fillFreshDefaults();
   if (!sheet.querySelector(".issuer")) {
     var totalsEl = sheet.querySelector(".totals");
     if (totalsEl) totalsEl.insertAdjacentHTML("afterbegin", issuerHTML);
+  }
+  var oldTier = sheet.querySelector(".tier-switch");
+  if (oldTier) {
+    var pressed = oldTier.querySelector('[aria-pressed="true"]');
+    oldTier.outerHTML = tierHTML;
+    if (pressed) {
+      var nb = sheet.querySelector('.tier-btn[data-tier="' + pressed.getAttribute("data-tier") + '"]');
+      if (nb) nb.setAttribute("aria-pressed", "true");
+    }
   }
   recalc();
 })();
