@@ -23,7 +23,12 @@
 - **작업 시작 전에 반드시 `git pull`** — 다른 컴퓨터에서 한 작업이 밀려 있을 수 있다.
 - 바탕화면 아이콘이 이 일을 대신한다: **푸드벨 시작**(`시작.bat` — pull + 미리보기 서버) / **푸드벨 저장**(`저장.bat` — pull + commit + push).
 - **클로드 코드는 자동으로 저장한다**(2026-09-28): 답을 마칠 때마다 `.claude/hooks/auto-save.sh` 가 commit + pull + push, 대화를 시작할 때 pull.
-  5MB 넘는 새 파일·충돌·인터넷 끊김이면 멈추고 한 줄로 알린다. **캐시 번호(`?v=`) 점검은 안 한다** — css/js 를 고치면 클로드가 같은 답 안에서 올린다.
+  5MB 넘는 새 파일·충돌·인터넷 끊김이면 멈추고 한 줄로 알린다. **캐시 번호(`?v=`) 점검은 자동 저장이 아니라 아래 자동 규칙이 맡는다.**
+- **고칠 때마다 도는 자동 규칙**(2026-10-08, `.claude/settings.json` 의 PostToolUse): 클로드가 파일을 고치거나 명령을 돌릴 때마다
+  `cache-reminder.sh` 가 "css/js 를 고쳤는데 `?v=` 를 안 올렸다"고, `index-guard.sh` 가 "`index.html` 에서 검색 확인 태그·사업자 정보가
+  빠졌다 / 가격이 들어갔다"고 클로드에게 알린다. 기준은 마지막 저장본이라, 일부러 바꾼 것은 저장되면 경고가 멈춘다.
+  **고친 뒤에 알리는 것이라 그 답 안에서 안 고치면 자동 저장이 그대로 올린다.**
+- **문구 검토 담당**(`.claude/agents/content-reviewer.md`): "내용 검토해줘" 라고 하면 새 문구의 가격·지어낸 사실·한자·개인정보를 따로 본다. 부를 때만 돈다.
 - 새 컴퓨터에서는 `바탕화면-바로가기.bat` 을 더블클릭하면 두 아이콘이 생긴다.
 
 ### 지금 어느 컴퓨터인가 — 이름으로 구분한다
@@ -113,6 +118,8 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 잘렸다고 본 화면이 실제로는 485px 이었고, **없는 버그를 세 번 쫓았다**(사라진 버튼, 잘린 글자 2회).
 매번 사이트는 멀쩡했고 측정 방법이 틀렸다.
 
+- **먼저 `python 휴대폰캡처.py`** (2026-10-08) — 사이트 + 서류 5종을 390px 로 찍고, 되읽은 폭과 넘침을 출력한다.
+  사진은 임시 폴더에 저장한다(작업 폴더에 두면 자동 저장으로 `foodbell.kr` 에 공개된다). 자세한 것은 `foodbell-site-dev` 스킬 2절.
 - 폭은 **Playwright**(`webapp-testing` 스킬, `viewport={"width":390,...}, is_mobile=True`)로 만드는 것이 가장 쉽다.
   없으면 **390px `<iframe>`** 이나 CDP `Emulation.setDeviceMetricsOverride`.
 - 캡처하기 전에 `document.documentElement.clientWidth` 를 **출력해서 390 인지 눈으로 확인**한다.
@@ -128,6 +135,7 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 
 - 직접 올릴 때: `python 캐시버전올리기.py` (`--check` 를 붙이면 올리지 않고 보기만 한다)
 - `저장.bat` 이 저장할 때마다 이 점검을 자동으로 한다 — 안 올렸으면 물어본다.
+- 클로드 작업 중에는 자동 규칙 `cache-reminder.sh` 가 고친 직후 알려 준다(위 "컴퓨터 세 대를 오간다" 절).
 
 ## 화면 만들 때
 

@@ -1,6 +1,6 @@
 ---
 name: foodbell-site-dev
-description: 푸드벨 사이트(c:\galleypark)를 고치고 확인하고 저장하는 작업 흐름. 화면을 고친 뒤 캐시 번호(?v=) 올리기, 휴대폰 폭을 제대로 만들어 확인하기, 저장이 GitHub 까지 갔는지 확인하기를 담는다. index.html·css/style.css·js/main.js·견적서(sije-quote.html, event-quote.html)를 수정할 때, "사이트가 안 바뀐다", "휴대폰에서 깨진다", "저장했는데 반영이 안 된다" 같은 말이 나올 때 쓴다. Working rules for developing, verifying, and saving the Foodbell static site.
+description: 푸드벨 사이트(c:\galleypark)를 고치고 확인하고 저장하는 작업 흐름. 화면을 고친 뒤 캐시 번호(?v=) 올리기, 휴대폰 폭을 제대로 만들어 확인하기, 저장이 GitHub 까지 갔는지·버셀 서버에 새 버전이 올라갔는지 확인하기를 담는다. index.html·css/style.css·js/main.js·견적서(sije-quote.html, event-quote.html)를 수정할 때, "사이트가 안 바뀐다", "휴대폰에서 깨진다", "저장했는데 반영이 안 된다", "배포 확인해줘", "휴대폰 확인해줘" 같은 말이 나올 때 쓴다. Working rules for developing, verifying, and saving the Foodbell static site.
 ---
 
 # 푸드벨 사이트 작업 흐름
@@ -24,6 +24,8 @@ python 캐시버전올리기.py --check  # 올리지 않고 확인만
 - 크게 바뀌었으면 `sw.js` 의 `CACHE = 'foodbell-vN'` 도 올려야 풀린다.
   (`?v=` 만 올려서 안 풀린 적이 있다.)
 - `저장.bat` 이 저장할 때마다 자동으로 점검한다 — 안 올렸으면 물어본다.
+- 클로드 작업 중에는 자동 규칙(`.claude/hooks/cache-reminder.sh`, 2026-10-08)이 css/js 를
+  고친 직후 "아직 안 올렸다"고 알려 준다. 이미 올렸으면 조용하다 — 알림이 떠도 **한 번만** 올린다.
 - 사진의 `?v=` 는 건드리지 않는다. 전부 올리면 손님이 사진을 다시 다 받는다.
 
 **같은 교훈이 작업 노트에 세 번 적혔는데도 또 빠졌다.** 그래서 규칙을 더 크게
@@ -37,6 +39,25 @@ python 캐시버전올리기.py --check  # 올리지 않고 확인만
 헤드리스 크롬은 `--window-size=390` 을 줘도 뷰포트를 **약 485px** 로 잡는다.
 그래서 390px 로 잘렸다고 본 화면이 실제로는 485px 이었고, **없는 버그를 세 번**
 쫓았다(사라진 버튼 1회, 잘린 글자 2회). 매번 사이트는 멀쩡했고 측정이 틀렸다.
+
+**먼저 검증된 도구로 찍는다 — 캡처 코드를 새로 짜지 않는다** (2026-10-08):
+
+```bash
+python -m http.server 8123          # 미리보기 서버 (다른 창)
+python 휴대폰캡처.py                 # 사이트 + 서류 5종, 390px
+python 휴대폰캡처.py --tag before    # 고치기 전 기준 사진
+```
+
+- 쪽마다 되읽은 폭과 넘침 여부를 출력한다. 폭이 390 이 아니면 "측정 실패"라고 적는다.
+- 사이트 css 가 `html`·`body` 에 `overflow-x: hidden` 을 걸어서 "화면보다 넓은가"로는
+  잘린 글자가 안 잡힌다. 도구는 오른쪽 끝을 넘은 요소를 하나씩 찾는다.
+- 매번 자체 시험(빈 쪽=조용 / 잘린 600px 상자=걸림 / 가로 스크롤 표=조용)부터 한다.
+  자체 시험이 실패하면 종료 코드 2 — 결과를 믿지 않는다.
+- **사진은 임시 폴더(`%TEMP%\foodbell-phone\날짜-시각`)에 저장한다.** 작업 폴더에 두면
+  자동 저장이 올리고 버셀이 `foodbell.kr/사진.png` 로 공개한다. `.gitignore` 는 png 를 막지 않는다.
+- 서류 사진에서 **아래 고정 버튼 막대가 사진 중간에 찍히는 것은 버그가 아니다.**
+  한 장으로 길게 찍을 때 고정 요소가 첫 화면 바닥 자리에 그려지는 것이다.
+- 도구로 안 되는 확인(누른 뒤 모습 등)만 아래 방법으로 직접 짠다.
 
 - 폭은 **playwright 로 먼저 만든다**(이 PC 에 설치돼 있다). 뷰포트를 직접 지정하고
   같은 페이지 안에서 `clientWidth` 를 되읽으므로 아래 하네스·출처 문제가 아예 없다.
@@ -219,6 +240,30 @@ curl -s -o /dev/null -w "%{http_code}" https://foodbell.kr/
 `office` 브랜치에 push 하면 버셀이 자동 배포한다. 깃허브 페이지는 **되돌릴 곳으로
 남겨 두었다.** 넷리파이는 **배포 중단** — 쓰지 않는다.
 
+### "배포 확인해줘" — 새 버전이 서버에 올라갔는지
+
+`200` 은 사이트가 **살아 있다**는 뜻이지 **새 버전이 올라갔다**는 뜻이 아니다.
+캐시 번호를 내 컴퓨터와 서버에서 비교한다:
+
+```bash
+echo "내 컴퓨터: $(grep -oE '(css/style\.css|js/main\.js)\?v=[0-9]+' index.html | tr '\n' ' ')"
+echo "버셀 서버: $(curl -s https://foodbell.kr/ | grep -oE '(css/style\.css|js/main\.js)\?v=[0-9]+' | tr '\n' ' ')"
+curl -s -o /dev/null -w "foodbell.kr %{http_code}\n" https://foodbell.kr/
+curl -s -o /dev/null -w "www         %{http_code} -> %{redirect_url}\n" https://www.foodbell.kr/
+printf '푸드벨.kr   '; curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" https://xn--hy1bx1mqsv.kr/
+```
+(curl 의 `-w` 안에 한글을 넣으면 깨져 나온다 — 한글 이름표는 `printf` 로 따로 찍는다.)
+
+정상: 두 번호가 같고, `200`, www·한글 주소는 `308 -> https://foodbell.kr/`.
+
+- **고친 그 답 안에서 확인하면 늘 "다름"으로 나온다.** 자동 저장은 답이 **끝날 때**
+  올리고, 버셀 배포에 다시 1분쯤(추정) 걸린다. 다음 답에서 확인한다.
+- 먼저 `git status -sb` 에 `ahead` 가 없는지(3절) 본다. 안 올라갔으면 서버가 다른 게 당연하다.
+- 이것은 **버셀 서버** 상태다. 손님 휴대폰은 서비스워커가 옛 화면을 붙잡고 있을 수 있어
+  앱을 다시 열어야 바뀐다. "손님 화면에 반영됐다"고 말하지 말고 "서버에 올라갔다"고 말한다.
+- css/js 를 안 고친 수정(글자만 바꿈)은 번호가 그대로라 이 비교로 못 가린다 —
+  `curl -s https://foodbell.kr/ | grep -c "바꾼 문구"` 로 그 문구를 직접 찾는다.
+
 문서에 적힌 배포 상태는 낡는다. 실제로 `CLAUDE.md` 에 "404, 안 뜬다"고 적혀 있던
 동안 사이트는 멀쩡히 떠 있었고, 그 낡은 기록 때문에 유료 호스팅으로 옮길 뻔했다.
 
@@ -256,6 +301,7 @@ curl -s -o /dev/null -w "%{http_code}" https://foodbell.kr/
 | `저장전점검.py --cache` | css/js 를 고치고 캐시 번호(`?v=`)를 안 올렸는지 |
 | `저장전점검.py --notpushed` | 지난번 저장이 GitHub 까지 갔는지 |
 | `사진용량줄이기.py` | 사진 일괄 축소 (이 PC 에 ImageMagick 이 없다 — Pillow 를 쓴다) |
+| `휴대폰캡처.py` | 사이트 + 서류 5종을 390px 로 찍고 폭·넘침 확인 (2절). Playwright 필요 |
 
 **`저장전점검.py` 의 옵션은 한 번에 하나만 먹는다.** `main()` 이 첫 옵션에서 곧바로
 `return` 하므로, 세 개를 묶어 주면 **첫 것만 돌고 나머지는 조용히 건너뛴 채
