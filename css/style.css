@@ -808,6 +808,8 @@ main:focus:not(:focus-visible) { outline: none; }
 .footer__brand .logo__text em { color: inherit; }
 .footer__biz { font-size: var(--text-caption); font-weight: var(--weight-normal); line-height: 1.9; color: var(--color-on-dark-soft); }
 .footer__copy { font-size: var(--text-caption); font-weight: var(--weight-normal); color: var(--color-on-dark-dim); margin-top: var(--space-2); }
+/* 개인정보 처리방침 — 첫 화면에서 바로 찾을 수 있게 굵게·밑줄 (개인정보위 작성지침), 누르는 자리 44px */
+.footer__policy a { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-caption); font-weight: var(--weight-bold); color: var(--color-white); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- 맨 위로 ---------- */
 .to-top {

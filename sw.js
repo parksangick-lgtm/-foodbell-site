@@ -1,6 +1,6 @@
 /* 푸드벨 서비스 워커 — 오프라인 기본 지원 + 홈 화면 앱 실행
    내용을 크게 바꿨을 때는 아래 CACHE 버전 숫자를 올리세요. */
-const CACHE = 'foodbell-v25';
+const CACHE = 'foodbell-v26';
 
 /* 처음 설치할 때 미리 받아두는 최소한의 파일 (앱 껍데기) */
 const PRECACHE = [
@@ -34,13 +34,19 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
 
   /* 페이지 이동: 온라인이면 최신을 보여주고 오프라인용 사본도 갱신,
-     오프라인이면 저장해 둔 첫 화면 */
+     오프라인이면 저장해 둔 첫 화면.
+     사본은 첫 화면을 열었을 때만 갱신한다 — 전에는 처리방침·견적서를 열어도 그 페이지가
+     "첫 화면" 사본 자리에 저장돼, 인터넷이 끊기면 엉뚱한 페이지가 나왔다(2026-10-08). */
   if (req.mode === 'navigate') {
+    const home = new URL('./', self.registration.scope).pathname;
+    const isHome = url.pathname === home || url.pathname === home + 'index.html';
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put('./index.html', copy));
+          if (isHome && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put('./index.html', copy));
+          }
           return res;
         })
         .catch(() => caches.match('./index.html', { ignoreSearch: true }))
