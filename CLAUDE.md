@@ -72,6 +72,7 @@
 | `teach` | `/teach 주제` — 여러 날에 걸친 맞춤 수업 (맷 포콕). **이 폴더에서 쓰지 말 것** — 수업 파일(`lessons/*.html` 등)을 작업 폴더에 만들어 foodbell.kr 에 올라간다. `C:\dev\vibe-study` 를 VS Code 로 열고 쓴다 |
 | `web-design-guidelines` | "내 사이트 점검해줘" — 웹 화면 규칙과 대조 (Vercel, MIT). 쓸 때마다 규칙을 인터넷에서 새로 받아온다 |
 | `webapp-testing` | 브라우저 자동 시험·휴대폰 폭 캡처 (Anthropic, Apache-2.0). Playwright 필요 — 컴퓨터마다 `python -m pip install playwright` + `python -m playwright install chromium` 한 번 |
+| `flutter-windows-setup` | 새 PC 에 Flutter 세팅 → 에뮬레이터에서 my_app 첫 실행 (2026-10-09). 이 사이트와 무관하지만 세 PC 에 따라가게 여기 둔다. 스크립트 2개 포함 |
 
 **외부 스킬**은 남이 만든 것이다 — 디자인 두 개는 원본 `github.com/leonxlnx/taste-skill`(MIT),
 2026-09-23 `c184364` 시점 사본. "맷 포콕" 일곱 개는 원본 `github.com/mattpocock/skills`(MIT),
