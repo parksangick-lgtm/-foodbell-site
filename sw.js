@@ -1,6 +1,6 @@
 /* 푸드벨 서비스 워커 — 오프라인 기본 지원 + 홈 화면 앱 실행
    내용을 크게 바꿨을 때는 아래 CACHE 버전 숫자를 올리세요. */
-const CACHE = 'foodbell-v29';
+const CACHE = 'foodbell-v30';
 
 /* 처음 설치할 때 미리 받아두는 최소한의 파일 (앱 껍데기) */
 const PRECACHE = [
@@ -59,6 +59,10 @@ self.addEventListener('fetch', (event) => {
 
   /* 버셀 측정 파일은 저장하지 않는다 — 옛 사본이 남으면 측정이 어긋난다 */
   if (url.pathname.startsWith('/_vercel/')) return;
+
+  /* 영상은 저장하지 않고 그대로 통과 — 브라우저는 영상을 조각(Range)으로 나눠 받는데,
+     통째로 저장된 사본을 돌려주면 아이폰 사파리가 재생을 못 한다 */
+  if (url.pathname.endsWith('.mp4')) return;
 
   /* 같은 사이트의 CSS·JS·이미지: 저장된 것 먼저 보여주고 뒤에서 갱신 */
   event.respondWith(

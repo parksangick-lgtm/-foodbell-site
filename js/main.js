@@ -80,6 +80,30 @@
     });
   });
 
+  /* ---------- 탭별 소개 영상 — 화면에 보일 때만 소리 없이 재생 ----------
+     preload="none" 이라 보이기 전에는 받지 않는다. 숨은 탭의 영상은 보이지 않으므로 멈춰 있다.
+     자동재생이 막힌 폰(절전 모드 등)이나 "동작 줄이기"를 켠 손님에게는 재생 버튼을 보여준다. */
+  var menuVideos = document.querySelectorAll('.menu-video video');
+  var lessMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (menuVideos.length && 'IntersectionObserver' in window && !lessMotion) {
+    var videoWatcher = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var video = entry.target;
+        if (entry.isIntersecting) {
+          var playing = video.play();
+          if (playing && playing.catch) {
+            playing.catch(function (err) { if (err && err.name === 'NotAllowedError') video.controls = true; });
+          }
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: 0.5 });
+    menuVideos.forEach(function (video) { videoWatcher.observe(video); });
+  } else {
+    menuVideos.forEach(function (video) { video.controls = true; });
+  }
+
   /* ---------- 맨 위로 버튼 ---------- */
   var toTop = document.getElementById('toTop');
   if (toTop) {
