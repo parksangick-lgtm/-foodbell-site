@@ -246,6 +246,9 @@ main:focus:not(:focus-visible) { outline: none; }
 }
 .hero__text {
   align-self: center;
+  /* 820px 은 글씨 자리만의 상한이다. 여백까지 넣어 세면 아주 넓은 화면(2668px~)에서
+     커진 왼쪽 여백이 820px 을 다 먹어 글씨가 한 글자씩 세로로 쌓였다 (2026-10-14) */
+  box-sizing: content-box;
   max-width: 820px;
   /* 왼쪽 여백을 아래 섹션(.container)의 글 시작선과 맞춘다 */
   padding: var(--space-24) var(--space-8) var(--space-24)
@@ -888,7 +891,7 @@ main:focus:not(:focus-visible) { outline: none; }
 @media (max-width: 960px) {
   .hero { grid-template-columns: 1fr; }
   .hero__photo { order: -1; min-height: 0; aspect-ratio: 4 / 3; border-left: none; border-bottom: 1px solid var(--color-border); }
-  .hero__text { padding: var(--space-12) var(--space-6) var(--space-16); }
+  .hero__text { box-sizing: border-box; padding: var(--space-12) var(--space-6) var(--space-16); }
   .features { grid-template-columns: repeat(2, 1fr); }
   .menu__grid { grid-template-columns: repeat(2, 1fr); }
   .album { grid-template-columns: repeat(3, 1fr); }
