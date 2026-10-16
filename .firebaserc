@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "foodbell-sije",
+    "test": "foodbell-sije-test"
+  }
+}

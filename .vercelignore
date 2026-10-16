@@ -13,3 +13,7 @@ design
 *.zip
 *.ico
 netlify.toml
+tools
+firebase.json
+.firebaserc
+firestore.rules

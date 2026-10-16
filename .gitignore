@@ -13,6 +13,15 @@ _*.html
 __pycache__/
 *.pyc
 
+# Playwright MCP(브라우저 자동 시험)가 저절로 쌓는 화면·콘솔 기록 — 올라가면 foodbell.kr 에 공개된다
+.playwright-mcp/
+
+# 파이어베이스 관리자 열쇠 — 원래 C:\foodbell-keys 에만 두지만, 실수로 여기 들어와도 올라가지 않게
+*-admin.json
+# 파이어베이스 명령이 실패하면 남기는 기록
+firebase-debug.log
+firestore-debug.log
+
 # 무거운 작업 파일 — 저장소에 올리지 않는다.
 # (예전에 26MB 짜리 디자인 zip 이 `git add -A` 로 통째로 올라갔고,
 #  나중에 지워도 저장소 기록에는 그대로 남는다.)

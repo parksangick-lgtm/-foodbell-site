@@ -51,6 +51,10 @@ jobs:
                    --exclude='*.zip' \
                    --exclude='*.ico' \
                    --exclude='netlify.toml' \
+                   --exclude='tools' \
+                   --exclude='firebase.json' \
+                   --exclude='.firebaserc' \
+                   --exclude='firestore.rules' \
                    ./ _site/
           touch _site/.nojekyll
 

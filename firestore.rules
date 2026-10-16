@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// 시제행사 내역서 저장소의 보안 규칙 — 이 파일은 공개 저장소에 올라간다. 메일 주소를 여기 쓰지 않는다.
+// 허락 = 구글로 로그인했고, 메일이 확인됐고, 그 메일이 `allow` 묶음에 있을 때 (allow 는 tools/sije_web/allow.py 가 고친다).
+// 올리기: npx firebase-tools@15.34.0 deploy --only firestore:rules --project test   (실제는 --project default)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function allowed() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/allow/$(request.auth.token.email));
+    }
+
+    match /events/{id} {
+      allow read: if allowed();
+      allow create, update: if allowed()
+        && request.resource.data.status in ['확정', '미확정', '주문없음'];
+      // 지우기는 아무도 못 한다 (행사 지우기는 1단계에 없음).
+
+      match /images/{n} {
+        allow read, create: if allowed();
+      }
+    }
+
+    match /templates/{name} {
+      allow read: if allowed();
+    }
+
+    // allow/* 와 그 밖의 모든 곳은 규칙이 없으므로 모두 거부된다.
+  }
+}
