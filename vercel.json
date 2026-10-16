@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/__/:path*", "destination": "https://foodbell-sije.firebaseapp.com/__/:path*" }
+  ]
+}

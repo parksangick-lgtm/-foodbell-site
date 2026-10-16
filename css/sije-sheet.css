@@ -1,0 +1,114 @@
+/* 시제행사 내역서 A4 모양 — 화면 · 인쇄 · 사무실 PC 의 PDF 공용 (js/sije/sheet-render.js 가 그린다).
+   크기와 색은 지금 엑셀 내역서(_만들기 프로그램\jobsheet.py)와 같은 값이다 — 손으로 쓰던 서류 모양을 그대로 옮기려고
+   사이트 색(:root) 대신 엑셀 색을 여기에만 둔다. 엑셀처럼 글자는 모두 굵게(맑은 고딕). */
+
+.sije-sheet {
+  --xl-navy: #1F4E78;      /* 맨 위 줄 · 품목 머리줄 */
+  --xl-sec: #D9EAF7;       /* ■ 구역 줄 */
+  --xl-label: #EDEDED;     /* 이름표 칸 */
+  --xl-yellow: #FFF2CC;    /* 손으로 적어 넣는 칸 */
+  --xl-group: #F6F1E7;     /* 구분 칸 */
+  --xl-line: #7F7F7F;
+  --xl-line-group: #595959;
+  --xl-line-sec: #262626;
+  --xl-mute: #7F7F7F;
+  --xl-red: #9C0006;       /* 꼭 지킬 것 */
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 706.5pt;
+  min-height: 1009.6pt;     /* A4 여백 안쪽과 같은 비율 — 남는 높이는 메모가 채운다 */
+  margin: 0 auto;
+  background: #FFFFFF;
+  color: #000000;
+  font-family: 'Malgun Gothic', var(--font-body, sans-serif);
+  font-weight: 700;
+  line-height: 1.25;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.sije-sheet *, .sije-sheet *::before, .sije-sheet *::after { box-sizing: border-box; }
+
+.sije-sheet table { width: 706.5pt; border-collapse: collapse; table-layout: fixed; }
+.sije-sheet td {
+  height: 21pt;
+  padding: 1pt 4pt;
+  border: 0.75pt solid var(--xl-line);
+  font-size: 12pt;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.sije-sheet .title td {
+  height: 67pt;
+  border: 0;
+  background: var(--xl-navy);
+  color: #FFFFFF;
+  font-size: 22pt;
+  line-height: 1.3;
+  text-align: center;
+}
+.sije-sheet .gap-row td { height: 6pt; padding: 0; border: 0; }
+.sije-sheet .sec td {
+  border: 0;
+  border-bottom: 1.5pt solid var(--xl-line-sec);
+  background: var(--xl-sec);
+  color: var(--xl-navy);
+}
+
+.sije-sheet .lab { background: var(--xl-label); font-size: 11pt; text-align: center; }
+.sije-sheet .val { padding-left: 6pt; }
+.sije-sheet .blank { background: var(--xl-yellow); }
+.sije-sheet .must td { padding-left: 6pt; background: var(--xl-yellow); color: var(--xl-red); }
+
+.sije-sheet .ihead td {
+  height: 22pt;
+  background: var(--xl-navy);
+  color: #FFFFFF;
+  font-size: 11pt;
+  text-align: center;
+}
+.sije-sheet td.gap { padding: 0; border-top: 0; border-bottom: 0; }
+.sije-sheet .ihead td, .sije-sheet td.no, .sije-sheet td.chk { padding-left: 1pt; padding-right: 1pt; }   /* 좁은 칸: 엑셀처럼 두 글자가 한 줄에 */
+.sije-sheet .item td { height: 20pt; }
+.sije-sheet .grp { background: var(--xl-group); font-size: 11pt; text-align: center; }
+.sije-sheet .no { color: var(--xl-mute); font-size: 10pt; text-align: center; }
+.sije-sheet .name { padding-left: 6pt; font-size: 11.5pt; }
+.sije-sheet .qty { font-size: 11pt; text-align: center; }
+.sije-sheet .note, .sije-sheet .extra { padding-left: 6pt; font-size: 10.5pt; }
+.sije-sheet .chk { text-align: center; }
+.sije-sheet .box { display: inline-block; width: 10pt; height: 10pt; border: 1pt solid #000000; vertical-align: middle; }
+.sije-sheet td.end { border-bottom: 1.5pt solid var(--xl-line-group); }
+
+.sije-sheet .memo { display: flex; flex: 1; flex-direction: column; }
+.sije-sheet .memo-sec {
+  display: flex;
+  align-items: center;
+  height: 21pt;
+  margin-top: 6pt;
+  padding: 0 4pt;
+  background: var(--xl-sec);
+  color: var(--xl-navy);
+  font-size: 12pt;
+}
+.sije-sheet .memo-box { display: flex; flex: 1; gap: 6pt; border: 0.75pt solid var(--xl-line); }
+.sije-sheet .memo-lines { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.sije-sheet .memo-text {
+  min-height: 24pt;
+  padding: 4pt 6pt;
+  font-size: 11pt;
+  line-height: 16.5pt;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* 글 아래 빈자리는 손으로 적는 줄 (엑셀의 메모 줄처럼 24pt 마다 가는 선) — 남는 높이만큼만 보인다 */
+.sije-sheet .memo-rule { flex: 1 1 0; min-height: 0; overflow: hidden; border-top: 0.75pt solid var(--xl-line); }
+.sije-sheet .memo-line { height: 24pt; border-bottom: 0.75pt solid var(--xl-line); }
+.sije-sheet .memo-imgs { display: flex; flex-direction: column; gap: 6pt; align-items: flex-end; padding: 6pt; }
+.sije-sheet .memo-imgs img { display: block; max-width: 260pt; max-height: 200pt; object-fit: contain; }
+
+.sije-sheet [contenteditable]:focus { outline: 2pt solid var(--xl-navy); outline-offset: -2pt; background: #FFFFFF; }
+
+@page { size: A4; margin: 0.3in 0.25in; }

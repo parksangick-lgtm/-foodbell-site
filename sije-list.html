@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸드벨 시제행사 목록</title>
+<meta name="description" content="푸드벨(박상익출장음식) 시제행사 목록. 허락된 계정만 로그인해서 보는 내부용 화면입니다.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+<meta name="theme-color" content="#6E1E2B">
+<!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
+<meta name="color-scheme" content="only light">
+<!-- 홈 화면 앱 정보(manifest) · 아이콘은 Task 6 에서 단다 -->
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<style>
+@media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
+:root{
+  color-scheme: only light;
+  /* 거래명세서(statement.html)와 같은 값 */
+  --cream:#F7F2E9; --paper:#FFFDF8; --band2:#EDE4D3;
+  --ink:#120C06; --ink-soft:#1A1409; --ink-mute:#332A1A;
+  --seal:#6E1E2B; --seal-dark:#4E141E; --gold:#B08D57;
+  --line:#E2D6BF; --line-strong:#CBBB9C;
+  --sans:'Pretendard','Pretendard Variable','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --w-normal:400; --w-medium:600; --w-bold:700;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); font-weight:var(--w-normal);
+  font-size:17px; line-height:1.6; padding:28px 16px 64px}
+[hidden]{display:none !important}
+.wrap{max-width:1080px; margin:0 auto}
+.head{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:16px}
+.head h1{margin:0; font-size:28px; font-weight:var(--w-bold); color:var(--seal)}
+.who{margin:0; font-size:14px; color:var(--ink-mute)}
+.card{background:var(--paper); border:1px solid var(--line); padding:24px; max-width:480px}
+.card p{margin:0 0 16px}
+button{font-family:var(--sans); font-size:16px; font-weight:var(--w-medium); color:var(--ink-soft); min-height:44px;
+  padding:8px 16px; background:var(--paper); border:1px solid var(--line-strong); cursor:pointer}
+button:hover{background:var(--band2)}
+button.primary, button[aria-pressed="true"]{background:var(--seal); border-color:var(--seal); color:var(--paper)}
+button.primary:hover{background:var(--seal-dark)}
+
+.toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px}
+.toolbar .primary{margin-left:auto}
+
+#rows{list-style:none; margin:0; padding:0; background:var(--paper); border:1px solid var(--line)}
+.row{display:grid; grid-template-columns:230px 1fr 140px 150px 80px; gap:4px 16px; align-items:center;
+  padding:12px 16px; min-height:52px; color:inherit; text-decoration:none; border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--band2)}
+.r-date{font-weight:var(--w-bold)}
+.r-phone{font-variant-numeric:tabular-nums}
+.r-status{justify-self:end; font-size:14px; font-weight:var(--w-medium); color:var(--seal)}
+.r-expect{grid-column:2 / -1; font-size:15px; color:var(--ink-mute)}
+.empty{padding:24px 16px; color:var(--ink-mute)}
+
+dialog{border:1px solid var(--line-strong); background:var(--paper); padding:24px; width:min(420px, 92vw)}
+dialog::backdrop{background:rgba(18,12,6,.45)}
+dialog h2{margin:0 0 16px; font-size:21px}
+#tpl-list{display:grid; gap:8px; margin-bottom:16px}
+.tpl-choice{text-align:left}
+.toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:60; max-width:88vw;
+  background:var(--ink); color:var(--paper); font-size:15px; padding:12px 16px; border-radius:8px}
+
+/* 휴대폰: 버튼은 화면 아래 고정 (기존 서류 화면과 같은 규칙), 한 줄은 위아래로 쌓는다 */
+@media (max-width:699px){
+  body{padding-bottom:calc(140px + env(safe-area-inset-bottom))}
+  .toolbar{position:fixed; left:0; right:0; bottom:0; z-index:40; margin:0; display:grid;
+    grid-template-columns:repeat(4, 1fr); gap:6px; padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+    background:var(--paper); border-top:1px solid var(--line-strong)}
+  .toolbar button{font-size:15px; padding:6px 4px; word-break:keep-all}
+  .toolbar .primary{grid-column:1 / -1; margin:0}
+  .row{grid-template-columns:1fr auto; gap:2px 8px}
+  .r-place, .r-setting, .r-phone, .r-expect{grid-column:1 / -1}
+  .r-status{grid-column:2; grid-row:1}
+  .toast{bottom:calc(130px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <h1>시제행사 목록</h1>
+    <p class="who" id="who"></p>
+  </header>
+
+  <p id="loading">불러오는 중…</p>
+
+  <section id="login" class="card" hidden>
+    <p>허락된 구글 계정으로 로그인하세요.</p>
+    <button type="button" id="sign-in" class="primary">구글로 로그인</button>
+  </section>
+
+  <section id="denied" class="card" hidden>
+    <p><b>권한이 없습니다</b> — 사장님께 문의하세요.</p>
+    <button type="button" id="sign-out">다른 계정으로 로그인</button>
+  </section>
+
+  <section id="list" hidden>
+    <div class="toolbar" role="toolbar" aria-label="행사 거르기">
+      <button type="button" data-status="확정" aria-pressed="true">확정</button>
+      <button type="button" data-status="미확정" aria-pressed="false">미확정</button>
+      <button type="button" data-status="주문없음" aria-pressed="false">주문없음</button>
+      <button type="button" data-status="전체" aria-pressed="false">전체</button>
+      <button type="button" id="new-event" class="primary">새 행사</button>
+    </div>
+    <div id="rows"></div>
+    <p id="empty" class="empty" hidden>해당하는 행사가 없습니다.</p>
+  </section>
+</main>
+
+<dialog id="tpl-dialog">
+  <h2>상 종류 고르기</h2>
+  <div id="tpl-list"></div>
+  <button type="button" id="tpl-cancel">닫기</button>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script type="module" src="js/sije/list-page.js?v=1"></script>
+</body>
+</html>
