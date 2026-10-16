@@ -1,6 +1,6 @@
 /* 푸드벨 서비스 워커 — 오프라인 기본 지원 + 홈 화면 앱 실행
    내용을 크게 바꿨을 때는 아래 CACHE 버전 숫자를 올리세요. */
-const CACHE = 'foodbell-v32';
+const CACHE = 'foodbell-v33';
 
 /* 처음 설치할 때 미리 받아두는 최소한의 파일 (앱 껍데기) */
 const PRECACHE = [
@@ -11,6 +11,40 @@ const PRECACHE = [
   './icons/icon-512.png',
 ];
 
+/* 인터넷이 없어도 열려야 하는 시제행사 화면 (페이지마다 자기 사본) */
+const SIJE_PAGES = ['sije-list.html', 'sije-sheet.html'];
+/* 신호가 약한 산속: 이만큼(ms) 기다려도 답이 없으면 저장본을 보여 준다 */
+const SLOW_MS = 3000;
+
+/* 시제행사 화면이 인터넷 없이 열리는 데 필요한 것 — 캐시 이름을 올려도 옛 캐시에서 새 캐시로 옮겨 둔다 */
+function keepOffline(u) {
+  const url = new URL(u);
+  if (url.origin === 'https://www.gstatic.com') return url.pathname.startsWith('/firebasejs/');
+  if (url.origin !== self.location.origin) return false;
+  const rel = url.pathname.slice(new URL('./', self.registration.scope).pathname.length);
+  return SIJE_PAGES.includes(rel) || rel.startsWith('js/sije/') || rel === 'css/sije-sheet.css';
+}
+
+/* 인터넷 먼저 — 그런데 SLOW_MS 안에 답이 없거나 끊기면 저장본. 늦게 온 답은 사본만 새로 바꾼다 */
+function networkFirst(req, key, fallback) {
+  const net = fetch(req).then((res) => {
+    if (res && res.status === 200) {
+      const copy = res.clone();
+      caches.open(CACHE).then((cache) => cache.put(key, copy));
+    }
+    return res;
+  });
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (res) => { if (res && !settled) { settled = true; resolve(res); } return res; };
+    const timer = setTimeout(() => fallback().then(finish), SLOW_MS);   // 저장본이 없으면 계속 기다린다
+    net.then((res) => { clearTimeout(timer); finish(res); }, () => {
+      clearTimeout(timer);
+      fallback().then((hit) => { if (!finish(hit) && !settled) reject(new Error('연결 안 됨')); });
+    });
+  });
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
@@ -20,11 +54,17 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const now = await caches.open(CACHE);
+    for (const k of (await caches.keys()).filter((name) => name !== CACHE)) {
+      const old = await caches.open(k);
+      for (const req of await old.keys()) {   // 시제행사 오프라인 사본은 새 캐시로 옮긴 뒤 옛 캐시를 지운다
+        if (keepOffline(req.url) && !(await now.match(req))) await now.put(req, await old.match(req));
+      }
+      await caches.delete(k);
+    }
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
@@ -40,22 +80,46 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     const home = new URL('./', self.registration.scope).pathname;
     const isHome = url.pathname === home || url.pathname === home + 'index.html';
+    /* 시제행사 목록 · 내역서는 산속(인터넷 없음)에서도 떠야 해서 그 페이지 자기 자리에 사본을 둔다
+       (첫 화면 사본 자리는 건드리지 않는다 — 위 2026-10-08 주석) */
+    const page = url.pathname.slice(home.length);
+    const own = SIJE_PAGES.includes(page) ? './' + page : null;
+    if (own) {
+      event.respondWith(networkFirst(req, own, () => caches.match(own, { ignoreSearch: true })
+        .then((hit) => hit || caches.match('./index.html', { ignoreSearch: true }))));
+      return;
+    }
     event.respondWith(
       fetch(req)
         .then((res) => {
-          if (isHome && res.ok) {
+          if ((isHome || own) && res.ok) {
             const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put('./index.html', copy));
+            caches.open(CACHE).then((cache) => cache.put(own || './index.html', copy));
           }
           return res;
         })
-        .catch(() => caches.match('./index.html', { ignoreSearch: true }))
+        .catch(() => (own ? caches.match(own, { ignoreSearch: true }) : Promise.resolve(null))
+          .then((hit) => hit || caches.match('./index.html', { ignoreSearch: true })))
     );
+    return;
+  }
+
+  /* 파이어베이스 프로그램 파일(판이 주소에 박혀 있어 안 바뀐다): 저장된 것 먼저, 뒤에서 갱신 */
+  if (url.origin === 'https://www.gstatic.com' && url.pathname.startsWith('/firebasejs/')) {
+    event.respondWith(cacheFirst(req));
     return;
   }
 
   /* 다른 사이트(폰트 CDN 등)는 그냥 통과 */
   if (url.origin !== self.location.origin) return;
+
+  /* 시제행사 화면의 스크립트·스타일: 인터넷이 되면 늘 최신, 끊기면 저장본.
+     모듈끼리 부르는 주소에는 ?v= 가 없어서, 저장본 먼저로 두면 고친 뒤 한 번은 옛 모듈이 섞인다 */
+  const rel = url.pathname.slice(new URL('./', self.registration.scope).pathname.length);
+  if (rel.startsWith('js/sije/') || rel === 'css/sije-sheet.css') {
+    event.respondWith(networkFirst(req, req, () => caches.match(req)));
+    return;
+  }
 
   /* 버셀 측정 파일은 저장하지 않는다 — 옛 사본이 남으면 측정이 어긋난다 */
   if (url.pathname.startsWith('/_vercel/')) return;
@@ -65,18 +129,20 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.endsWith('.mp4')) return;
 
   /* 같은 사이트의 CSS·JS·이미지: 저장된 것 먼저 보여주고 뒤에서 갱신 */
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+  event.respondWith(cacheFirst(req));
 });
+
+function cacheFirst(req) {
+  return caches.match(req).then((cached) => {
+    const network = fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => cached);
+    return cached || network;
+  });
+}

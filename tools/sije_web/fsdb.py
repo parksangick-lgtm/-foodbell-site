@@ -47,3 +47,43 @@ def app_for(key: Path) -> firebase_admin.App:
 
 def open_db(key: Path):
     return firestore.client(app_for(key))
+
+
+def write_event(db, id: str, ev: dict, images: list[bytes]):
+    """행사 문서 + 그림(images/0, 1, …). 같은 id 로 다시 쓰면 덮어쓴다 (옮기기를 두 번 해도 하나)."""
+    from PIL import Image
+    import io
+    ref = db.collection('events').document(id)
+    ref.set({**ev, 'updatedAt': firestore.SERVER_TIMESTAMP})
+    for old in ref.collection('images').stream():
+        old.reference.delete()
+    for n, data in enumerate(images):
+        w, h = Image.open(io.BytesIO(data)).size
+        ref.collection('images').document(str(n)).set({'order': n, 'bytes': data, 'width': w, 'height': h})
+
+
+class FirestoreSource:
+    """사무실 PC 프로그램이 읽는 저장소 — 바뀐 행사(updatedAt 기준) · 그림 · 전체."""
+
+    def __init__(self, db):
+        self.db = db
+
+    def changed_since(self, since: str | None) -> list[tuple[str, dict]]:
+        from datetime import datetime
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        q = self.db.collection('events')
+        if since:
+            q = q.where(filter=FieldFilter('updatedAt', '>', datetime.fromisoformat(since)))
+        rows = [(d.id, d.to_dict()) for d in q.stream()]
+        return sorted(rows, key=lambda x: str(x[1].get('updatedAt') or ''))
+
+    def images(self, id: str) -> list[bytes]:
+        docs = self.db.collection('events').document(id).collection('images').order_by('order').stream()
+        return [d.get('bytes') for d in docs]
+
+    def all_events(self) -> list[tuple[str, dict]]:
+        return [(d.id, d.to_dict()) for d in self.db.collection('events').stream()]
+
+
+def write_template(db, name: str, tpl: dict):
+    db.collection('templates').document(name).set({'name': name, 'items': tpl['items'], 'itemRows': tpl.get('itemRows', 0)})

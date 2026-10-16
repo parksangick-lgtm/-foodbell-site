@@ -50,3 +50,8 @@ test('새 행사는 빈 양식에서 시작해 미확정', () => {
   ev.items.L01.qty = '7개';
   assert.equal(tpl.items.L01.qty, '5개', '새 행사를 고쳐도 빈 양식은 그대로');
 });
+
+test('새 행사는 빈 양식의 품목표 줄 수를 이어받는다', () => {
+  assert.equal(newEventFromTemplate({ name: '60만원상', items: {}, itemRows: 17 }).itemRows, 17);
+  assert.equal(newEventFromTemplate({ name: '60만원상', items: {} }).itemRows, 0);
+});

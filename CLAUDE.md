@@ -182,9 +182,19 @@ staff-pay.html        알바비 지급내역서 (내부용, 2026-10-02). 한 줄
                       사장님이 밖에서 써서 사무실 직원에게 "이대로 이체" 를 전하는 용도(직원에게 보내기).
                       파일 이름은 작성일자로: 알바비지급내역서_YYYY-MM-DD (사진·PDF 둘 다 — 인쇄 때 document.title 을 잠깐 바꾼다).
                       거래명세서의 스타일·편집·저장 틀을 그대로 빌렸다(table.stmt 클래스). 입력은 이 기기에만(localStorage foodbell-staffpay-v1).
+sije-list.html        시제행사 목록 (2026-10-16 서류 자동화 1단계). 구글 로그인 → 확정·미확정·주문없음·전체, 새 행사(빈 양식에서).
+sije-sheet.html       시제행사 내역서 (?id=…). PC 는 엑셀 모양 칸을 눌러 고침, 휴대폰은 맨 위 날짜·시간·품목 수량. 칸을 떠나면 저장,
+                      인터넷이 없어도 한 번 연 화면은 열린다(sw.js 사본 + 파이어베이스 기기 저장).
+sije-print.html       인쇄 전용 — 사무실 PC 의 PDF 프로그램(tools/sije_web/render_pdf.py)이 연다. 파이어베이스 없음.
+css/sije-sheet.css · js/sije/   내역서 A4 모양(지금 엑셀 색 그대로 — 사장님 확인) · 화면 동작. js/sije/firebase-config.js 는 연결 정보(공개돼도 됨)
+firestore.rules · firebase.json · .firebaserc   저장소 보안 규칙 — 허락 목록(allow)에 있는 구글 메일만. 메일 주소는 규칙 파일에 쓰지 않는다.
+                      올리기: npx firebase-tools@15.34.0 deploy --only firestore:rules --project test (실제는 default)
+vercel.json           /__/ → foodbell-sije.firebaseapp.com (구글 로그인 창이 foodbell.kr 주소로 열리게). 다른 설정은 넣지 않는다.
+tools/sije_web/       옮기기 · PDF · 백업 · 허락 목록 파이썬 프로그램과 시험(pytest, node --test). 관리자 열쇠는 C:\foodbell-keys\
+                      (원드라이브 · 저장소 밖). 노트북 백신(Avast)이 보안 연결을 검사해서 fsdb.py 가 윈도우 인증서를 합쳐 쓴다.
 images/stamp.png      박상익출장음식 사각 도장 그림 — 견적서·거래명세서의 (인) 자리에 쓴다
 manifest-*.webmanifest  서류마다 휴대폰 홈 화면 앱 정보(이름·아이콘). 아이콘은 icons/app-*.png
-아이콘-*.ico          PC 바탕화면 아이콘. 서류는 바탕색으로 구별: 시제견적서=버건디 / 행사견적서=미색 / 작업지시서=먹색 / 거래명세서=황동 / 알바비=흐린 먹색(#6B5E48)
+아이콘-*.ico          PC 바탕화면 아이콘. 서류는 바탕색으로 구별: 시제견적서=버건디 / 행사견적서=미색 / 작업지시서=먹색 / 거래명세서=황동 / 알바비=흐린 먹색(#6B5E48) / 시제행사 목록=남색(#1F4E78, 2026-10-16)
                       작업 도구는 모양부터 다르게: 시작=초록 동그라미▶ / 저장=파란 구름↑ / 스킬설치=주황 톱니바퀴↓ / 홈페이지=아이콘.ico(제기)
                       (같은 모양이라 헷갈린다는 사용자 요청, 2026-10-01 — 도구 아이콘끼리 같은 그림을 다시 쓰지 않는다)
                       (아이콘 그림을 바꿀 때는 파일 이름도 바꾼다 — 휴대폰·윈도우가 옛 그림을 붙잡고 있다)

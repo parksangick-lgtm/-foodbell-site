@@ -27,9 +27,11 @@ export function onUser(cb) {
   return au.onAuthStateChanged(auth, cb);
 }
 
-// 팝업 로그인 — 팝업이 막히거나(홈 화면 앱 등) 안 되는 곳이면 페이지를 넘겨 로그인(redirect)
+// 팝업 로그인 — 홈 화면 앱(standalone)이거나 팝업이 막히면 페이지를 넘겨 로그인(redirect).
+// 홈 화면 앱은 팝업이 떠도 결과가 안 돌아오는 일이 많아 처음부터 redirect 로 간다.
 export async function signIn() {
   const provider = new au.GoogleAuthProvider();
+  if (matchMedia('(display-mode: standalone)').matches) return au.signInWithRedirect(auth, provider);
   try {
     await au.signInWithPopup(auth, provider);
   } catch (e) {
@@ -70,13 +72,14 @@ export function updateField(id, path, value) {
 
 export async function listTemplates() {
   const snap = await fs.getDocs(fs.collection(db, 'templates'));
-  return snap.docs.map((d) => ({ name: d.data().name ?? d.id, items: d.data().items ?? {} }));
+  return snap.docs.map((d) => ({ name: d.data().name ?? d.id, items: d.data().items ?? {}, itemRows: d.data().itemRows ?? 0 }));
 }
 
 export async function createFromTemplate(name) {
   const tpl = (await fs.getDoc(fs.doc(db, 'templates', name))).data();
   const ref = fs.doc(fs.collection(db, 'events'));
-  const saving = fs.setDoc(ref, { ...newEventFromTemplate({ name, items: tpl.items }), updatedAt: fs.serverTimestamp() });
+  const ev = newEventFromTemplate({ name, items: tpl.items, itemRows: tpl.itemRows });
+  const saving = fs.setDoc(ref, { ...ev, updatedAt: fs.serverTimestamp() });
   if (navigator.onLine) await saving;   // 오프라인이면 기다리지 않는다 — 기기에 들고 있다가 연결되면 올라간다
   return ref.id;
 }

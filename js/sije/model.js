@@ -41,5 +41,6 @@ export function newEventFromTemplate(tpl) {
     templateType: tpl.name,
     contacts: [],
     items: structuredClone(tpl.items),
+    itemRows: tpl.itemRows ?? 0,   // 품목표 줄 수 — 엑셀처럼 남는 줄에 '추가 기입' 칸을 그린다
   };
 }

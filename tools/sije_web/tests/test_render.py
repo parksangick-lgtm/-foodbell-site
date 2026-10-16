@@ -42,6 +42,13 @@ def test_absurdly_long_event_raises_too_long(tmp_path, repo_url):
         render_pdf(fake_event(memo=memo), [], tmp_path / 'too-long.pdf', repo_url)
 
 
+def test_item_rows_draw_extra_blocks_on_both_sides(tmp_path, repo_url):
+    """옛 엑셀은 줄 수를 합치기 전 기준으로 잡아 양쪽 모두에 '추가 기입' 칸이 생기기도 한다 (2026-10-16 비교에서 14장)."""
+    out = tmp_path / 'rows.pdf'
+    assert render_pdf(fake_event(itemRows=18), [], out, repo_url) == 1
+    assert pdf_text(out).count('추가기입') == 2
+
+
 def test_image_is_drawn_in_memo(tmp_path, repo_url):
     out = tmp_path / 'image.pdf'
     assert render_pdf(fake_event(), [fake_jpeg()], out, repo_url) == 1

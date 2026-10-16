@@ -53,6 +53,134 @@ def fake_jpeg(w=1200, h=900, color=(176, 141, 87)) -> bytes:
     return buf.getvalue()
 
 
+FAKE_STEM = '2026년11월13일 가짜동 1-1 시제행사 내역서'
+FAKE_DATE_TEXT = '2026년 11월 13일 (금) 10시'
+FAKE_PLACE = '가짜동 1-1 놀이터 위'
+
+
+def _build_sheet(dest: Path, *, title_place='가짜동 1-1', date_text=FAKE_DATE_TEXT, contacts=1, amount='600,000원',
+                 drop_label=None, rename=None, rename_group=None, extra=None,
+                 must=('산신제 상은 따로 차린다', '도착하면 먼저 전화'),
+                 memo='주차는 가짜 마을회관 앞', with_image=False, items_title='■ 준비 품목 — 60만원상') -> Path:
+    """실제 2026 내역서와 같은 모양의 가짜 엑셀 (jobsheet.py 틀): A·B 이름표 → C 값, G~I 이름표 → J 값,
+    연락처가 여럿이면 '연락처 2 · 연락처 3' 줄이 끼어 아래가 한 줄씩 밀린다. 손님 정보는 전부 가짜."""
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = '작업지시서'
+
+    def put(rng, value):
+        if ':' in rng:
+            ws.merge_cells(rng)
+        ws[rng.split(':')[0]] = value
+
+    put('A1:M1', f'{title_place}\n{date_text}')
+    put('A3:M3', '■ 행사 정보')
+    put('A4:B4', '행사일')
+    put('C4:M4', date_text)
+    phones = [f'010-0000-000{i}' for i in range(contacts)]
+    pairs = [('장소', FAKE_PLACE, '시제일', '음력 10월 3일'), ('상차림', '7치 1상', '산신제', '없음'),
+             ('고객', '가짜 문중', '연락처', phones[0])]
+    if contacts > 1:
+        pairs.append(('연락처 2', phones[1], '연락처 3', phones[2] if contacts > 2 else ''))
+    pairs += [('담당·차량', '가짜 담당 · 1호차', '식사', '20인분'), ('금액', amount, '금액 내역', '상차림 60만'),
+              ('출발 시간', '07시', '도착 시간', '09시 30분')]
+    if rename:   # 손으로 다듬은 파일처럼 이름표만 다르게 (예: 시제일 → 지내는 법)
+        pairs = [tuple(rename[1] if x == rename[0] else x for x in p) for p in pairs]
+    r = 5
+    for a, b, c, d in pairs:
+        if a != drop_label:
+            put(f'A{r}:B{r}', a)
+            put(f'C{r}:F{r}', b)
+        if c != drop_label:
+            put(f'G{r}:I{r}', c)
+            put(f'J{r}:M{r}', d)
+        r += 1
+    r += 1
+    put(f'A{r}:M{r}', '■ 꼭 지킬 것')
+    for line in must:
+        r += 1
+        put(f'A{r}:M{r}', line)
+    r += 2
+    put(f'A{r}:M{r}', items_title)
+    r += 1
+    for cols in ('ABCDEF', 'HIJKLM'):
+        for col, h in zip(cols, ['구분', '번호', '품목', '수량', '비고', '준비']):
+            ws[f'{col}{r}'] = h
+    top = r + 1
+    no = 1
+    sides = [('ABCDEF', _LEFT), ('HIJKLM', _RIGHT)]
+    if rename_group:   # 예: 전·부침 → '추가 적\n(2번째)' (실제 파일에 있는 묶음 이름)
+        sides = [(cols, [((rename_group[1] if g == rename_group[0] else g), *rest) for g, *rest in rows])
+                 for cols, rows in sides]
+    n = max(len(_LEFT), len(_RIGHT))
+    for cols, rows in sides:
+        g, b, c, d, e, f = cols
+        prev = None
+        for i, (group, name, qty, note) in enumerate(rows):
+            rr = top + i
+            if group != prev:
+                ws[f'{g}{rr}'] = group
+                prev = group
+            ws[f'{b}{rr}'] = no
+            ws[f'{c}{rr}'] = name
+            ws[f'{d}{rr}'] = qty or None
+            ws[f'{e}{rr}'] = note or None
+            ws[f'{f}{rr}'] = '☐'
+            no += 1
+        if len(rows) < n:
+            ws[f'{g}{top + len(rows)}'] = '추가\n기입'
+            if extra:
+                ws[f'{c}{top + len(rows)}'], ws[f'{d}{top + len(rows)}'] = extra
+            for rr in range(top + len(rows), top + n):
+                ws[f'{f}{rr}'] = '☐'
+    r = top + n + 1
+    put(f'A{r}:M{r}', '■ 메모')
+    memo_row = r + 1
+    put(f'A{memo_row}:M{memo_row}', memo)
+    put(f'A{memo_row + 1}:M{memo_row + 1}', None)
+    put(f'A{memo_row + 3}:M{memo_row + 3}', '원본: 가짜.xls  ·  노란 칸은 손으로 적어 넣는 칸')
+    if with_image:
+        import random
+        from openpyxl.drawing.image import Image as XlImage
+        from PIL import Image
+        random.seed(2)
+        img = Image.frombytes('RGB', (1800, 1350), bytes(random.getrandbits(8) for _ in range(1800 * 1350 * 3)))
+        buf = io.BytesIO()
+        img.save(buf, 'PNG')
+        buf.seek(0)
+        ws.add_image(XlImage(buf), f'H{memo_row}')
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(dest)
+    return dest
+
+
+def make_fake_sheet(tmp_path, *, contacts=1, with_image=False, date_text=FAKE_DATE_TEXT, status='확정',
+                    stem=FAKE_STEM, **kw) -> Path:
+    """tmp_path/2026년/{status}/{stem}.xlsx 에 가짜 내역서를 만든다."""
+    return _build_sheet(tmp_path / '2026년' / status / f'{stem}.xlsx', contacts=contacts, with_image=with_image,
+                        date_text=date_text, **kw)
+
+
+def make_fake_blank(tmp_path, name='60만원상') -> Path:
+    """빈 양식 (품목만 쓴다)."""
+    return _build_sheet(tmp_path / f'빈 양식 시제행사 내역서 ({name}).xlsx', title_place='시제행사 내역서', date_text='',
+                        must=('',), memo='', items_title=f'■ 준비 품목 — {name}')
+
+
+def make_fake_list(path: Path, rows) -> Path:
+    """확정 · 미확정 목록: (날짜, 장소, 전화번호, 2026 예상 날짜, 근거, 확정 날짜·시간) 줄들."""
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(['날짜', '장소', '전화번호', '2026 예상 날짜', '근거 (작년 기준)', '확정 날짜·시간\n(전화 후 적기)'])
+    for row in rows:
+        ws.append(list(row))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(path)
+    return path
+
+
 @pytest.fixture(scope='session')
 def repo_url():
     """저장소 폴더를 이 컴퓨터 안에서만 여는 임시 서버 주소."""

@@ -108,7 +108,8 @@ export function renderSheet(root, ev, images, opts = {}) {
   const items = ev.items || {};
   const keys = { L: [], R: [] };
   for (const k of Object.keys(items).sort()) keys[k[0]]?.push(k);
-  let n = Math.max(keys.L.length, keys.R.length, 1);
+  // 줄 수는 엑셀 표의 줄 수(itemRows)를 따른다 — 옛 엑셀은 양쪽 모두에 '추가 기입' 칸이 남기도 한다
+  let n = Math.max(ev.itemRows || 0, keys.L.length, keys.R.length, 1);
   const extraSide = keys.R.length < n ? 'R' : keys.L.length < n ? 'L' : null;
   if (!extraSide && (ev.extraItems || editable)) n += 1;   // 추가 기입 칸이 남지 않으면 한 줄 더
   const extraAt = extraSide || 'R';
@@ -168,10 +169,13 @@ export function renderSheet(root, ev, images, opts = {}) {
 
   root.append(table, memo);
 
-  if (editable && onEdit) {
+  // 칸을 떠날 때 저장 — 실시간으로 여러 번 다시 그려도 알림은 한 번만 걸리게 root 에 한 번만 단다
+  root.sijeOnEdit = editable ? onEdit : null;
+  if (!root.sijeBound) {
+    root.sijeBound = true;
     root.addEventListener('focusout', (e) => {
       const td = e.target.closest?.('[data-path]');
-      if (!td || !root.contains(td)) return;
+      if (!td || !root.contains(td) || !root.sijeOnEdit) return;
       const path = td.dataset.path;
       const read = (x) => x.innerText.replace(/\n+$/, '');
       const v = path === 'mustDo'
@@ -179,7 +183,7 @@ export function renderSheet(root, ev, images, opts = {}) {
         : read(td);
       if (read(td) === td.dataset.orig) return;
       td.dataset.orig = read(td);
-      onEdit(path, v);
+      root.sijeOnEdit(path, v);
     });
   }
 }

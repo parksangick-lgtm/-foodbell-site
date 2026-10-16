@@ -1,5 +1,9 @@
 firebase-admin==7.7.0
 requests==2.34.2
 certifi==2026.7.22
+playwright==1.62.0
+openpyxl==3.1.5
+pymupdf==1.28.2
+pillow==12.3.0
 pytest==9.1.1
 # firebase-tools 15.34.0

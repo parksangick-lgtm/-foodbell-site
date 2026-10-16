@@ -90,6 +90,22 @@ $('new-event').addEventListener('click', async () => {
 });
 $('tpl-cancel').addEventListener('click', () => $('tpl-dialog').close());
 
+// 인터넷이 끊기면 알린다 (목록은 기기에 저장해 둔 것을 보여 준다).
+// 신호가 약한 산속이나 끊긴 채 연 화면은 navigator.onLine 이 '연결됨'으로 나오기도 해서,
+// 저장소가 서버에 못 붙고 기기 저장본만 보여 주는 상태가 2초 넘게 이어져도 '연결 안 됨'으로 본다.
+let cacheOnlySince = null;
+const netState = () => {
+  $('net-state').hidden = navigator.onLine && !(cacheOnlySince && Date.now() - cacheOnlySince > 2000);
+};
+const trackCache = (fromCache) => {
+  cacheOnlySince = fromCache ? (cacheOnlySince ?? Date.now()) : null;
+  netState();
+  if (fromCache) setTimeout(netState, 2100);
+};
+addEventListener('online', netState);
+addEventListener('offline', netState);
+netState();
+
 show('loading');
 await initStore();
 const testToken = new URLSearchParams(location.search).get('testToken');
@@ -103,7 +119,7 @@ onUser((user) => {
   if (!user) return show('login');
   $('who').textContent = user.email || '';
   show('list');
-  stop = watchEvents((r) => { rows = r; render(); }, (e) => {
+  stop = watchEvents((r, meta) => { rows = r; render(); trackCache(meta.fromCache); }, (e) => {
     rows = [];
     render();
     if (e.code === 'permission-denied') show('denied');

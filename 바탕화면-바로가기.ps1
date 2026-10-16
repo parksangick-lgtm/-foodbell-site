@@ -53,6 +53,8 @@ New-UrlLink '푸드벨 거래명세서' "$site/statement.html" `
     '거래명세서 - 수량 · 단가 자동 계산 · 인쇄 · 고객에게 보내기' '아이콘-거래명세서.ico'
 New-UrlLink '푸드벨 알바비' "$site/staff-pay.html" `
     '알바비 지급내역서 - 행사별 일당 · 계좌 · 직원에게 보내기 (내부용)' '아이콘-알바비.ico'
+New-UrlLink '푸드벨 시제행사 목록' "$site/sije-list.html" `
+    '시제행사 목록 · 내역서 - 로그인해서 보고 고치기 (내부용)' '아이콘-시제행사목록.ico'
 
 Write-Host ''
 if (Test-Path (Join-Path $desktop '푸드벨 견적서.lnk')) {
