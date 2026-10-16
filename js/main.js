@@ -16,12 +16,14 @@
     navToggle.addEventListener('click', function () {
       var isOpen = nav.classList.toggle('is-open');
       navToggle.setAttribute('aria-expanded', String(isOpen));
+      navToggle.setAttribute('aria-label', isOpen ? '메뉴 닫기' : '메뉴 열기');
     });
 
     nav.querySelectorAll('.nav__link').forEach(function (link) {
       link.addEventListener('click', function () {
         nav.classList.remove('is-open');
         navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.setAttribute('aria-label', '메뉴 열기');
       });
     });
   }

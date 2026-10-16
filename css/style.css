@@ -193,6 +193,10 @@ main:focus:not(:focus-visible) { outline: none; }
   font-weight: var(--weight-bold);
   font-size: var(--text-xl);
   margin-right: auto;
+  /* 누르는 자리 44px — 위아래 -2.5px 로 헤더 높이(72px)는 그대로 (예전 로고 높이 39px) */
+  min-height: 44px;
+  margin-top: -2.5px;
+  margin-bottom: -2.5px;
 }
 .logo__mark { color: var(--color-gold); display: inline-flex; }
 .logo__text { color: var(--color-primary); }
@@ -235,6 +239,10 @@ main:focus:not(:focus-visible) { outline: none; }
   background: var(--color-ink);
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
+/* 메뉴가 열리면 세 줄(☰)이 ✕ 로 바뀐다 — 닫는 자리를 알 수 있게 (줄 2px + 간격 4px = 6px 씩 모은다) */
+.nav__toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav__toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.nav__toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
 /* ---------- 히어로 — 왼쪽 글자판 · 오른쪽 사진 ----------
    사진 위에 글자를 얹지 않는다. 글자 그림자 없이 또렷하게 읽히도록 판을 나눈다. */
@@ -778,8 +786,10 @@ main:focus:not(:focus-visible) { outline: none; }
   margin-bottom: var(--space-4);
 }
 
-/* 문자·카카오톡 단추 — 휴대폰에서만 보인다 (컴퓨터에서는 문자·카톡 앱이 없어 눌러도 소용없다) */
-.contact__cta-sms, .contact__cta-kakao { display: none; }
+/* 문자 단추 — 휴대폰에서만 보인다 (컴퓨터에는 문자 앱이 없어 눌러도 소용없다).
+   카카오톡 단추는 컴퓨터에서도 보인다 — 누르면 카카오 로그인 뒤 웹 채팅으로 이어진다 (2026-10-16 확인) */
+.contact__cta-sms { display: none; }
+.contact__cta-kakao { margin-top: var(--space-3); }
 .contact__cta-note {
   font-size: var(--text-caption);
   color: var(--color-ink-muted);
@@ -818,6 +828,9 @@ main:focus:not(:focus-visible) { outline: none; }
 .footer__brand .logo__text,
 .footer__brand .logo__text em { color: inherit; }
 .footer__biz { font-size: var(--text-caption); font-weight: var(--weight-normal); line-height: 1.9; color: var(--color-on-dark-soft); }
+/* 항목 하나("전화 : 010-…")가 두 줄로 갈라지지 않게 묶고, 구분 막대는 항목 사이에만 */
+.footer__biz span { white-space: nowrap; }
+.footer__biz span + span::before { content: "|"; margin: 0 0.75em; }
 .footer__copy { font-size: var(--text-caption); font-weight: var(--weight-normal); color: var(--color-on-dark-dim); margin-top: var(--space-2); }
 /* 개인정보 처리방침 — 첫 화면에서 바로 찾을 수 있게 굵게·밑줄 (개인정보위 작성지침), 누르는 자리 44px */
 .footer__policy a { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-caption); font-weight: var(--weight-bold); color: var(--color-white); text-decoration: underline; text-underline-offset: 3px; }
@@ -938,6 +951,10 @@ main:focus:not(:focus-visible) { outline: none; }
   .contact__inner { grid-template-columns: 1fr; gap: var(--space-8); }
   .contact__cta { padding: var(--space-8) var(--space-6); }
   .contact__cta-sms, .contact__cta-kakao { display: inline-flex; margin-top: var(--space-3); }
+  /* 사업자 정보: 좁은 화면에서는 항목마다 한 줄, 구분 막대 없이 (줄 끝에 막대만 남지 않게) */
+  .footer__biz br { display: none; }
+  .footer__biz span { display: block; white-space: normal; }
+  .footer__biz span + span::before { content: none; }
 
   /* 서비스 카드: 좁은 화면에서는 한 줄에 하나, 사진 왼쪽 · 설명 오른쪽 (설명 글이 길쭉하게 눌리지 않도록) */
   .menu__grid { grid-template-columns: 1fr; gap: var(--space-4); }
