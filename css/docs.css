@@ -7,7 +7,8 @@ body:not([data-doc-view="doc"]) > .hint,
 body:not([data-doc-view="doc"]) > .toolbar,
 body:not([data-doc-view="doc"]) > .sheet,
 body:not([data-doc-view="doc"]) .doc-state,
-body:not([data-doc-view="doc"]) .doc-del-wrap{display:none !important}
+body:not([data-doc-view="doc"]) .doc-del-wrap,
+body:not([data-doc-view="doc"]) .doc-make{display:none !important}
 .doc-gate [data-show]{display:none}
 body[data-doc-view="loading"] .doc-gate [data-show="loading"],
 body[data-doc-view="login"] .doc-gate [data-show="login"],
@@ -51,6 +52,13 @@ body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저
   background:var(--paper); color:var(--seal); border:1px solid var(--line-strong); cursor:pointer}
 #doc-del:hover{background:var(--band2)}
 
+/* 3단계 서류 잇기: '이 견적서로 내역서 만들기 · 거래명세서 만들기' 줄 (지우기 위) */
+.doc-make{max-width:880px; margin:28px auto 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end}
+.doc-make b{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); margin-right:4px}
+.doc-make button{font-family:var(--sans); font-size:15px; font-weight:var(--w-medium); min-height:44px; padding:8px 16px; cursor:pointer;
+  background:var(--paper); color:var(--seal); border:1px solid var(--seal)}
+.doc-make button:hover{background:var(--band2)}
+
 .doc-toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:60; max-width:88vw;
   background:var(--ink); color:var(--paper); font-size:15px; padding:12px 16px; border-radius:8px}
 
@@ -65,5 +73,5 @@ body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저
 }
 
 @media print{
-  .doc-gate, .doc-state, .doc-del-wrap, .doc-toast{display:none !important}
+  .doc-gate, .doc-state, .doc-del-wrap, .doc-make, .doc-toast{display:none !important}
 }

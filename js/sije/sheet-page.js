@@ -1,6 +1,7 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
 import { itemsBySide } from './model.js';
+import { NOTES_KEY, putBundle, eventToStatement } from '../docs/handoff.js';
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, addImage, watchImages,
@@ -57,6 +58,8 @@ function save(path, value) {
     path = 'contacts';
     value = list;
   }
+  // 화면이 들고 있는 행사 값도 바로 고친다 — 저장소 알림은 따로 늦게 와서, 고치자마자 '거래명세서 만들기' 를 누르면 옛 값이 넘어갔다 (3단계 검토 I2)
+  if (!path.includes('.')) ev = { ...ev, [path]: value };
   updateField(id, path, value).catch((e) => toast(`저장하지 못했습니다 (${e.code || e.message})`));
 }
 
@@ -150,6 +153,13 @@ for (const b of document.querySelectorAll('[data-set-status]')) {
   b.addEventListener('click', () => save('status', b.dataset.setStatus));
 }
 $('print').addEventListener('click', () => { measurePrint(); print(); });
+// 3단계 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 (꾸러미는 같은 탭 sessionStorage, 주소엔 안 실음)
+$('make-statement').addEventListener('click', () => {
+  if (!ev || !confirm('이 내역서 내용으로 새 거래명세서를 만들까요?')) return;
+  flush();
+  putBundle(sessionStorage, 'statement', eventToStatement(ev), Date.now());
+  location.href = 'statement.html?make=1';
+});
 $('attach').addEventListener('click', () => $('image-file').click());
 $('image-file').addEventListener('change', async () => {
   const file = $('image-file').files[0];
@@ -187,6 +197,11 @@ onUser((user) => {
     trackCache(meta.fromCache);
     show('doc');
     paint();
+    const notes = sessionStorage.getItem(NOTES_KEY);   // 3단계 — 견적서에서 옮겨 만들며 못 읽은 칸이 있었다 (한 번만)
+    if (notes) {
+      sessionStorage.removeItem(NOTES_KEY);
+      toast(JSON.parse(notes).join(' · '));
+    }
   }, fail));
   stops.push(watchImages(id, (urls) => { images = urls; paint(); }));
 });

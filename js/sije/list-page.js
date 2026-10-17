@@ -1,5 +1,6 @@
 // 시제행사 목록 화면 (sije-list.html) — 로그인 · 상태 버튼 · 새 행사
 import { formatDateText } from './model.js';
+import { takeBundle, pickTemplate, NOTES_KEY } from '../docs/handoff.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchEvents, listTemplates, createFromTemplate,
 } from './store.js';
@@ -64,7 +65,18 @@ for (const b of document.querySelectorAll('[data-status]')) {
 $('sign-in').addEventListener('click', () => signIn().catch((e) => toast(`로그인하지 못했습니다 (${e.code || e.message})`)));
 $('sign-out').addEventListener('click', () => signOutUser());
 
-$('new-event').addEventListener('click', async () => {
+// 새 행사 만들기 — bundle(3단계: 견적서에서 옮겨 온 칸 · 알림)이 있으면 함께 넣고, 뒤로 가면 견적서로 돌아가게 한다
+async function makeEvent(name, bundle) {
+  const { template, ...extra } = bundle ? bundle.fields : {};
+  const id = await createFromTemplate(name, extra);
+  if (bundle?.notes.length) sessionStorage.setItem(NOTES_KEY, JSON.stringify(bundle.notes));
+  const url = `sije-sheet.html?id=${encodeURIComponent(id)}`;
+  if (bundle) location.replace(url);
+  else location.href = url;
+}
+
+// 상 종류 고르기 창
+async function chooseTemplate(bundle) {
   const dlg = $('tpl-dialog');
   $('tpl-list').replaceChildren(el('p', 'tpl-wait', '불러오는 중…'));
   dlg.showModal();
@@ -76,7 +88,7 @@ $('new-event').addEventListener('click', async () => {
       b.addEventListener('click', async () => {
         b.disabled = true;
         try {
-          location.href = `sije-sheet.html?id=${encodeURIComponent(await createFromTemplate(t.name))}`;
+          await makeEvent(t.name, bundle);
         } catch (e) {
           b.disabled = false;
           toast(`새 행사를 만들지 못했습니다 (${e.code || e.message})`);
@@ -87,7 +99,22 @@ $('new-event').addEventListener('click', async () => {
   } catch (e) {
     $('tpl-list').replaceChildren(el('p', 'tpl-wait', `빈 양식을 불러오지 못했습니다 (${e.code || e.message})`));
   }
-});
+}
+$('new-event').addEventListener('click', () => chooseTemplate(null));
+
+// 3단계 — 시제 견적서의 '내역서 만들기' 로 ?make=1 열림: 1분 안의 꾸러미만 한 번 쓴다 (읽으면 늘 지움).
+// 눌린 수량 버튼과 같은 빈 양식이 있으면 바로, 없으면(40만원상 · 안 누름) 고르기 창.
+const incoming = takeBundle(sessionStorage, 'event', new URLSearchParams(location.search).get('make') === '1', Date.now());
+async function receive(bundle) {
+  toast('견적서 내용으로 내역서를 만드는 중…');   // 신호가 약하면 몇 초 걸린다 — 안 된 줄 알고 또 누르지 않게 (내역서는 지울 수 없다)
+  try {
+    const name = pickTemplate(bundle.fields.template, (await listTemplates()).map((t) => t.name));
+    if (name) await makeEvent(name, bundle);
+    else await chooseTemplate(bundle);
+  } catch (e) {
+    toast(`새 행사를 만들지 못했습니다 (${e.code || e.message})`);
+  }
+}
 $('tpl-cancel').addEventListener('click', () => $('tpl-dialog').close());
 
 // 인터넷이 끊기면 알린다 (목록은 기기에 저장해 둔 것을 보여 준다).
@@ -125,4 +152,8 @@ onUser((user) => {
     if (e.code === 'permission-denied') show('denied');
     else toast(`목록을 불러오지 못했습니다 (${e.code || e.message})`);
   });
+  if (incoming && !incoming.used) {
+    incoming.used = true;   // 로그인 알림이 두 번 와도 한 장만
+    receive(incoming);
+  }
 });
