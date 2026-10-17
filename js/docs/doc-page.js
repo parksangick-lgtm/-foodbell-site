@@ -114,8 +114,8 @@ function showState() {
   if (!docId) return;
   if (failed) state.textContent = '저장하지 못했습니다';
   else if (offline()) state.textContent = '연결 안 됨 — 연결되면 올라갑니다';
-  // 편집을 켜 둔 채 다른 기기 고침이 왔다 — 모르고 글자를 치면 그것을 덮어쓰므로 알린다
-  else if (waiting !== null) state.textContent = '다른 기기에서 고친 내용이 있습니다 — 편집 완료를 누르면 보입니다';
+  // 치는 중에 다른 기기 고침이 왔다 — 이 기기 것이 올라가 남는다는 것을 알린다
+  else if (waiting !== null) state.textContent = '다른 기기에서 같은 서류를 고쳤습니다 — 지금 고치는 내용으로 저장합니다';
   else if (pending || timer) state.textContent = '저장 중…';
   else if (current?.updatedAt) state.textContent = `저장됨 · 마지막으로 고친 시각 ${hhmm(current.updatedAt.toDate())}`;
   else state.textContent = '';
@@ -136,7 +136,7 @@ function flush() {
   if (drawing || gone || !docId || shownFrom === null) return;
   const html = D.serialize();
   if (html === lastHtml) {                       // 이 기기에서 바뀐 것 없음
-    if (waiting !== null && !D.editing()) apply(waiting);
+    if (waiting !== null) apply(waiting);
     showState();
     return;
   }
@@ -172,8 +172,10 @@ function onDoc(doc, meta) {
     apply(doc.html);
     view('doc');
   } else if (!meta.pending && doc.html !== shownFrom) {   // 다른 기기에서 고침
-    if (D.editing()) waiting = doc.html;
-    else apply(doc.html);
+    // 이 기기에 아직 안 올린 글자가 없으면 편집 중이어도 바로 보여 준다 (사장님 결정 2026-10-17).
+    // 한창 치는 중(모아 올리기 전)이면 치던 글자를 지우지 않게 들고 있다가 — 이 기기 것이 올라가 나중 것으로 남는다
+    if (timer === null && D.serialize() === lastHtml) apply(doc.html);
+    else waiting = doc.html;
   }
   showState();
 }

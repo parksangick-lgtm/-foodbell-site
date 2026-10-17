@@ -679,7 +679,10 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
   window.FoodbellDoc = {
     kind: "staff-pay",
     serialize: serialize,
-    load: function (html) { sheet.innerHTML = html; recalc(); },
+    load: function (html) {
+      sheet.innerHTML = html; recalc();
+      if (body.classList.contains("editing")) { addControls(); setCE(true); }   /* 편집 중에 다른 기기 고침이 와도 고칠 수 있게 */
+    },
     fresh: function () { sheet.innerHTML = FRESH; fillFreshDefaults(); recalc(); },
     summary: function () {
       return { label: getText("issue"), issue: getText("issue"), total: getText("total"), count: getText("count") };

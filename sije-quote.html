@@ -905,7 +905,10 @@ body:not(.editing) .tier-switch{display:none !important}
   window.FoodbellDoc = {
     kind: "sije-quote",
     serialize: serialize,
-    load: function (html) { sheet.innerHTML = html; afterLoad(); },
+    load: function (html) {
+      sheet.innerHTML = html; afterLoad();
+      if (body.classList.contains("editing")) { addControls(); setCE(true); }   /* 편집 중에 다른 기기 고침이 와도 고칠 수 있게 */
+    },
     fresh: function () { sheet.innerHTML = FRESH; fillFreshDefaults(); afterLoad(); },
     summary: function () { return { label: custName(), issue: kText("issue"), total: kText("total") }; },
     editing: function () { return body.classList.contains("editing"); },

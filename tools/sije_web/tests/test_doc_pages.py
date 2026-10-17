@@ -1,6 +1,7 @@
 """웹 서류 5종 화면 시험 (2단계) — 시험 프로젝트의 docs 에 가짜 서류를 넣거나 화면으로 만들고, 끝나면 지운다.
 PC 창(1280px)과 휴대폰 창(390px)을 같이 띄워 같은 서류를 고친다. 손님 정보는 전부 가짜."""
 import datetime
+import threading
 import time
 import uuid
 
@@ -280,33 +281,46 @@ def test_supply_updates_total_summary(pc, repo_url, custom_token, test_db, made)
     wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('total') == '1,100,000')
 
 
-def test_remote_change_waits_while_editing(pc, repo_url, custom_token, test_db, made):
-    """Review Focus 1 — 편집 중에 다른 기기 고침이 와도 치던 글자가 안 지워진다."""
+@pytest.mark.parametrize(PAGE_ARGS, PAGES)
+def test_remote_change_shows_at_once_while_editing(pc, repo_url, custom_token, test_db, made, kind, file, noun, title,
+                                                   send, label, edit_sel):
+    """편집을 켜 둔 채라도 이 기기에 안 올린 글자가 없으면 다른 기기 고침이 바로 보이고, 편집을 이어 할 수 있다
+    (사장님 결정 2026-10-17 — 전에는 편집을 끝낼 때까지 기다려서, 켜 둔 채 치면 다른 기기 고침을 덮었다)."""
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    doc_id = new_doc(pc, made)
+    ref = test_db.collection('docs').document(doc_id)
+    pc.click('#btn-edit')
+    set_text(pc, edit_sel, 'PC 첫 글자')
+    html = wait_db(ref, lambda s: 'PC 첫 글자' in s.get('html')).get('html')       # 다 올라갔다
+    ref.update({'html': html.replace('PC 첫 글자', '다른기기 고침'), 'updatedAt': firestore.SERVER_TIMESTAMP})
+    pc.locator(edit_sel, has_text='다른기기 고침').wait_for(timeout=10_000)
+    assert pc.evaluate("document.body.classList.contains('editing')")            # 편집은 켜진 그대로
+    set_text(pc, edit_sel, '이어서 고침')                                          # 칸이 다시 고칠 수 있어야 들어간다
+    pc.click('#btn-edit')
+    wait_db(ref, lambda s: '이어서 고침' in s.get('html') and '다른기기 고침' not in s.get('html'))
+
+
+def test_remote_change_does_not_erase_text_being_typed(pc, repo_url, custom_token, test_db, made):
+    """Review Focus 1 — 한창 치는 중(아직 안 올라간 글자가 있음)에 다른 기기 고침이 와도 치던 글자는 안 지워지고 이 기기 것이 남는다."""
     open_list(pc, repo_url, QUOTE['file'], custom_token(ALLOWED, allowed=True))
     doc_id = new_doc(pc, made)
     ref = test_db.collection('docs').document(doc_id)
     sel = QUOTE['sel']
-    # 1) 치고 있는데 다른 기기 고침이 옴 → 친 글자 그대로, 더 치고 편집 완료하면 내 것이 남는다
     pc.click('#btn-edit')
-    set_text(pc, sel, 'PC 첫 글자')
-    html = wait_db(ref, lambda s: 'PC 첫 글자' in s.get('html')).get('html')
-    ref.update({'html': html.replace('PC 첫 글자', '다른기기 고침'), 'updatedAt': firestore.SERVER_TIMESTAMP})
-    # 다른 기기 고침이 도착했다는 알림이 떠야 한다 (검토 I2 — 편집을 켜 둔 기기가 모르고 덮어쓰지 않게)
-    pc.locator('#doc-state', has_text='다른 기기에서 고친 내용이 있습니다').wait_for(timeout=10_000)
-    assert pc.inner_text(sel) == 'PC 첫 글자'
-    pc.keyboard.type(' 더')
+    set_text(pc, sel, '시작')
+    html = wait_db(ref, lambda s: '시작' in s.get('html')).get('html')
+
+    def other_device():
+        time.sleep(1.0)
+        ref.update({'html': html.replace('시작', '다른기기 고침'), 'updatedAt': firestore.SERVER_TIMESTAMP})
+
+    t = threading.Thread(target=other_device)
+    t.start()
+    pc.keyboard.type(' 가나다라마바사아자차카타파하', delay=150)   # 0.8초보다 촘촘히 치는 동안 다른 기기 고침이 온다
+    t.join()
     pc.click('#btn-edit')
-    wait_db(ref, lambda s: 'PC 첫 글자 더' in s.get('html') and '다른기기 고침' not in s.get('html'))
-    # 2) 편집만 켜 두고 안 고쳤는데 다른 기기 고침이 옴 → 편집을 끝내면 그것이 보인다
-    pc.click('#btn-edit')
-    html = ref.get().get('html')
-    ref.update({'html': html.replace('PC 첫 글자 더', '다른기기 두번째'), 'updatedAt': firestore.SERVER_TIMESTAMP})
-    pc.locator('#doc-state', has_text='다른 기기에서 고친 내용이 있습니다').wait_for(timeout=10_000)
-    assert pc.inner_text(sel) == 'PC 첫 글자 더'
-    pc.click('#btn-edit')
-    pc.locator(sel, has_text='다른기기 두번째').wait_for(timeout=10_000)
-    time.sleep(2)
-    assert '다른기기 두번째' in ref.get().get('html')
+    assert pc.inner_text(sel) == '시작 가나다라마바사아자차카타파하'
+    wait_db(ref, lambda s: '시작 가나다라마바사아자차카타파하' in s.get('html') and '다른기기 고침' not in s.get('html'))
 
 
 def test_edit_done_saves_at_once(pc, repo_url, custom_token, test_db, made):
