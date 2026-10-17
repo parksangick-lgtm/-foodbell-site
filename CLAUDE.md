@@ -192,6 +192,8 @@ firestore.rules · firebase.json · .firebaserc   저장소 보안 규칙 — �
 vercel.json           /__/ → foodbell-sije.firebaseapp.com (구글 로그인 창이 foodbell.kr 주소로 열리게). 다른 설정은 넣지 않는다.
 tools/sije_web/       옮기기 · PDF · 백업 · 허락 목록 파이썬 프로그램과 시험(pytest, node --test). 관리자 열쇠는 C:\foodbell-keys\
                       (원드라이브 · 저장소 밖). 노트북 백신(Avast)이 보안 연결을 검사해서 fsdb.py 가 윈도우 인증서를 합쳐 쓴다.
+                      2026-10-17 갈아탐 — 시제행사 내역서의 원본은 이제 웹이다(엑셀은 옮기기 전 보관본). 사무실 PC 작업 스케줄러
+                      "푸드벨 시제 PDF" 가 5분마다 휴대폰용 PDF, 하루 한 번 백업 엑셀. 옮기기(migrate --write)는 다시 돌리지 않는다 — 웹에서 고친 것이 지워진다.
 images/stamp.png      박상익출장음식 사각 도장 그림 — 견적서·거래명세서의 (인) 자리에 쓴다
 manifest-*.webmanifest  서류마다 휴대폰 홈 화면 앱 정보(이름·아이콘). 아이콘은 icons/app-*.png
 아이콘-*.ico          PC 바탕화면 아이콘. 서류는 바탕색으로 구별: 시제견적서=버건디 / 행사견적서=미색 / 작업지시서=먹색 / 거래명세서=황동 / 알바비=흐린 먹색(#6B5E48) / 시제행사 목록=남색(#1F4E78, 2026-10-16)
