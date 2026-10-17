@@ -1,6 +1,6 @@
 /* 푸드벨 서비스 워커 — 오프라인 기본 지원 + 홈 화면 앱 실행
    내용을 크게 바꿨을 때는 아래 CACHE 버전 숫자를 올리세요. */
-const CACHE = 'foodbell-v33';
+const CACHE = 'foodbell-v34';
 
 /* 처음 설치할 때 미리 받아두는 최소한의 파일 (앱 껍데기) */
 const PRECACHE = [
@@ -11,8 +11,12 @@ const PRECACHE = [
   './icons/icon-512.png',
 ];
 
-/* 인터넷이 없어도 열려야 하는 시제행사 화면 (페이지마다 자기 사본) */
-const SIJE_PAGES = ['sije-list.html', 'sije-sheet.html'];
+/* 인터넷이 없어도 열려야 하는 화면 (페이지마다 자기 사본) — 시제행사 화면 + 2단계 서류 5종 */
+const OFFLINE_PAGES = ['sije-list.html', 'sije-sheet.html',
+  'sije-quote.html', 'event-quote.html', 'sije-worksheet.html', 'statement.html', 'staff-pay.html'];
+/* 그 화면들이 부르는 모듈 · 스타일 — 인터넷 먼저(모듈끼리 부르는 주소에 ?v= 가 없어서), 끊기면 저장본 */
+const isOfflineAsset = (rel) => rel.startsWith('js/sije/') || rel.startsWith('js/docs/')
+  || rel === 'css/sije-sheet.css' || rel === 'css/docs.css';
 /* 신호가 약한 산속: 이만큼(ms) 기다려도 답이 없으면 저장본을 보여 준다 */
 const SLOW_MS = 3000;
 
@@ -22,7 +26,7 @@ function keepOffline(u) {
   if (url.origin === 'https://www.gstatic.com') return url.pathname.startsWith('/firebasejs/');
   if (url.origin !== self.location.origin) return false;
   const rel = url.pathname.slice(new URL('./', self.registration.scope).pathname.length);
-  return SIJE_PAGES.includes(rel) || rel.startsWith('js/sije/') || rel === 'css/sije-sheet.css';
+  return OFFLINE_PAGES.includes(rel) || isOfflineAsset(rel);
 }
 
 /* 인터넷 먼저 — 그런데 SLOW_MS 안에 답이 없거나 끊기면 저장본. 늦게 온 답은 사본만 새로 바꾼다 */
@@ -83,7 +87,7 @@ self.addEventListener('fetch', (event) => {
     /* 시제행사 목록 · 내역서는 산속(인터넷 없음)에서도 떠야 해서 그 페이지 자기 자리에 사본을 둔다
        (첫 화면 사본 자리는 건드리지 않는다 — 위 2026-10-08 주석) */
     const page = url.pathname.slice(home.length);
-    const own = SIJE_PAGES.includes(page) ? './' + page : null;
+    const own = OFFLINE_PAGES.includes(page) ? './' + page : null;
     if (own) {
       event.respondWith(networkFirst(req, own, () => caches.match(own, { ignoreSearch: true })
         .then((hit) => hit || caches.match('./index.html', { ignoreSearch: true }))));
@@ -113,10 +117,10 @@ self.addEventListener('fetch', (event) => {
   /* 다른 사이트(폰트 CDN 등)는 그냥 통과 */
   if (url.origin !== self.location.origin) return;
 
-  /* 시제행사 화면의 스크립트·스타일: 인터넷이 되면 늘 최신, 끊기면 저장본.
+  /* 시제행사 화면 · 서류 5종의 스크립트·스타일: 인터넷이 되면 늘 최신, 끊기면 저장본.
      모듈끼리 부르는 주소에는 ?v= 가 없어서, 저장본 먼저로 두면 고친 뒤 한 번은 옛 모듈이 섞인다 */
   const rel = url.pathname.slice(new URL('./', self.registration.scope).pathname.length);
-  if (rel.startsWith('js/sije/') || rel === 'css/sije-sheet.css') {
+  if (isOfflineAsset(rel)) {
     event.respondWith(networkFirst(req, req, () => caches.match(req)));
     return;
   }

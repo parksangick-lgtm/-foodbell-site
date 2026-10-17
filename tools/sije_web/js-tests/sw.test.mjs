@@ -87,6 +87,35 @@ test('캐시 번호를 올려도(새 서비스 워커) 시제 화면 사본 · �
   assert.equal(await now.match(SITE + 'images/hero.jpg'), undefined, '사이트 사진까지 옮기지는 않는다');
 });
 
+test('신호가 약하면 서류 화면(2단계)도 몇 초 뒤 저장본으로 열린다', async () => {
+  const sw = loadSW(never);
+  await sw.open(CACHE).put('./statement.html', new Response('저장본 거래명세서'));
+  const res = await within(fire(sw.handlers, { url: SITE + 'statement.html?id=x', mode: 'navigate' }), 5000);
+  assert.equal(await res.text(), '저장본 거래명세서');
+});
+
+test('인터넷이 되면 서류 공통 부품은 늘 최신 (저장본 먼저가 아님)', async () => {
+  const sw = loadSW(async () => new Response('// 최신 부품', { status: 200 }));
+  await sw.open(CACHE).put(SITE + 'js/docs/doc-page.js', new Response('// 옛 부품'));
+  const res = await within(fire(sw.handlers, { url: SITE + 'js/docs/doc-page.js' }), 5000);
+  assert.equal(await res.text(), '// 최신 부품');
+});
+
+test('캐시 번호를 올려도 서류 화면 · js/docs · docs.css 사본은 남는다', async () => {
+  const sw = loadSW(never);
+  const old = sw.open('foodbell-v1');
+  for (const u of ['sije-quote.html', 'staff-pay.html', 'js/docs/doc-page.js', 'css/docs.css?v=1']) {
+    await old.put(SITE + u, new Response('옛 ' + u));
+  }
+  let done;
+  sw.handlers.activate({ waitUntil: (p) => { done = p; } });
+  await done;
+  const now = sw.open(CACHE);
+  for (const u of ['sije-quote.html', 'staff-pay.html', 'js/docs/doc-page.js', 'css/docs.css?v=1']) {
+    assert.ok(await now.match(SITE + u), u);
+  }
+});
+
 test('인터넷이 되면 시제 화면은 늘 최신', async () => {
   const sw = loadSW(async () => new Response('최신 목록', { status: 200 }));
   await sw.open(CACHE).put('./sije-list.html', new Response('옛 목록'));

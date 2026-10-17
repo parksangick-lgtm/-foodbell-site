@@ -1,0 +1,69 @@
+/* 웹 서류 5종 공통 (2단계) — 목록 · 로그인 · 저장 표시 · 지우기 버튼 · 보기 전환.
+   값은 서류 화면의 :root 변수(sije-list.html 과 같은 값)를 쓴다. js/docs/doc-page.js 가 이 요소들을 끼워 넣는다. */
+
+/* 보기 전환 — body[data-doc-view] = loading · login · denied · list · doc · missing.
+   서류(doc) 보기가 아닐 때는 서류 · 버튼 막대 · 안내문을 숨긴다 (부품이 뜨기 전에도 숨김 → 빈 양식이 깜빡이지 않게) */
+body:not([data-doc-view="doc"]) > .hint,
+body:not([data-doc-view="doc"]) > .toolbar,
+body:not([data-doc-view="doc"]) > .sheet,
+body:not([data-doc-view="doc"]) .doc-state,
+body:not([data-doc-view="doc"]) .doc-del-wrap{display:none !important}
+.doc-gate [data-show]{display:none}
+body[data-doc-view="loading"] .doc-gate [data-show="loading"],
+body[data-doc-view="login"] .doc-gate [data-show="login"],
+body[data-doc-view="denied"] .doc-gate [data-show="denied"],
+body[data-doc-view="list"] .doc-gate [data-show="list"],
+body[data-doc-view="missing"] .doc-gate [data-show="missing"]{display:block}
+body[data-doc-view="doc"] .doc-gate{margin:0}
+body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저장 표시가 같은 말을 한다 */
+
+.doc-gate{max-width:1080px; margin:0 auto; font-family:var(--sans); color:var(--ink)}
+.doc-gate button{font-family:var(--sans); font-size:16px; font-weight:var(--w-medium); color:var(--ink-soft); min-height:44px;
+  padding:8px 16px; background:var(--paper); border:1px solid var(--line-strong); cursor:pointer}
+.doc-gate button:hover{background:var(--band2)}
+.doc-gate button.doc-primary{background:var(--seal); border-color:var(--seal); color:var(--paper)}
+.doc-gate button.doc-primary:hover{background:var(--seal-dark)}
+.doc-gate button[disabled]{opacity:.55; cursor:default}
+.doc-wait{margin:0; color:var(--ink-mute)}
+.doc-card{background:var(--paper); border:1px solid var(--line); padding:24px; max-width:480px}
+.doc-card p{margin:0 0 16px}
+.doc-net{margin:12px 0 0; font-size:15px; font-weight:var(--w-medium); color:var(--seal)}
+
+.doc-head{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:16px}
+.doc-head h1{margin:0; font-size:28px; font-weight:var(--w-bold); color:var(--seal)}
+.doc-who{margin:0; font-size:14px; color:var(--ink-mute)}
+.doc-bar{display:flex; justify-content:flex-end; margin-bottom:16px}
+#doc-rows{background:var(--paper); border:1px solid var(--line)}
+#doc-rows:empty{display:none}
+.doc-row{display:grid; grid-template-columns:1fr 170px 150px 150px; gap:4px 16px; align-items:center;
+  padding:12px 16px; min-height:52px; color:inherit; text-decoration:none; border-bottom:1px solid var(--line)}
+.doc-row:last-child{border-bottom:0}
+.doc-row:hover{background:var(--band2)}
+.d-name{font-weight:var(--w-bold); overflow-wrap:anywhere}
+.d-total{font-variant-numeric:tabular-nums; justify-self:end}
+.d-time{justify-self:end; font-size:14px; color:var(--ink-mute)}
+.doc-empty{padding:24px 16px; margin:0; color:var(--ink-mute); background:var(--paper); border:1px solid var(--line)}
+
+/* 서류 보기: 저장 표시 · 지우기 */
+.doc-state{max-width:880px; margin:-4px auto 12px; font-size:14px; font-weight:var(--w-medium); color:var(--seal); min-height:1.6em}
+.doc-del-wrap{max-width:880px; margin:24px auto; text-align:right}
+#doc-del{font-family:var(--sans); font-size:15px; font-weight:var(--w-medium); min-height:44px; padding:8px 16px;
+  background:var(--paper); color:var(--seal); border:1px solid var(--line-strong); cursor:pointer}
+#doc-del:hover{background:var(--band2)}
+
+.doc-toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:60; max-width:88vw;
+  background:var(--ink); color:var(--paper); font-size:15px; padding:12px 16px; border-radius:8px}
+
+/* 휴대폰: '새 서류' 버튼은 화면 아래 고정 한 줄 (서류 보기의 도구 버튼 6개와 같은 자리), 한 줄은 위아래로 쌓는다 */
+@media (max-width:699px){
+  .doc-bar{position:fixed; left:0; right:0; bottom:0; z-index:40; margin:0; display:grid; justify-content:stretch;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line-strong)}
+  .doc-row{grid-template-columns:1fr auto; gap:2px 8px}
+  .d-name, .d-time{grid-column:1 / -1}
+  .d-time{justify-self:start}
+  .doc-toast{bottom:calc(120px + env(safe-area-inset-bottom))}
+}
+
+@media print{
+  .doc-gate, .doc-state, .doc-del-wrap, .doc-toast{display:none !important}
+}

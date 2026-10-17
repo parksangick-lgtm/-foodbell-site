@@ -56,7 +56,7 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
     try:
         backup = work_root / '백업' / f'{datetime.date.today():%Y-%m-%d} 시제행사 백업.xlsx'
         if not backup.exists():
-            write_backup(source.all_events(), backup)
+            write_backup(source.all_events(), backup, source.all_docs())
             log.info('백업 만듦: %s', backup.name)
     except Exception:
         log.exception('백업 실패 (다음 차례에 다시)')

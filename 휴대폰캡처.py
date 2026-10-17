@@ -14,6 +14,8 @@
 - 사진은 작업 폴더 밖(임시 폴더)에 저장한다. 작업 폴더에 두면 자동 저장이 GitHub 에
   올리고 버셀이 foodbell.kr/사진이름.png 로 공개한다.
 - 쪽마다 새 브라우저 프로필로 연다 — 서류에 저장된 옛 입력값이 찍히지 않는다.
+- 서류 5종(2단계)은 로그인해야 서류가 보인다. 시험 프로젝트에 가짜 계정으로 들어가 새 서류를 하나 만들어
+  찍고 끝나면 지운다(시험 열쇠 C:\\foodbell-keys\\sije-test-admin.json 필요). 못 들어가면 "★서류가 안 보임" 으로 실패.
 
 쓰는 법
 -------
@@ -77,6 +79,42 @@ SELF_TESTS = [
 ]
 
 
+DOC_EMAIL = "phone-capture@example.com"   # 시험 프로젝트의 가짜 계정 (손님 정보 없음)
+
+
+class DocLogin:
+    """서류 5종(2단계)은 로그인해야 서류가 보인다 — 로그인 상자만 찍고 "넘침 없음" 을 내면 거짓 정상이다.
+    127.0.0.1 은 시험 프로젝트로 붙으므로, 가짜 계정으로 들어가 새 서류를 하나 만들어 찍고 끝나면 지운다."""
+
+    def __init__(self):
+        sys.path.insert(0, str(HERE))
+        from firebase_admin import auth
+        from tools.sije_web import allow, fsdb
+        if not fsdb.KEY_TEST.exists():
+            raise RuntimeError(f"시험 열쇠가 없습니다: {fsdb.KEY_TEST}")
+        self.auth, self.allow = auth, allow
+        self.db, self.app = fsdb.open_db(fsdb.KEY_TEST), fsdb.app_for(fsdb.KEY_TEST)
+        try:
+            self.uid = auth.get_user_by_email(DOC_EMAIL, app=self.app).uid
+        except auth.UserNotFoundError:
+            self.uid = auth.create_user(email=DOC_EMAIL, email_verified=True, app=self.app).uid
+        allow.add(self.db, DOC_EMAIL)
+        self.made = []
+
+    def open_new_doc(self, page, name):
+        token = self.auth.create_custom_token(self.uid, app=self.app).decode()
+        page.goto(BASE + name + "?testToken=" + token, wait_until="load", timeout=20000)
+        page.wait_for_function("document.body.dataset.docView === 'list'", timeout=20000)
+        page.click("#doc-new")
+        page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20000)
+        self.made.append(page.evaluate("new URLSearchParams(location.search).get('id')"))
+
+    def close(self):
+        for doc_id in self.made:
+            self.db.collection("docs").document(doc_id).delete()
+        self.allow.remove(self.db, DOC_EMAIL)
+
+
 def new_page(browser):
     ctx = browser.new_context(viewport={"width": WIDTH, "height": 844},
                               device_scale_factor=2, is_mobile=True, has_touch=True)
@@ -126,6 +164,7 @@ def main(argv) -> int:
         return 1
 
     bad = 0
+    login = None
     with sync_playwright() as p:
         browser = p.chromium.launch()
         print("자체 시험 (도구가 넘침을 제대로 잡는지):")
@@ -141,13 +180,23 @@ def main(argv) -> int:
                 page.goto(BASE + name, wait_until="networkidle", timeout=20000)
             except Exception:
                 page.goto(BASE + name, wait_until="load", timeout=20000)
+            note = ""
+            if page.evaluate("!!window.FoodbellDoc"):            # 서류 5종 — 로그인해서 서류를 연다
+                try:
+                    login = login or DocLogin()
+                    login.open_new_doc(page, name)
+                except Exception as e:
+                    note = f"★서류가 안 보임 — 로그인 화면만 찍힘 ({e.__class__.__name__}: {e}). 이 사진으로 판단하지 말 것"
             page.evaluate("document.fonts.ready.then(() => 1)")
             r = page.evaluate(OVERFLOW_JS)
             shot = out / (Path(name).stem + ".png")
             page.screenshot(path=str(shot), full_page=True)
             ctx.close()
 
-            if r["cw"] != WIDTH:
+            if note:
+                bad += 1
+                result = note
+            elif r["cw"] != WIDTH:
                 bad += 1
                 result = f"★측정 실패 — 폭이 {WIDTH} 이 아님. 이 사진으로 판단하지 말 것"
             elif r["count"]:
@@ -157,6 +206,8 @@ def main(argv) -> int:
                 result = "넘침 없음"
             print(f"{name:<22}{r['cw']:>5}  {result}")
         browser.close()
+        if login:
+            login.close()
 
     print(f"\n사진 폴더 (작업 폴더 밖이라 GitHub 에 안 올라감): {out}")
     return 1 if bad else 0

@@ -82,3 +82,59 @@ def test_templates_read_only_for_allowed(base, fake_template, id_token):
 def test_allow_collection_unreadable(base, id_token):
     token = id_token(ALLOWED, allowed=True)
     assert call('GET', f'{base}/allow/{ALLOWED}', token).status_code == 403
+
+
+# ---------- 2단계: 서류 5종 (docs) ----------
+
+@pytest.fixture
+def doc_id(test_db):
+    """시험이 만들 서류 id — 끝나면 관리자 열쇠로 지운다."""
+    doc_id = 'rules-doc-' + uuid.uuid4().hex[:8]
+    yield doc_id
+    test_db.collection('docs').document(doc_id).delete()
+
+
+def put_doc(base, doc_id, token, kind='sije-quote', html='<p>○○ 김씨 문중 종친회</p>'):
+    """서류 한 장을 통째로 쓴다 (없으면 만들기, 있으면 고치기) — 화면의 createDoc 과 같은 칸."""
+    return call('PATCH', f'{base}/docs/{doc_id}', token, json={'fields': {
+        'kind': {'stringValue': kind}, 'html': {'stringValue': html},
+        'label': {'stringValue': '○○ 김씨 문중 종친회'}, 'issue': {'stringValue': '2026년 10월 17일'},
+        'total': {'stringValue': ''}}})
+
+
+def test_docs_allowed_can_create_read_update_delete(base, doc_id, id_token):
+    token = id_token(ALLOWED, allowed=True)
+    assert put_doc(base, doc_id, token).status_code == 200
+    assert call('GET', f'{base}/docs/{doc_id}', token).status_code == 200
+    assert patch(base, f'docs/{doc_id}', token, 'html', '<p>고친 견적서</p>').status_code == 200
+    assert call('DELETE', f'{base}/docs/{doc_id}', token).status_code == 200
+    assert call('GET', f'{base}/docs/{doc_id}', token).status_code == 404
+
+
+def test_docs_denied_cannot_read_or_create(base, doc_id, id_token):
+    allowed = id_token(ALLOWED, allowed=True)
+    assert put_doc(base, doc_id, allowed).status_code == 200            # 서류는 있고
+    assert call('GET', f'{base}/docs/{doc_id}', allowed).status_code == 200  # 허락된 사람은 읽는다
+    denied = id_token(DENIED, allowed=False)
+    assert call('GET', f'{base}/docs/{doc_id}', denied).status_code == 403
+    assert put_doc(base, doc_id + '-x', denied).status_code == 403
+    assert call('DELETE', f'{base}/docs/{doc_id}', denied).status_code == 403
+    assert call('GET', f'{base}/docs/{doc_id}').status_code == 403        # 로그인 안 함
+
+
+def test_docs_unknown_kind_rejected(base, doc_id, id_token):
+    token = id_token(ALLOWED, allowed=True)
+    assert put_doc(base, doc_id, token, kind='other').status_code == 403
+    assert put_doc(base, doc_id, token, kind='staff-pay').status_code == 200  # 다섯 가지 중 하나는 된다
+
+
+def test_docs_html_too_long_rejected(base, doc_id, id_token):
+    token = id_token(ALLOWED, allowed=True)
+    assert put_doc(base, doc_id, token, html='a' * 300_000).status_code == 403
+    assert put_doc(base, doc_id, token, html='a' * 299_999).status_code == 200
+
+
+def test_docs_update_to_unknown_kind_rejected(base, doc_id, id_token):
+    token = id_token(ALLOWED, allowed=True)
+    assert put_doc(base, doc_id, token).status_code == 200
+    assert patch(base, f'docs/{doc_id}', token, 'kind', 'other').status_code == 403

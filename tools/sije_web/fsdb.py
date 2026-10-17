@@ -84,6 +84,10 @@ class FirestoreSource:
     def all_events(self) -> list[tuple[str, dict]]:
         return [(d.id, d.to_dict()) for d in self.db.collection('events').stream()]
 
+    def all_docs(self) -> list[tuple[str, dict]]:
+        """2단계 서류 5종 전체 (하루 한 번 백업용)."""
+        return [(d.id, d.to_dict()) for d in self.db.collection('docs').stream()]
+
 
 def write_template(db, name: str, tpl: dict):
     db.collection('templates').document(name).set({'name': name, 'items': tpl['items'], 'itemRows': tpl.get('itemRows', 0)})
