@@ -17,9 +17,10 @@
 <meta name="apple-mobile-web-app-title" content="알바비">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<!-- 글꼴 · 사진 만들기 부품은 화면을 막지 않게 받는다 — 신호가 약해 안 와도 화면 · 스크립트는 돈다 (2단계 검토 I1, 1단계 sije-list 와 같음) -->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" media="print" onload="this.media='all'">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 <style>
 @media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
 :root{
@@ -299,9 +300,10 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
   body.editing .memo [data-ph]:empty::after{content:none}
 }
 </style>
+<link rel="stylesheet" href="css/docs.css?v=1">
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 입력한 내용은 이 기기에만 자동 저장되니, 새 내역을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 주세요.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 지급내역서가 보입니다. 새 내역은 <strong>목록</strong>에서 <strong>새 지급내역서</strong>를 누르세요.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -309,7 +311,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
   <button type="button" id="btn-send" class="primary">직원에게 보내기</button>
   <button type="button" id="btn-copy">복사</button>
   <button type="button" id="btn-print">인쇄 · PDF</button>
-  <button type="button" id="btn-reset">초기화</button>
+  <button type="button" id="btn-list">목록</button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -388,7 +390,6 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
             / 파일 이름은 작성일자로: 알바비지급내역서_2026-10-03 (사진·PDF 모두) */
 (function () {
   "use strict";
-  var KEY = "foodbell-staffpay-v1";
   var NAME = "알바비지급내역서";
   function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
   function money(n) { return n ? fmt(n) : ""; }
@@ -461,13 +462,8 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     each(c.querySelectorAll("[contenteditable]"), function (n) { n.removeAttribute("contenteditable"); });
     return c.innerHTML;
   }
-  function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) {} }
-  function restore() {
-    var html = null;
-    try { html = localStorage.getItem(KEY); } catch (e) { return false; }
-    if (html) { sheet.innerHTML = html; return true; }
-    return false;
-  }
+  /* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
+  function save() { var D = window.FoodbellDoc; if (D && D.onSave) D.onSave(); }
   /* 처음 여는 화면일 때만: 문서번호 · 작성일자를 오늘로 */
   function fillFreshDefaults() {
     var d = new Date();
@@ -673,20 +669,33 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     });
   });
 
-  document.getElementById("btn-reset").addEventListener("click", function () {
-    if (!window.confirm("입력하신 내용을 지우고 빈 알바비 지급내역서로 되돌릴까요?")) return;
-    try { localStorage.removeItem(KEY); } catch (e) {}
-    window.location.reload();
-  });
-
   btnEdit.addEventListener("click", function () {
     setEditing(!body.classList.contains("editing"));
   });
 
-  if (!restore()) fillFreshDefaults();
+  /* 웹 저장소 연결 고리 — 공통 부품(js/docs/doc-page.js)이 이것으로 서류를 그리고 · 새로 만들고 · 저장한다.
+     목록 구분값은 작성일자 (파일 이름도 작성일자로 짓는다) */
+  var FRESH = sheet.innerHTML;
+  window.FoodbellDoc = {
+    kind: "staff-pay",
+    serialize: serialize,
+    load: function (html) { sheet.innerHTML = html; recalc(); },
+    fresh: function () { sheet.innerHTML = FRESH; fillFreshDefaults(); recalc(); },
+    summary: function () {
+      return { label: getText("issue"), issue: getText("issue"), total: getText("total"), count: getText("count") };
+    },
+    editing: function () { return body.classList.contains("editing"); },
+    onSave: null
+  };
+  fillFreshDefaults();
   recalc();
 })();
 </script>
+<script>
+// 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
+if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+</script>
+<script type="module" src="js/docs/doc-page.js?v=1"></script>
 
 
 </body>

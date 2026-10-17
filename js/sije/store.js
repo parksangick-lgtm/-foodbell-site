@@ -91,6 +91,40 @@ export async function addImage(id, file) {
     { order: Date.now(), bytes, width: bmp.width, height: bmp.height });
 }
 
+// ---------- 2단계: 웹 서류 5종 (docs) — 서류 한 장을 통째로 (서류 전체 모양 html + 목록 칸) ----------
+
+export function watchDocs(kind, cb, onError) {
+  const q = fs.query(fs.collection(db, 'docs'), fs.where('kind', '==', kind));
+  return fs.onSnapshot(q, { includeMetadataChanges: true },
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, doc: d.data() })), meta(snap)), onError);
+}
+
+export function watchDoc(id, cb, onError) {
+  return fs.onSnapshot(fs.doc(db, 'docs', id), { includeMetadataChanges: true },
+    (snap) => cb(snap.exists() ? snap.data() : null, meta(snap)), onError);
+}
+
+// 서버 확인은 이만큼(ms)까지만 기다린다 — 끊긴 채 연 화면은 navigator.onLine 이 '연결됨'으로 나와서 그것만으로는 못 가린다.
+// 그 뒤에는 기기에 들고 있다가 연결되면 올라간다.
+export const CONFIRM_WAIT = 3000;
+export const atMost = (p, ms = CONFIRM_WAIT) => Promise.race([p, new Promise((ok) => setTimeout(ok, ms))]);
+
+export async function createDoc(kind, html, summary) {
+  const ref = fs.doc(fs.collection(db, 'docs'));
+  const saving = fs.setDoc(ref, { kind, html, ...summary, createdAt: fs.serverTimestamp(), updatedAt: fs.serverTimestamp() });
+  if (navigator.onLine) await atMost(saving);   // 오프라인이면 기다리지 않는다
+  return ref.id;
+}
+
+// 고치기만 한다 — 다른 기기에서 지운 서류면 실패한다(다시 만들지 않는다)
+export function saveDoc(id, html, summary) {
+  return fs.updateDoc(fs.doc(db, 'docs', id), { html, ...summary, updatedAt: fs.serverTimestamp() });
+}
+
+export function removeDoc(id) {
+  return fs.deleteDoc(fs.doc(db, 'docs', id));
+}
+
 export function watchImages(id, cb) {
   const q = fs.query(fs.collection(db, 'events', id, 'images'), fs.orderBy('order'));
   return fs.onSnapshot(q, (snap) => cb(snap.docs.map((d) => 'data:image/jpeg;base64,' + d.data().bytes.toBase64())));

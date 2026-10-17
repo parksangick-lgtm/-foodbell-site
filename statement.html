@@ -17,9 +17,10 @@
 <meta name="apple-mobile-web-app-title" content="거래명세서">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<!-- 글꼴 · 사진 만들기 부품은 화면을 막지 않게 받는다 — 신호가 약해 안 와도 화면 · 스크립트는 돈다 (2단계 검토 I1, 1단계 sije-list 와 같음) -->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" media="print" onload="this.media='all'">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 <style>
 @media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
 :root{
@@ -258,9 +259,10 @@ body:not(.editing) tr.addrow{display:none !important}
   .receiver{margin-top:22px}
 }
 </style>
+<link rel="stylesheet" href="css/docs.css?v=1">
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>으로 받는 분과 품목·규격·수량·단가를 채우면 공급가액·세액·합계가 자동으로 계산됩니다. <strong>고객에게 보내기</strong>를 누르면 문자·카톡으로 바로 보낼 수 있고, <strong>파일로 저장</strong>은 기록용 이미지를 남깁니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 입력 중인 내용은 이 기기에 자동 저장되니, <strong>새 손님</strong>을 시작할 땐 먼저 <strong>초기화</strong>를 눌러 주세요.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>으로 받는 분과 품목·규격·수량·단가를 채우면 공급가액·세액·합계가 자동으로 계산됩니다. <strong>고객에게 보내기</strong>를 누르면 문자·카톡으로 바로 보낼 수 있고, <strong>파일로 저장</strong>은 기록용 이미지를 남깁니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 거래명세서가 보입니다. 새 손님은 <strong>목록</strong>에서 <strong>새 거래명세서</strong>를 누르세요.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -268,7 +270,7 @@ body:not(.editing) tr.addrow{display:none !important}
   <button type="button" id="btn-send" class="primary">고객에게 보내기</button>
   <button type="button" id="btn-copy">복사</button>
   <button type="button" id="btn-print">인쇄 · PDF</button>
-  <button type="button" id="btn-reset">초기화</button>
+  <button type="button" id="btn-list">목록</button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -377,7 +379,6 @@ body:not(.editing) tr.addrow{display:none !important}
 <script>
 (function () {
   "use strict";
-  var KEY = "foodbell-statement-v1";
   function fmt(n) { return (n || 0).toLocaleString("ko-KR"); }
   function money(n) { return n ? fmt(n) : ""; }
   function raw(el) { return el ? (parseInt(el.getAttribute("data-raw"), 10) || 0) : 0; }
@@ -459,13 +460,8 @@ body:not(.editing) tr.addrow{display:none !important}
     each(c.querySelectorAll("[contenteditable]"), function (n) { n.removeAttribute("contenteditable"); });
     return c.innerHTML;
   }
-  function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) {} }
-  function restore() {
-    var html = null;
-    try { html = localStorage.getItem(KEY); } catch (e) { return false; }
-    if (html) { sheet.innerHTML = html; return true; }
-    return false;
-  }
+  /* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
+  function save() { var D = window.FoodbellDoc; if (D && D.onSave) D.onSave(); }
   /* 처음 여는 화면일 때만: 문서번호 · 작성일자 · 첫 줄 날짜를 오늘로 */
   function fillFreshDefaults() {
     var d = new Date();
@@ -674,12 +670,6 @@ body:not(.editing) tr.addrow{display:none !important}
     });
   });
 
-  document.getElementById("btn-reset").addEventListener("click", function () {
-    if (!window.confirm("입력하신 내용을 지우고 빈 거래명세서로 되돌릴까요?")) return;
-    try { localStorage.removeItem(KEY); } catch (e) {}
-    window.location.reload();
-  });
-
   btnEdit.addEventListener("click", function () {
     setEditing(!body.classList.contains("editing"));
   });
@@ -687,25 +677,49 @@ body:not(.editing) tr.addrow{display:none !important}
   /* 공급받는 자 칸을 공급자와 같은 7줄로 바꿨다(2026-10-01).
      예전 저장본(상호·성명 / 주소 / 전화 3줄)은 새 칸으로 바꾸고 적어 둔 내용을 옮겨 담는다. */
   var buyerHTML = sheet.querySelector(".party.buyer").outerHTML;
-  if (!restore()) fillFreshDefaults();
-  if (!sheet.querySelector(".party.buyer")) {
-    var oldBuyer = sheet.querySelector(".party"), was = {};
-    if (oldBuyer) {
-      each(oldBuyer.querySelectorAll(".prow"), function (r) {
-        var sp = r.querySelector("[data-edit]");
-        if (sp) was[r.querySelector("dt").textContent.trim()] = sp.textContent;
-      });
-      oldBuyer.insertAdjacentHTML("beforebegin", buyerHTML);
-      oldBuyer.remove();
-      setText("cust", was["상호·성명"] || "");
-      setText("bAddr", was["주소"] || "");
-      setText("bTel", was["전화"] || "");
-      save();
+  function afterLoad() {
+    if (!sheet.querySelector(".party.buyer")) {
+      var oldBuyer = sheet.querySelector(".party"), was = {};
+      if (oldBuyer) {
+        each(oldBuyer.querySelectorAll(".prow"), function (r) {
+          var sp = r.querySelector("[data-edit]");
+          if (sp) was[r.querySelector("dt").textContent.trim()] = sp.textContent;
+        });
+        oldBuyer.insertAdjacentHTML("beforebegin", buyerHTML);
+        oldBuyer.remove();
+        setText("cust", was["상호·성명"] || "");
+        setText("bAddr", was["주소"] || "");
+        setText("bTel", was["전화"] || "");
+        save();
+      }
     }
+    recalc();
   }
-  recalc();
+  function kText(k) {
+    var n = sheet.querySelector('[data-k="' + k + '"]');
+    return n ? n.textContent.trim() : "";
+  }
+
+  /* 웹 저장소 연결 고리 — 공통 부품(js/docs/doc-page.js)이 이것으로 서류를 그리고 · 새로 만들고 · 저장한다 */
+  var FRESH = sheet.innerHTML;
+  window.FoodbellDoc = {
+    kind: "statement",
+    serialize: serialize,
+    load: function (html) { sheet.innerHTML = html; afterLoad(); },
+    fresh: function () { sheet.innerHTML = FRESH; fillFreshDefaults(); afterLoad(); },
+    summary: function () { return { label: custName(), issue: kText("issue"), total: kText("total") }; },
+    editing: function () { return body.classList.contains("editing"); },
+    onSave: null
+  };
+  fillFreshDefaults();
+  afterLoad();
 })();
 </script>
+<script>
+// 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
+if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+</script>
+<script type="module" src="js/docs/doc-page.js?v=1"></script>
 
 </body>
 </html>
