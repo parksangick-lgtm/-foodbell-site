@@ -130,6 +130,74 @@ def test_new_doc_offline_then_syncs(ctx, repo_url, custom_token, test_db, made):
     raise AssertionError('연결된 뒤 30초 안에 저장소에 안 올라감')
 
 
+def test_handoff_offline_then_syncs(ctx, repo_url, custom_token, test_db, made):
+    """3단계 Review Focus 5 — 끊긴 곳에서 견적서 → 거래명세서를 만들어도 열리고, 연결되면 올라간다."""
+    page = ctx.new_page()
+    page.goto(f'{repo_url}sije-quote.html?testToken={custom_token(EMAIL, allowed=True)}')
+    page.wait_for_function("document.body.dataset.docView === 'list'", timeout=20_000)
+    quote_id = _new_quote(page, made)
+    wait_controlled(page)
+    page.goto(f'{repo_url}statement.html')                       # 받는 화면도 한 번 열어 둔다 (오프라인 사본)
+    page.wait_for_function("document.body.dataset.docView === 'list'", timeout=20_000)
+    page.goto(f'{repo_url}sije-quote.html?id={quote_id}')
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+
+    ctx.set_offline(True)
+    page.goto(f'{repo_url}sije-quote.html?id={quote_id}')
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+    page.once('dialog', lambda d: d.accept())
+    page.click('#doc-make-statement')
+    page.wait_for_url('**/statement.html?id=*', timeout=20_000)
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+    st_id = page.evaluate("new URLSearchParams(location.search).get('id')")
+    made.append(st_id)
+    ctx.set_offline(False)
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        snap = test_db.collection('docs').document(st_id).get()
+        if snap.exists and snap.get('label') == '○○ 김씨 문중 종친회':
+            return
+        time.sleep(1)
+    raise AssertionError('연결된 뒤 30초 안에 거래명세서가 저장소에 안 올라감')
+
+
+def test_handoff_no_signal_then_syncs(ctx, repo_url, custom_token, test_db, made):
+    """3단계 검토 I1 — 신호가 아예 없는 곳(navigator.onLine 거짓 — 비행기 모드 · 산속)에서 만든 거래명세서도
+    기기에 남았다가 연결되면 올라간다. (set_offline 만으로는 끊긴 채 연 화면이 '연결됨' 이라 이 길을 안 탄다)"""
+    page = ctx.new_page()
+    page.goto(f'{repo_url}sije-quote.html?testToken={custom_token(EMAIL, allowed=True)}')
+    page.wait_for_function("document.body.dataset.docView === 'list'", timeout=20_000)
+    quote_id = _new_quote(page, made)
+    wait_controlled(page)
+    page.goto(f'{repo_url}statement.html')
+    page.wait_for_function("document.body.dataset.docView === 'list'", timeout=20_000)
+    page.goto(f'{repo_url}sije-quote.html?id={quote_id}')
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+
+    page.add_init_script("Object.defineProperty(Navigator.prototype, 'onLine', {get: () => false, configurable: true})")
+    ctx.set_offline(True)
+    page.goto(f'{repo_url}sije-quote.html?id={quote_id}')
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+    page.once('dialog', lambda d: d.accept())
+    page.click('#doc-make-statement')
+    page.wait_for_url('**/statement.html?id=*', timeout=20_000)
+    st_id = page.evaluate("new URLSearchParams(location.search).get('id')")
+    made.append(st_id)
+    # 기기 저장이 끝났는지 — 서류가 열려야 한다 (저장 전에 넘어가면 '찾을 수 없습니다')
+    page.wait_for_function("['doc', 'missing'].includes(document.body.dataset.docView)", timeout=20_000)
+    assert page.evaluate('document.body.dataset.docView') == 'doc', '신호 없는 곳에서 만든 거래명세서가 기기에 안 남음'
+    ctx.set_offline(False)
+    page.goto('about:blank')
+    page.goto(f'{repo_url}statement.html?id={st_id}')                  # 연결된 화면이 들고 있던 쓰기를 올린다
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        snap = test_db.collection('docs').document(st_id).get()
+        if snap.exists and snap.get('label') == '○○ 김씨 문중 종친회':
+            return
+        time.sleep(1)
+    raise AssertionError('연결된 뒤 30초 안에 거래명세서가 저장소에 안 올라감')
+
+
 def test_list_button_offline_does_not_hang(ctx, repo_url, custom_token, made):
     """끊긴 곳에서 고치고 '목록' 을 눌러도 멈추지 않는다 (끊긴 채 연 화면은 navigator.onLine 이 참으로 나온다)."""
     page = ctx.new_page()

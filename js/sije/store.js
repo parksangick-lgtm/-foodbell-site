@@ -75,12 +75,14 @@ export async function listTemplates() {
   return snap.docs.map((d) => ({ name: d.data().name ?? d.id, items: d.data().items ?? {}, itemRows: d.data().itemRows ?? 0 }));
 }
 
-export async function createFromTemplate(name) {
+// extra = 다른 서류에서 옮겨 온 칸 (3단계 — 견적서의 고객 · 날짜 · 장소 · 상차림 · 금액)
+export async function createFromTemplate(name, extra = {}) {
   const tpl = (await fs.getDoc(fs.doc(db, 'templates', name))).data();
   const ref = fs.doc(fs.collection(db, 'events'));
-  const ev = newEventFromTemplate({ name, items: tpl.items, itemRows: tpl.itemRows });
+  const ev = { ...newEventFromTemplate({ name, items: tpl.items, itemRows: tpl.itemRows }), ...extra };
   const saving = fs.setDoc(ref, { ...ev, updatedAt: fs.serverTimestamp() });
-  if (navigator.onLine) await saving;   // 오프라인이면 기다리지 않는다 — 기기에 들고 있다가 연결되면 올라간다
+  await localSaved(ref);
+  if (navigator.onLine) await atMost(saving);   // 끊긴 곳에서는 3초까지만 — 기기에 들고 있다가 연결되면 올라간다
   return ref.id;
 }
 
@@ -109,9 +111,15 @@ export function watchDoc(id, cb, onError) {
 export const CONFIRM_WAIT = 3000;
 export const atMost = (p, ms = CONFIRM_WAIT) => Promise.race([p, new Promise((ok) => setTimeout(ok, ms))]);
 
+// 방금 쓴 것이 이 기기 저장소에 들어갈 때까지 — 저장소 작업은 차례대로 돌아서, 이 읽기가 끝나면 앞의 쓰기도 기기에 들어가 있다.
+// 신호가 아예 없으면(navigator.onLine 거짓) 서버를 안 기다리고 곧장 다음 화면으로 가는데, 그 전에 기기 쓰기가 안 끝나면 새 서류가 사라졌다
+// (3단계 최종 검토 I1 — '서류를 찾을 수 없습니다').
+const localSaved = (ref) => fs.getDocFromCache(ref).catch(() => {});
+
 export async function createDoc(kind, html, summary) {
   const ref = fs.doc(fs.collection(db, 'docs'));
   const saving = fs.setDoc(ref, { kind, html, ...summary, createdAt: fs.serverTimestamp(), updatedAt: fs.serverTimestamp() });
+  await localSaved(ref);
   if (navigator.onLine) await atMost(saving);   // 오프라인이면 기다리지 않는다
   return ref.id;
 }

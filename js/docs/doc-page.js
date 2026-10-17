@@ -2,6 +2,7 @@
 // 화면은 window.FoodbellDoc(연결 고리)만 내주고, 저장소는 ../sije/store.js 로만 부른다.
 // 주소에 ?id= 가 없으면 그 종류의 목록, 있으면 그 서류.
 import { KINDS, sortDocs, editedText, rowCells } from './doc-model.js';
+import { putBundle, takeBundle, quoteToEvent, quoteToStatement, NOTES_KEY as NOTES } from './handoff.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost,
 } from '../sije/store.js';
@@ -53,6 +54,36 @@ delWrap.className = 'doc-del-wrap';
 delWrap.innerHTML = '<button type="button" id="doc-del"></button>';
 document.querySelector('.sheet').after(delWrap);
 $('doc-del').textContent = `이 ${noun} 지우기`;
+
+// 3단계 서류 잇기 — '이 견적서로 …만들기' 줄 (지우기 위). 누르면 겹치는 칸을 꾸러미로 넘기고 받는 화면을 ?make=1 로 연다.
+const MAKES = { 'sije-quote': ['event', 'statement'], 'event-quote': ['statement'] };
+const MAKE = {
+  event: { label: '내역서 만들기', ask: `이 ${noun} 내용으로 새 내역서를 만들까요?`, url: 'sije-list.html?make=1', build: quoteToEvent },
+  statement: { label: '거래명세서 만들기', ask: `이 ${noun} 내용으로 새 거래명세서를 만들까요?`, url: 'statement.html?make=1', build: quoteToStatement },
+};
+if (MAKES[D.kind]) {
+  const row = document.createElement('div');
+  row.className = 'doc-make';
+  row.innerHTML = `<b>이 ${noun}로</b>`;
+  for (const to of MAKES[D.kind]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = `doc-make-${to}`;
+    b.textContent = MAKE[to].label;
+    b.addEventListener('click', async () => {
+      if (!confirm(MAKE[to].ask)) return;
+      const saving = flush();                               // 고치던 것을 먼저 올린다
+      if (saving && navigator.onLine) await atMost(saving);
+      putBundle(sessionStorage, to, MAKE[to].build(D.handoff()), Date.now());
+      location.href = MAKE[to].url;
+    });
+    row.append(b);
+  }
+  delWrap.before(row);
+}
+// 받는 쪽(거래명세서 목록) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
+const incoming = D.kind === 'statement' && !docId
+  ? takeBundle(sessionStorage, 'statement', params.get('make') === '1', Date.now()) : null;
 
 const toastEl = document.createElement('div');
 toastEl.className = 'doc-toast';
@@ -171,6 +202,11 @@ function onDoc(doc, meta) {
   if (shownFrom === null) {                       // 처음 (방금 이 기기에서 만들어 아직 안 올라간 것도)
     apply(doc.html);
     view('doc');
+    const notes = sessionStorage.getItem(NOTES);  // 다른 서류에서 옮겨 만들며 못 읽은 칸이 있었다
+    if (notes) {
+      sessionStorage.removeItem(NOTES);
+      toast(JSON.parse(notes).join(' · '));
+    }
   } else if (!meta.pending && doc.html !== shownFrom) {   // 다른 기기에서 고침
     // 이 기기에 아직 안 올린 글자가 없으면 편집 중이어도 바로 보여 준다 (사장님 결정 2026-10-17).
     // 한창 치는 중(모아 올리기 전)이면 치던 글자를 지우지 않게 들고 있다가 — 이 기기 것이 올라가 나중 것으로 남는다
@@ -213,18 +249,23 @@ document.getElementById('btn-list')?.addEventListener('click', async () => {
   location.href = listUrl;
 });
 
-$('doc-new').addEventListener('click', async () => {
+// 새 서류 — bundle 이 있으면(3단계) 빈 첫 화면에 받은 칸을 채워서 만든다
+async function makeNew(bundle) {
   const b = $('doc-new');
   b.disabled = true;
   try {
-    draw(() => D.fresh());
+    draw(() => { D.fresh(); if (bundle) D.prefill(bundle.fields); });
     const id = await createDoc(D.kind, D.serialize(), D.summary());
-    location.href = `${listUrl}?id=${encodeURIComponent(id)}`;
+    if (bundle?.notes.length) sessionStorage.setItem(NOTES, JSON.stringify(bundle.notes));
+    const url = `${listUrl}?id=${encodeURIComponent(id)}`;
+    if (bundle) location.replace(url);   // 뒤로 가면 ?make=1 이 아니라 원래 서류로
+    else location.href = url;
   } catch (e) {
     b.disabled = false;
     toast(`새 ${noun}를 만들지 못했습니다 (${why(e)})`);
   }
-});
+}
+$('doc-new').addEventListener('click', () => makeNew(null));
 
 $('doc-del').addEventListener('click', async () => {
   if (!confirm(`정말 지울까요? 지운 ${noun}는 되살릴 수 없습니다.`)) return;
@@ -262,6 +303,9 @@ onUser((user) => {
   $('doc-who').textContent = user.email || '';
   if (docId) {
     stop = watchDoc(docId, onDoc, onError);
+  } else if (incoming && !incoming.used) {
+    incoming.used = true;                 // 로그인 알림이 두 번 와도 한 장만
+    makeNew(incoming);
   } else {
     view('list');
     stop = watchDocs(D.kind, onRows, onError);

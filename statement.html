@@ -259,7 +259,7 @@ body:not(.editing) tr.addrow{display:none !important}
   .receiver{margin-top:22px}
 }
 </style>
-<link rel="stylesheet" href="css/docs.css?v=1">
+<link rel="stylesheet" href="css/docs.css?v=2">
 </head>
 <body>
 <p class="hint"><b>안내</b><strong>편집</strong>으로 받는 분과 품목·규격·수량·단가를 채우면 공급가액·세액·합계가 자동으로 계산됩니다. <strong>고객에게 보내기</strong>를 누르면 문자·카톡으로 바로 보낼 수 있고, <strong>파일로 저장</strong>은 기록용 이미지를 남깁니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 거래명세서가 보입니다. 새 손님은 <strong>목록</strong>에서 <strong>새 거래명세서</strong>를 누르세요.</p>
@@ -711,6 +711,21 @@ body:not(.editing) tr.addrow{display:none !important}
     },
     fresh: function () { sheet.innerHTML = FRESH; fillFreshDefaults(); afterLoad(); },
     summary: function () { return { label: custName(), issue: kText("issue"), total: kText("total") }; },
+    /* 3단계 서류 잇기 — 견적서 · 내역서에서 받은 칸: 상호 + 거래 내역 첫 줄(월/일 · 품목 · 규격 비움 · 수량 1 · 단가) */
+    prefill: function (f) {
+      setText("cust", f.cust || "");
+      var tr = sheet.querySelector("tr.item");
+      if (tr) {
+        var cell = function (sel, text) { var e = tr.querySelector(sel); if (e) e.textContent = text; return e; };
+        cell('[data-k="md"]', f.md || "");
+        cell(".item-name", f.item || "");
+        cell('td[data-label="규격"]', "");
+        cell('[data-k="qty"]', "1").setAttribute("data-raw", "1");
+        var price = cell('[data-k="price"]', f.price ? fmt(f.price) : "");
+        if (f.price) price.setAttribute("data-raw", String(f.price)); else price.removeAttribute("data-raw");
+      }
+      recalc();
+    },
     editing: function () { return body.classList.contains("editing"); },
     onSave: null
   };
@@ -722,7 +737,7 @@ body:not(.editing) tr.addrow{display:none !important}
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=1"></script>
+<script type="module" src="js/docs/doc-page.js?v=2"></script>
 
 </body>
 </html>
