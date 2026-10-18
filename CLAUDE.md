@@ -114,7 +114,9 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 검은 창에서 구글 드라이브·지메일·시트·캘린더를 다루는 도구(npm `@googleworkspace/cli`).
 **사무실 PC 만 설치·로그인했다. 노트북·집은 아직** — 그 PC 에서 쓸 일이 생기면 아래대로 한다.
 
-- 구글 클라우드 프로젝트 **`foodbell-gws80786`**(앱 이름 "푸드벨 gws", 외부 · 테스트 중, 시험 사용자 = 사장님 메일).
+- 구글 클라우드 프로젝트 **`foodbell-gws80786`**(앱 이름 "푸드벨 gws", 외부 · **프로덕션**(2026-10-19 게시) · 사용자 = 사장님 메일).
+  브랜딩에 홈페이지 `https://foodbell.kr/` · 개인정보처리방침 `https://foodbell.kr/privacy.html` · 승인된 도메인 `foodbell.kr`.
+  **앱 로고는 올리지 않는다** — 올리면 구글 심사에 제출해야 한다. 심사(인증) 제출도 하지 않는다(사장님 혼자 쓰는 앱).
   서류용 파이어베이스 프로젝트와 일부러 분리했다 — 그쪽 로그인 화면 설정을 건드리지 않으려고. 구글 클라우드 화면 작업은 다시 안 한다.
 - 새 PC 설치:
   1. `npm install -g @googleworkspace/cli`
@@ -126,9 +128,12 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
      gws auth login --scopes https://www.googleapis.com/auth/drive,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/gmail.modify,https://www.googleapis.com/auth/calendar
      ```
 
-     나온 주소에 `drive` · `gmail` 글자가 있는지 보고 Ctrl+클릭 → 사장님 계정 → "확인하지 않은 앱" **계속** → 권한 모두 체크.
+     나온 주소에 `drive` · `gmail` 글자가 있는지 보고 Ctrl+클릭 → 사장님 계정 → "Google에서 확인하지 않은 앱" 경고에서
+     왼쪽 아래 **고급 → "푸드벨 gws(으)로 이동(안전하지 않음)"** → 권한 모두 선택 → 계속.
      **클로드가 로그인 창을 대신 열면 자동 안전 장치가 막는다** — 클로드는 명령 창을 띄우고 명령을 복사해 두기까지만 하고, 클릭은 사장님이 한다.
-- **테스트 중 앱이라 7일마다 로그인이 풀린다** → 같은 명령을 다시.
+- **로그인은 이제 저절로 유지된다** — "테스트 중"이던 10-18 까지는 7일마다 풀렸고, 10-19 프로덕션으로 게시한 뒤 다시 로그인했다.
+  구글 안내상 6개월 안 쓰거나 사장님이 직접 끊으면 풀린다 → 그때 같은 명령을 다시. **10-26 이후에도 안 풀렸는지 한 번 확인할 것**(아직 확인 전).
+  "테스트로 돌아가기" 를 누르면 다시 7일마다 풀린다.
 - 확인: `gws auth status`, `gws drive files list --params '{"pageSize": 3}' --format table`
 - 캘린더 자동 맞추기("푸드벨 행사")는 gws 가 아니라 서버용 계정으로 돈다(아래 파일 목록 `tools/sije_web/` 줄) — gws 로그인이 풀려도 캘린더는 계속 맞춰진다.
 
