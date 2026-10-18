@@ -217,8 +217,19 @@ def test_sheet_to_statement(pc, repo_url, custom_token, test_db, made, event_id)
     assert eref.get().to_dict() == before                                     # 내역서 그대로
 
 
+def test_sheet_man_amount_to_statement(pc, repo_url, custom_token, test_db, made, event_id):
+    test_db.collection('events').document(event_id).update({'amount': '360만 VAT별도'})   # 실제 내역서 꼴 — 단가가 비던 신고 (2026-10-18)
+    open_sheet(pc, repo_url, custom_token, event_id)
+    answer_next(pc)
+    pc.click('#make-statement')
+    pc.wait_for_url(STATEMENT_DONE, timeout=20_000)
+    wait_view(pc, 'doc')
+    doc = wait_db(test_db.collection('docs').document(opened_doc_id(pc, made)), lambda s: s.exists).to_dict()
+    assert doc['total'] == '3,960,000'                                        # 3,600,000 + 세액 10%
+
+
 def test_sheet_bad_amount_notes_amount(pc, repo_url, custom_token, test_db, made, event_id):
-    test_db.collection('events').document(event_id).update({'amount': '2.400,000원'})   # 엑셀에서 온 오타 꼴
+    test_db.collection('events').document(event_id).update({'amount': '육십만원'})   # 숫자가 아닌 꼴 (2.400,000원 은 이제 읽는다 — 2026-10-18)
     open_sheet(pc, repo_url, custom_token, event_id)
     answer_next(pc)
     pc.click('#make-statement')

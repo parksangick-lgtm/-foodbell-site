@@ -38,8 +38,20 @@ test('parseAmount — 받는 꼴', () => {
   for (const t of ['600,000원', '600000', '₩600,000', ' 600,000 원 ']) assert.equal(parseAmount(t), 600000, t);
 });
 
-test('parseAmount — 못 읽으면 null (엑셀에서 온 2.400,000원 등)', () => {
-  for (const t of ['2.400,000원', '', '육십만원', '600,00원', '0', undefined]) assert.equal(parseAmount(t), null, String(t));
+test('parseAmount — 만 단위 · 메모 · 점 (실제 내역서 금액 칸에 적힌 모양, 2026-10-18)', () => {
+  const cases = {
+    '90만원': 900000, '180만': 1800000, '360만 VAT별도': 3600000, '385만 VAT별도': 3850000,
+    '132만원(입금가)': 1320000, '1,200,000원 (1자상)': 1200000,       // 괄호 메모는 빼고 앞 숫자
+    '2.145.000': 2145000, '1.585.000': 1585000, '2.400,000원': 2400000,  // 점도 자리 나눔으로
+    '170': 1700000,                                                     // 단위 없는 1만 미만 숫자는 만 원 (사장님 결정)
+  };
+  for (const [t, n] of Object.entries(cases)) assert.equal(parseAmount(t), n, t);
+});
+
+test('parseAmount — 못 읽으면 null', () => {
+  for (const t of ['', '육십만원', '600,00원', '0', '0만원', '1.5만', '360만 VAT포함', '60만원 정도', undefined]) {
+    assert.equal(parseAmount(t), null, String(t));
+  }
 });
 
 test('monthDay · wonText', () => {
@@ -99,7 +111,8 @@ test('quoteToStatement — 공급가액이 없으면 단가 비우고 알림', (
 test('eventToStatement — 내역서 금액 글자에서 단가', () => {
   const ev = { customer: '가짜 문중', date: '2026-11-13', setting: '7치 1상', amount: '600,000원' };
   assert.deepEqual(eventToStatement(ev), { fields: { cust: '가짜 문중', md: '11/13', item: '7치 1상', price: 600000 }, notes: [] });
-  const bad = eventToStatement({ ...ev, date: '', amount: '2.400,000원' });
+  assert.equal(eventToStatement({ ...ev, amount: '360만 VAT별도' }).fields.price, 3600000);
+  const bad = eventToStatement({ ...ev, date: '', amount: '육십만원' });
   assert.equal(bad.fields.md, '');
   assert.equal(bad.fields.price, null);
   assert.deepEqual(bad.notes, [NO_DATE, NO_AMOUNT]);
