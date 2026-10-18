@@ -109,6 +109,29 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 `git clone https://github.com/parksangick-lgtm/PARK...git C:\dev\park-obsidian-save`
 (주소 끝의 점 세 개는 저장소 이름 `PARK..` 와 `.git` 이 붙은 것이다). 노트북은 2026-09-25 에 설치했다.
 
+### gws — 구글 워크스페이스 CLI (PC 마다 설치, 2026-10-18)
+
+검은 창에서 구글 드라이브·지메일·시트·캘린더를 다루는 도구(npm `@googleworkspace/cli`).
+**사무실 PC 만 설치·로그인했다. 노트북·집은 아직** — 그 PC 에서 쓸 일이 생기면 아래대로 한다.
+
+- 구글 클라우드 프로젝트 **`foodbell-gws80786`**(앱 이름 "푸드벨 gws", 외부 · 테스트 중, 시험 사용자 = 사장님 메일).
+  서류용 파이어베이스 프로젝트와 일부러 분리했다 — 그쪽 로그인 화면 설정을 건드리지 않으려고. 구글 클라우드 화면 작업은 다시 안 한다.
+- 새 PC 설치:
+  1. `npm install -g @googleworkspace/cli`
+  2. 원드라이브 `바탕화면\작업장\사업자 등록증 영문\client_secret_…json` 을 `%USERPROFILE%\.config\gws\client_secret.json` 으로 **복사**.
+     비밀 파일이다 — 작업 폴더(인터넷에 올라감)에 두지 않는다.
+  3. 로그인은 **권한을 직접 적는다.** `-s drive,gmail,…` 은 권한 고르기 목록이 `Cloud Platform` 하나만 뜨거나 드라이브 권한이 빠진 주소가 나왔다:
+
+     ```bash
+     gws auth login --scopes https://www.googleapis.com/auth/drive,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/gmail.modify,https://www.googleapis.com/auth/calendar
+     ```
+
+     나온 주소에 `drive` · `gmail` 글자가 있는지 보고 Ctrl+클릭 → 사장님 계정 → "확인하지 않은 앱" **계속** → 권한 모두 체크.
+     **클로드가 로그인 창을 대신 열면 자동 안전 장치가 막는다** — 클로드는 명령 창을 띄우고 명령을 복사해 두기까지만 하고, 클릭은 사장님이 한다.
+- **테스트 중 앱이라 7일마다 로그인이 풀린다** → 같은 명령을 다시.
+- 확인: `gws auth status`, `gws drive files list --params '{"pageSize": 3}' --format table`
+- 캘린더 자동 맞추기("푸드벨 행사")는 gws 가 아니라 서버용 계정으로 돈다(아래 파일 목록 `tools/sije_web/` 줄) — gws 로그인이 풀려도 캘린더는 계속 맞춰진다.
+
 ## 미리보기
 
 - VSCode Live Server(포트 **5500**)가 이미 떠 있는 경우가 많다. `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5500/` 로 먼저 확인한다.
