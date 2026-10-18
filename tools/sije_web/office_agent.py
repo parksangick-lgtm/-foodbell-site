@@ -1,4 +1,4 @@
-r"""사무실 PC 상주 프로그램 — 5분마다 바뀐 행사 PDF, 하루 한 번 백업 엑셀. 윈도우에 로그온하면 저절로 시작한다
+r"""사무실 PC 상주 프로그램 — 5분마다 바뀐 행사 PDF · 캘린더 맞추기, 하루 한 번 백업 엑셀. 윈도우에 로그온하면 저절로 시작한다
 (install-agent.ps1 이 작업 스케줄러 "푸드벨 시제 PDF" 로 등록).
 
     python -m tools.sije_web.office_agent              # 계속 돈다 (작업 스케줄러는 pythonw 로)
@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 
-from tools.sije_web import fsdb
+from tools.sije_web import calendar_sync, fsdb
 from tools.sije_web.backup import write_backup
 from tools.sije_web.pdf_sync import STATE_FILE, load_state, save_state, sync_once
 from tools.sije_web.render_pdf import render_pdf, serve_repo
@@ -36,8 +36,9 @@ def setup_log(path: Path) -> logging.Logger:
     return log
 
 
-def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger):
-    """PDF 와 백업은 따로 감싼다 — 한쪽이 실패해도 다른 쪽은 돈다."""
+def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger, calendar=None):
+    """PDF · 백업 · 캘린더는 따로 감싼다 — 하나가 실패해도 나머지는 돈다.
+    calendar 는 calendar_sync.CalendarJob — None 이면(캘린더 ID 파일 없는 PC) 건너뛴다."""
     result = None
     try:
         state = load_state(state_file)
@@ -60,6 +61,20 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
             log.info('백업 만듦: %s', backup.name)
     except Exception:
         log.exception('백업 실패 (다음 차례에 다시)')
+    if calendar is not None:
+        try:
+            cal = calendar.run(source, time.time())
+            for word, key in (('만듦', 'made'), ('고침', 'updated'), ('지움', 'removed')):
+                for title in (cal or {}).get(key, []):
+                    log.info('캘린더 %s: %s', word, title)
+            for id, why in (cal or {}).get('failed', []):
+                log.warning('캘린더 실패 (다음 차례에 다시): %s — %s', id, why)
+            if cal and cal['guarded']:
+                log.warning('캘린더: 행사 목록이 0개로 읽혀 지우기를 건너뜀')
+        except calendar_sync.CalendarError as e:   # 공유가 풀림 · 서비스 꺼짐 등 — 5분마다 긴 오류 대신 한 줄
+            log.warning('캘린더 차례 실패 (다음 차례에 다시): %s', e)
+        except Exception:
+            log.exception('캘린더 차례 실패 (다음 차례에 다시)')
     return result
 
 
@@ -77,12 +92,15 @@ def main(argv=None) -> int:
         return 2
     # 상태 기록은 열쇠(프로젝트)마다 따로 — 시험 프로젝트로 돌려 본 기록이 실제와 섞이지 않게
     state_file = STATE_FILE.with_name(f'state-{a.key.stem}.json')
-    log.info('시작 (열쇠 %s, 폴더 %s, %s초마다)', a.key.name, a.work_root, a.interval)
+    cal = calendar_sync.open_calendar(a.key)
+    calendar = calendar_sync.CalendarJob(cal) if cal else None
+    log.info('시작 (열쇠 %s, 폴더 %s, %s초마다, 캘린더 %s)', a.key.name, a.work_root, a.interval,
+             '켬' if calendar else '끔')
     source = fsdb.FirestoreSource(fsdb.open_db(a.key))
     with serve_repo(ROOT) as url:
         while True:
             try:
-                one_cycle(source, a.work_root, state_file, url, log)
+                one_cycle(source, a.work_root, state_file, url, log, calendar)
             except Exception:       # 인터넷 끊김 등 — 기록하고 다음 차례에
                 log.exception('이번 차례 실패')
                 if a.once:

@@ -254,3 +254,33 @@ def page(browser):
     pg = ctx.new_page()
     yield pg
     ctx.close()
+
+
+class FakeCalendar:
+    """캘린더 부품(list_tagged · insert · update · delete)의 메모리 가짜 — calls 에 한 일을 쌓는다.
+    fail_ids 에 든 일정 번호는 만들기 · 고치기가 실패한다. untagged 는 사장님이 손으로 만든 일정 자리."""
+
+    def __init__(self, fail_ids=frozenset()):
+        self.events = {}
+        self.untagged = {}
+        self.calls = []
+        self.fail_ids = set(fail_ids)
+
+    def list_tagged(self):
+        return {e['extendedProperties']['private']['foodbellId']: dict(e) for e in self.events.values()}
+
+    def insert(self, body):
+        self.calls.append(('insert', body['id']))
+        if body['id'] in self.fail_ids:
+            raise RuntimeError('흉내: 만들기 실패')
+        self.events[body['id']] = dict(body)
+
+    def update(self, event_id, body):
+        self.calls.append(('update', event_id))
+        if event_id in self.fail_ids:
+            raise RuntimeError('흉내: 고치기 실패')
+        self.events[event_id] = dict(body)
+
+    def delete(self, event_id):
+        self.calls.append(('delete', event_id))
+        del self.events[event_id]
