@@ -75,13 +75,15 @@
 | `web-design-guidelines` | "내 사이트 점검해줘" — 웹 화면 규칙과 대조 (Vercel, MIT). 쓸 때마다 규칙을 인터넷에서 새로 받아온다 |
 | `webapp-testing` | 브라우저 자동 시험·휴대폰 폭 캡처 (Anthropic, Apache-2.0). Playwright 필요 — 컴퓨터마다 `python -m pip install playwright` + `python -m playwright install chromium` 한 번 |
 | `flutter-windows-setup` | 새 PC 에 Flutter 세팅 → 에뮬레이터에서 my_app 첫 실행 (2026-10-09). 이 사이트와 무관하지만 세 PC 에 따라가게 여기 둔다. 스크립트 2개 포함 |
+| `handoff` | `/handoff` (또는 `/handoff 다음엔 ○○`) — 대화를 인수인계 문서로 정리해 `C:\dev\vibe-study\handoff\` 에 저장 (맷 포콕, 2026-10-19). 대화가 길어졌거나 다른 PC 로 옮길 때. 이어받을 때는 새 대화에서 "인수인계 이어받아줘" → 그 폴더의 가장 최근 파일을 읽는다. 사람이 불러야만 돈다 |
 
 **외부 스킬**은 남이 만든 것이다 — 디자인 두 개는 원본 `github.com/leonxlnx/taste-skill`(MIT),
 2026-09-23 `c184364` 시점 사본. "맷 포콕" 일곱 개는 원본 `github.com/mattpocock/skills`(MIT),
 2026-09-23 `c55ee46` 시점 사본. 같은 저장소의 `tdd`·`diagnosing-bugs` 는 이미 있는
 superpowers 스킬(`test-driven-development`·`systematic-debugging`)과 겹쳐서 일부러 뺐다.
 2026-09-24 추가: `teach`(mattpocock/skills `c55ee46`), `web-design-guidelines`(vercel-labs/agent-skills `063bee9`),
-`webapp-testing`(anthropics/skills `34040c9`). 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
+`webapp-testing`(anthropics/skills `34040c9`). 2026-10-19 추가: `handoff`(mattpocock/skills `49dd158`) — 원본에서
+**저장 위치 한 줄만 고쳤다**(원본은 PC 임시 폴더 → 세 PC 가 함께 보는 비공개 `C:\dev\vibe-study\handoff\`). 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
 `SKILL.md` 를 다시 복사해 온다. React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
 **이 사이트에서는 위 "화면 만들 때"·"사진" 규칙이 먼저다.**
 
