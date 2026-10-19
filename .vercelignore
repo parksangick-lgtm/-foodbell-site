@@ -17,3 +17,5 @@ tools
 firebase.json
 .firebaserc
 firestore.rules
+# 맨 위 docs/ (설계서 · 계획서 · 견본) — 앞에 / 를 붙여야 js/docs/(서류 공통 부품)까지 빠지지 않는다
+/docs

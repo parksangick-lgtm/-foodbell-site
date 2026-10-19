@@ -11,6 +11,24 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/allow/$(request.auth.token.email));
     }
 
+    // 보기 명단(직원) — 일일 일정표만 읽는다. viewers 는 tools/sije_web/allow.py viewer-add 가 고친다.
+    function viewer() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/viewers/$(request.auth.token.email));
+    }
+
+    // 화면이 '나는 주인인가 · 보기 전용인가' 를 알도록 자기 메일의 문서만 읽힌다 (남의 것 · 목록 보기 · 쓰기는 안 됨)
+    function isSelf(email) {
+      return request.auth != null && request.auth.token.email_verified == true && request.auth.token.email == email;
+    }
+    match /allow/{email} {
+      allow get: if isSelf(email);
+    }
+    match /viewers/{email} {
+      allow get: if isSelf(email);
+    }
+
     match /events/{id} {
       allow read: if allowed();
       allow create, update: if allowed()
@@ -29,9 +47,10 @@ service cloud.firestore {
     // 2단계: 웹 서류 5종 — 서류 한 장 = 문서 하나 (서류 전체 모양 html + 목록 칸).
     // 300,000 글자 미만: 한글은 한 글자가 최대 3바이트라 문서 한 장 한도(1MB) 안쪽. 지금 서류는 약 5만 글자.
     match /docs/{id} {
-      allow read, delete: if allowed();
+      allow read: if allowed() || (viewer() && resource.data.kind == 'daily-schedule');
+      allow delete: if allowed();
       allow create, update: if allowed()
-        && request.resource.data.kind in ['sije-quote', 'event-quote', 'sije-worksheet', 'statement', 'staff-pay']
+        && request.resource.data.kind in ['sije-quote', 'event-quote', 'sije-worksheet', 'statement', 'staff-pay', 'daily-schedule']
         && request.resource.data.html is string
         && request.resource.data.html.size() < 300000;
     }

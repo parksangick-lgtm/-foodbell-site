@@ -23,7 +23,7 @@ ITEM_COLS = ['group', 'no', 'name', 'qty', 'note']
 
 # 2단계: 서류 5종 (js/docs/doc-model.js 의 KINDS 제목과 같게)
 DOC_KINDS = {'sije-quote': '시제 견적서', 'event-quote': '행사 견적서', 'sije-worksheet': '시제 작업지시서',
-             'statement': '거래명세서', 'staff-pay': '알바비 지급내역서'}
+             'statement': '거래명세서', 'staff-pay': '알바비 지급내역서', 'daily-schedule': '일일 일정표'}
 DOC_COLS = [('label', '구분값'), ('issue', '발행일'), ('total', '합계'), ('count', '인원'),
             ('createdAt', '만든 시각'), ('updatedAt', '고친 시각')]
 _BLOCK = {'div', 'p', 'br', 'tr', 'td', 'th', 'li', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'table', 'section', 'article'}

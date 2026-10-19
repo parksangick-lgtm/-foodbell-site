@@ -6,6 +6,12 @@ r"""허락 목록 — 로그인해서 내역서를 볼 수 있는 구글 메일.
     python -m tools.sije_web.allow list --key C:\foodbell-keys\sije-admin.json
     python -m tools.sije_web.allow add 메일주소 --key C:\foodbell-keys\sije-admin.json
     python -m tools.sije_web.allow remove 메일주소 --key C:\foodbell-keys\sije-admin.json
+
+보기 명단(viewers) — 직원: 일일 일정표만 읽는다(쓰기 · 지우기 · 다른 서류 없음). 그만두면 뺀다.
+
+    python -m tools.sije_web.allow viewer-list --key C:\foodbell-keys\sije-admin.json
+    python -m tools.sije_web.allow viewer-add 메일주소 --key C:\foodbell-keys\sije-admin.json
+    python -m tools.sije_web.allow viewer-remove 메일주소 --key C:\foodbell-keys\sije-admin.json
 """
 import argparse
 from pathlib import Path
@@ -31,20 +37,40 @@ def list_all(db) -> list[str]:
     return sorted(doc.id for doc in db.collection('allow').stream())
 
 
+def _viewer(db, email: str):
+    return db.collection('viewers').document(email.strip().lower())
+
+
+def add_viewer(db, email: str):
+    _viewer(db, email).set({'addedAt': SERVER_TIMESTAMP})
+
+
+def remove_viewer(db, email: str):
+    _viewer(db, email).delete()
+
+
+def list_viewers(db) -> list[str]:
+    return sorted(doc.id for doc in db.collection('viewers').stream())
+
+
 def main(argv=None):
-    p = argparse.ArgumentParser(prog='python -m tools.sije_web.allow', description='허락 목록 보기 · 넣기 · 빼기')
-    p.add_argument('action', choices=['add', 'remove', 'list'])
+    p = argparse.ArgumentParser(prog='python -m tools.sije_web.allow', description='허락 목록 · 보기 명단 보기 · 넣기 · 빼기')
+    p.add_argument('action', choices=['add', 'remove', 'list', 'viewer-add', 'viewer-remove', 'viewer-list'])
     p.add_argument('email', nargs='?')
     p.add_argument('--key', type=Path, required=True, help='관리자 열쇠 파일')
     a = p.parse_args(argv)
-    if a.action != 'list' and not a.email:
+    if not a.action.endswith('list') and not a.email:
         p.error('메일 주소를 적어 주세요')
     db = fsdb.open_db(a.key)
     if a.action == 'add':
         add(db, a.email)
     elif a.action == 'remove':
         remove(db, a.email)
-    for email in list_all(db):
+    elif a.action == 'viewer-add':
+        add_viewer(db, a.email)
+    elif a.action == 'viewer-remove':
+        remove_viewer(db, a.email)
+    for email in (list_viewers if a.action.startswith('viewer') else list_all)(db):
         print(email)
 
 

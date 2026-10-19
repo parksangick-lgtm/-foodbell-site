@@ -55,6 +55,7 @@ jobs:
                    --exclude='firebase.json' \
                    --exclude='.firebaserc' \
                    --exclude='firestore.rules' \
+                   --exclude='/docs' \
                    ./ _site/
           touch _site/.nojekyll
 

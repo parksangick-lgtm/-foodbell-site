@@ -7,6 +7,7 @@ export const KINDS = {
   'sije-worksheet': { title: '시제 작업지시서', noun: '작업지시서' },
   'statement': { title: '거래명세서', noun: '거래명세서' },
   'staff-pay': { title: '알바비 지급내역서', noun: '지급내역서' },
+  'daily-schedule': { title: '일일 일정표', noun: '일정표' },
 };
 
 const toDate = (t) => (t && typeof t.toDate === 'function' ? t.toDate() : t) || null;
@@ -33,5 +34,6 @@ export function editedText(updated, now) {
 export function rowCells(kind, doc) {
   const total = doc.total ? `${doc.total}원` : '-';
   if (kind === 'staff-pay') return [doc.issue || '', doc.count || '0명', total];
+  if (kind === 'daily-schedule') return [doc.label || '(날짜 없음)', doc.count || '0건', ''];
   return [doc.label || '(이름 없음)', doc.issue || '', total];
 }

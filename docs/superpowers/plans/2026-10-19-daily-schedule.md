@@ -30,6 +30,10 @@
 - `doc-page.js` · `docs.css` 를 고치면 그 둘을 부르는 다섯 화면(`sije-quote` · `event-quote` · `sije-worksheet` · `statement` · `staff-pay`)의 `?v=2` 를 `?v=3` 으로 올린다(`캐시버전올리기.py` 는 이 둘을 안 올린다).
 - 실행: 저장소 맨 위(`c:\galleypark`). JS `node --test "tools/sije_web/js-tests/*.test.mjs"`, 파이썬 `python -m pytest tools/sije_web/tests/<파일> -q`.
 - 앞 단계 기록장(`.superpowers/…` 의 `Final:` · `Ruling:`)은 노트북에만 있어 이 PC 에서 못 읽었다 — 노트북에서 실행하면 시작 전에 읽고 해당되는 것을 여기에 더한다. 알려진 것: 외부 글꼴은 `media=print onload` 로(막히면 화면이 멈춤), 대기는 `navigator.onLine` 에 기대지 않고 `atMost` 로 묶는다.
+  - **10-20 노트북에서 1단계 기록장을 읽음:** 화면 쪽 교훈(화면을 끄면 쓰던 칸 저장 · 3초 대기 한도 · 글꼴 · 홈 화면 앱 로그인 · 오프라인 사본 유지)은 공통 부품에 이미 있다. 더할 것은 **시험 쓰는 법** —
+    ① 규칙 시험의 "막힘(403)" 은 같은 사람의 "됨(200)" 과 함께 본다(모두 막힌 상태에서 그냥 통과하지 않게),
+    ② `page.wait_for_function` 에 약속(promise)을 돌려주는 식을 넣지 않는다(끝나지 않음) — `evaluate` 를 짧게 되풀이한다,
+    ③ `context.set_offline(True)` 뒤에 **새로 연** 화면은 `navigator.onLine` 이 참으로 나온다 — 끊김 표시 시험은 그걸 믿지 않는다.
 
 ## Review Focus
 

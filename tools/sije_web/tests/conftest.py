@@ -204,32 +204,35 @@ def test_db():
 
 @pytest.fixture(scope='session')
 def custom_token(test_db):
-    """custom_token(email, allowed) → 화면의 signInWithCustomToken 에 넣을 토큰. allowed 면 허락 목록에 넣는다."""
+    """custom_token(email, allowed, viewer=False) → 화면의 signInWithCustomToken 에 넣을 토큰.
+    allowed 면 허락 목록에, viewer 면 보기 명단(일일 일정표만 읽음)에 넣는다 — 끝나면 둘 다 뺀다."""
     app = fsdb.app_for(fsdb.KEY_TEST)
     used = []
 
-    def make(email: str, allowed: bool) -> str:
+    def make(email: str, allowed: bool, viewer: bool = False) -> str:
         try:
             user = auth.get_user_by_email(email, app=app)
         except auth.UserNotFoundError:
             user = auth.create_user(email=email, email_verified=True, app=app)
         (allow.add if allowed else allow.remove)(test_db, email)
+        (allow.add_viewer if viewer else allow.remove_viewer)(test_db, email)
         used.append(email)
         return auth.create_custom_token(user.uid, app=app).decode()
 
     yield make
     for email in used:
         allow.remove(test_db, email)
+        allow.remove_viewer(test_db, email)
 
 
 @pytest.fixture(scope='session')
 def id_token(custom_token):
-    """id_token(email, allowed) → 그 메일로 로그인한 사람의 ID 토큰 (REST 로 저장소를 직접 부를 때)."""
+    """id_token(email, allowed, viewer=False) → 그 메일로 로그인한 사람의 ID 토큰 (REST 로 저장소를 직접 부를 때)."""
     api_key = _test_project_config()['apiKey']
 
-    def make(email: str, allowed: bool) -> str:
+    def make(email: str, allowed: bool, viewer: bool = False) -> str:
         r = requests.post('https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken',
-                          params={'key': api_key}, json={'token': custom_token(email, allowed), 'returnSecureToken': True},
+                          params={'key': api_key}, json={'token': custom_token(email, allowed, viewer), 'returnSecureToken': True},
                           timeout=30)
         r.raise_for_status()
         return r.json()['idToken']

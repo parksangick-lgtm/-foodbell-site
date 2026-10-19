@@ -53,6 +53,15 @@ def test_backup_has_docs_sheet(tmp_path):
     assert second[1] == '알바비 지급내역서' and second[5] == '1명'
 
 
+def test_backup_names_daily_schedule_kind(tmp_path):
+    out = tmp_path / '백업.xlsx'
+    daily = ('d9', {'kind': 'daily-schedule', 'label': '2026년 10월 21일 (수)', 'issue': '2026년 10월 21일 (수)',
+                    'total': '', 'count': '3건', 'html': '<p>가짜동</p>'})
+    write_backup([('a', fake_event())], out, [daily])
+    row = [c.value for c in openpyxl.load_workbook(out)['서류'][2]]
+    assert row[:3] == ['d9', '일일 일정표', '2026년 10월 21일 (수)'] and row[5] == '3건'
+
+
 def test_backup_without_docs_still_has_empty_docs_sheet(tmp_path):
     out = tmp_path / '백업.xlsx'
     write_backup([('a', fake_event())], out)
