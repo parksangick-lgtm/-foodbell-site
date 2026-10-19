@@ -9,7 +9,7 @@
 
 **Tech Stack:** 정적 HTML/CSS/JS(빌드 없음), 파이어베이스(Firestore · 구글 로그인), html2canvas, node --test, pytest + Playwright, Pillow(아이콘).
 
-**Spec:** `docs/superpowers/specs/2026-10-19-daily-schedule-design.md` — 특히 "10-20 추가 결정" 1 · 2 절. 견본 화면은 사장님이 확인함(10-20).
+**Spec:** `docs/superpowers/specs/2026-10-19-daily-schedule-design.md` — 특히 "10-20 추가 결정" 1 · 2 절. 견본 화면은 사장님이 확인함(10-20): `docs/superpowers/specs/2026-10-20-daily-schedule-mockup/일정표-견본.html`(글자는 모두 지어낸 것 — Task 3 화면의 모양 기준).
 
 ## Global Constraints
 
