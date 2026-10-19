@@ -75,8 +75,14 @@ npx firebase-tools@15.34.0 deploy --only firestore:rules --project default  # �
 1. `POST https://firebaserules.googleapis.com/v1/projects/{프로젝트}/rulesets` — 본문에 규칙 파일 내용
 2. `PATCH https://firebaserules.googleapis.com/v1/projects/{프로젝트}/releases/cloud.firestore` — 새 `rulesetName` 으로
 
-**로그인도 열쇠도 없는 PC** — 위 "벽 2" 로 로그인부터 한다(사장님 동의 한 번). 🔸 2026-10-20 집 PC 가 이 상태였다
-(`login:list` → `No authorized accounts`, `C:\foodbell-keys` 없음).
+**로그인도 열쇠도 없는 PC** — 위 "벽 2" 로 로그인부터 한다(사장님 동의 한 번). ✅ 2026-10-20 집 PC:
+1. `~/.config/configstore/firebase-tools.json` 을 읽은 뒤 `usage:false`·`gemini:false` 를 넣는다(중간 질문 없애기).
+2. 사장님이 볼 창을 연다: `Start-Process powershell.exe -ArgumentList '-NoExit','-NoProfile','-ExecutionPolicy','Bypass','-Command','npx.cmd -y firebase-tools@15.34.0 login'`.
+   이 창에서도 **두 단계 방식**(세션 ID + 주소)으로 나온다. 끝에 `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)` 가 찍혀도
+   무시한다 — 설정 저장소에 `tempLoginState` 가 남았는지만 본다.
+3. 사장님: 주소 Ctrl+클릭 → "Yes, I just ran this command"(화면에는 `firebase login --no-localhost` 로 보여도 맞다) →
+   세션 ID 확인 → 계정 고르고 허용 → 나온 코드를 대화에 붙여 넣는다.
+4. 클로드: `npx.cmd -y firebase-tools@15.34.0 login <코드>` → `Success! Logged in as …`. 확인은 `login:list`·`projects:list`(읽기만).
 
 ---
 
