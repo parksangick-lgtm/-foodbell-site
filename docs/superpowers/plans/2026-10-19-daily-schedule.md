@@ -1,286 +1,139 @@
-# 직원용 일일 일정표 서류 — 작업 계획
+# 직원용 일일 일정표 서류 — 작업 계획 (10-20 새 설계로 다시 씀)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> 함께 적용: `superpowers-extras` 스킬(이 사용자 환경의 보조 규칙).
 
-**Goal:** 서류 웹의 여섯 번째 서류 "일일 일정표"(`daily-schedule.html`)를 만들어, 사장님이 저녁에 다음 날 직원 일정을 채워 카톡 단톡방에 사진으로 올리게 한다.
+**Goal:** 서류 웹의 여섯 번째 서류 "일일 일정표"(`daily-schedule.html`)를 만든다. 사장님이 저녁에 다음 날 일정을 채워 카톡 단톡방에 사진으로 보내고, 직원 10명은 구글로 로그인해 일정표만 **보기**로 연다(밴드 대신). 사무실 PC 가 옵시디언에 사본을 남긴다.
 
-**Architecture:** 알바비 지급내역서(`staff-pay.html`)를 본떠 새 화면 파일 하나를 만들고, 공통 부품(`js/docs/doc-page.js`)에는
-`window.FoodbellDoc` 연결 고리로만 붙는다. 종류 목록(`doc-model.js`) · 보안 규칙 · 백업 · 오프라인 사본 · 아이콘에 한 줄씩 더한다.
+**Architecture:** 알바비 지급내역서(`staff-pay.html`)를 본떠 화면 파일 하나를 만들고, 공통 부품(`js/docs/doc-page.js`)에 "보기 전용"과 "이어받기" 고리 두 개만 더한다. 보안 규칙에 보기 명단(`viewers`)을 더하고, 사무실 PC 상주 프로그램(`office_agent.py`)에 옵시디언 사본 차례를 붙인다. 장 나누기 계산은 따로 시험할 수 있게 작은 모듈(`js/docs/paging.js`)로 뺀다.
 
 **Tech Stack:** 정적 HTML/CSS/JS(빌드 없음), 파이어베이스(Firestore · 구글 로그인), html2canvas, node --test, pytest + Playwright, Pillow(아이콘).
 
-**Spec:** `docs/superpowers/specs/2026-10-19-daily-schedule-design.md`
+**Spec:** `docs/superpowers/specs/2026-10-19-daily-schedule-design.md` — 특히 "10-20 추가 결정" 1 · 2 절. 견본 화면은 사장님이 확인함(10-20).
 
 ## Global Constraints
 
-- 종류 `daily-schedule` · 목록 제목 `일일 일정표` · 버튼 글자 `일정표` · 화면 파일 `daily-schedule.html`.
-- 사진 · PDF 이름 `일일일정표_YYYY-MM-DD` — **일정 날짜**로(못 읽으면 오늘).
-- 새로 만들 때 날짜 = **내일**, 요일은 날짜에서 계산(`(월)`…`(일)`), 못 읽는 날짜면 요일 빈칸.
-- 손님 이름 · 연락처를 예시 · 시험 자료에 넣지 않는다(시험 글자는 `가짜동`, `○○`).
-- 이 대화는 `c:\dev\vibe-study` 에서 열려 있어 galleypark 자동 저장 · 캐시 경고 훅이 돌지 않는다 → **과제마다 직접 `git pull` → commit → push**(사장님 결정). 캐시 번호도 손으로 확인.
-- 보안 규칙의 **실제 프로젝트(`--project default`) 올리기 직전에 사장님께 다시 묻는다.**
-- 실행: 저장소 맨 위(`c:\galleypark`)에서. JS 시험 `node --test "tools/sije_web/js-tests/*.test.mjs"`, 파이썬 시험 `python -m pytest tools/sije_web/tests/<파일> -q`.
+- 종류 `daily-schedule` · 목록 제목 `일일 일정표` · 버튼 글자 `일정표` · 화면 `daily-schedule.html`.
+- 사진 · PDF 이름 `일일일정표_YYYY-MM-DD`(일정 날짜, 못 읽으면 오늘). 사진이 여러 장이면 `_1` · `_2` …
+- 새로 만들 때: 날짜 = **내일**, 요일 계산(`(월)`…`(일)`, 못 읽는 날짜면 빈칸). 순번 · 전달 메모 = **가장 최근에 고친 일정표**에서 이어받음, 하나도 없으면 전달 메모만 아래 글:
+  `추모공원(협력업체)은 회사에서 출발 전에 전화 · 화장은 시작 5분 후 전화 · 매장은 발인 5분 전에 팀장에게 전화 · 상주(직접주문)에게는 가게 출발 전에 전화`
+- 표 칸 여섯(이 순서): 번호 / 시간 · 장소 · 연락처 / 행사 내용 · 인원 · 금액 / 담당 직원 · 차량 / 상조팀장 · 현지 안내인 / 메모. **집합 칸 없음.**
+- 금액 = 인원 × 단가(저절로), 표시 `60명 × 15,000원 = 900,000원`. 하루 합계 없음.
+- 표제 "푸드벨" 옆 `foodbell.kr` 링크(`https://foodbell.kr/`) + QR(`images/qr-foodbell.png`, `design/qr/qr-화면.png` 사본). 복사 글 맨 끝에 `https://foodbell.kr/` 한 줄. 보내기 공유 글에 `https://foodbell.kr/daily-schedule.html` 한 줄.
+- 직원(보기 명단)은 일정표만 읽는다 — 다른 종류 서류 · 쓰기 · 지우기는 규칙이 막고, 화면은 편집 · 새 일정표 · 지우기 버튼을 숨긴다. 알림은 카톡(보내기)뿐 — 푸시 없음.
+- 손님 이름 · 연락처 · 직원 실명을 예시 · 시험 자료에 넣지 않는다(시험 글자는 `가짜동` · `가짜일` · `010-0000-0000`).
+- **이 집 PC 에는 관리자 열쇠(`C:\foodbell-keys`)가 없다** → 파이썬 시험(`test_rules_live.py` · `test_doc_pages.py` · `test_backup.py` 등 시험 서버에 붙는 것)과 보기 명단 넣기는 **노트북 · 사무실 PC 에서**. 집 PC 에서는 `node --test` 와 코드 작성까지.
+- 저장(커밋 · 푸시)은 자동 저장 훅이 한다(어느 폴더에서 연 대화든 galleypark 도 저장됨, 10-20). 과제마다 직접 커밋하지 않고 **바꾼 파일 목록**을 기록장에 남긴다. 시작 커밋을 적어 둔다. 시작 전에 `git check-ignore -q .superpowers/x` 로 계획 폴더가 무시되는지 보고, 아니면 `.git/info/exclude` 에 `.superpowers/` 를 넣는다(집 PC 는 무시 안 됨 — 10-20 확인).
+- 자동 저장은 답이 끝날 때마다 GitHub → 버셀에 게시한다. 그래서 **규칙(Task 1)을 실제 프로젝트에 올린 뒤에 화면(Task 3)을 만든다** — 반대면 게시된 화면의 "새 일정표"가 권한 없음으로 실패한다. 실제 프로젝트 올리기는 **직전에 사장님께 묻는다**.
+- `doc-page.js` · `docs.css` 를 고치면 그 둘을 부르는 다섯 화면(`sije-quote` · `event-quote` · `sije-worksheet` · `statement` · `staff-pay`)의 `?v=2` 를 `?v=3` 으로 올린다(`캐시버전올리기.py` 는 이 둘을 안 올린다).
+- 실행: 저장소 맨 위(`c:\galleypark`). JS `node --test "tools/sije_web/js-tests/*.test.mjs"`, 파이썬 `python -m pytest tools/sije_web/tests/<파일> -q`.
+- 앞 단계 기록장(`.superpowers/…` 의 `Final:` · `Ruling:`)은 노트북에만 있어 이 PC 에서 못 읽었다 — 노트북에서 실행하면 시작 전에 읽고 해당되는 것을 여기에 더한다. 알려진 것: 외부 글꼴은 `media=print onload` 로(막히면 화면이 멈춤), 대기는 `navigator.onLine` 에 기대지 않고 `atMost` 로 묶는다.
 
 ## Review Focus
 
-1. 날짜를 연도 없이 · 없는 날(2월 30일)로 고침 → 요일 빈칸, 목록 이름은 적힌 글자 그대로, 파일 이름은 오늘 날짜 — Task 2 `test_daily_schedule_weekday_follows_date`.
-2. 연말에 "새 일정표" → 다음 해 1월 1일 · 요일이 맞아야 함 — Task 2 `test_daily_schedule_fresh_date_rolls_over_year`.
-3. 줄만 추가하고 아무것도 안 친 빈 줄 → 건수 · 복사 글에 안 들어감 — Task 2 `test_daily_schedule_counts_filled_rows_only`.
-4. 휴대폰(390px)에서 긴 장소 · 메모 → 카드 안에서 줄바꿈, 화면 밖으로 안 넘침 — Task 2 `test_daily_schedule_long_text_fits_phone`.
-5. 다른 기기에서 날짜를 고쳐 화면에 들어옴 → 요일 · 목록 이름이 따라옴 — `load()` 가 `recalc()` 를 부르는 것으로 막음(알바비와 같음), 공통 시험 `test_remote_change_shows_at_once_while_editing` 이 그 경로를 지난다.
+1. 날짜를 연도 없이 · 없는 날(2월 30일)로 고침 → 요일 빈칸, 목록 이름은 적힌 그대로, 파일 이름은 오늘 — Task 3 `test_daily_weekday_follows_date`.
+2. 연말에 "새 일정표" → 다음 해 1월 1일 (금) — Task 3 `test_daily_fresh_date_rolls_over_year`.
+3. 하루 15건(밴드에 실제로 있었던 최대) → 인쇄 · 사진이 줄을 자르지 않고 장을 나눔 — Task 3 `test_page_groups_*`(node) · `test_daily_fifteen_rows_split_into_pages`.
+4. 보기 명단 직원이 화면을 거치지 않고 저장소에 직접 쓰기 · 다른 종류 읽기 → 거부 — Task 1 `test_viewer_*`.
+5. 단가 · 인원을 `15,000원` · `60명` 처럼 손으로 침 → 숫자만 읽어 금액이 맞음, 비우면 아래 줄 숨김 — Task 3 `test_daily_amount_from_typed_numbers`.
 
 ---
 
-### Task 1: 종류 등록 — 목록 칸 · 백업 이름 · 보안 규칙
+### Task 1: 종류 등록 · 보기 명단 규칙
 
 **Files:**
-- Modify: `js/docs/doc-model.js` (`KINDS`, `rowCells`)
-- Modify: `tools/sije_web/backup.py:25-26` (`DOC_KINDS`)
-- Modify: `firestore.rules:34` (kind 목록)
+- Modify: `js/docs/doc-model.js` (`KINDS`, `rowCells`), `tools/sije_web/backup.py` (`DOC_KINDS`), `firestore.rules`, `tools/sije_web/allow.py`, `tools/sije_web/tests/conftest.py` (`custom_token` · `id_token`)
 - Test: `tools/sije_web/js-tests/doc-model.test.mjs`, `tools/sije_web/tests/test_backup.py`, `tools/sije_web/tests/test_rules_live.py`
 
 **Interfaces:**
-- Produces: `KINDS['daily-schedule'] = { title: '일일 일정표', noun: '일정표' }`;
-  `rowCells('daily-schedule', doc) → [doc.label || '(날짜 없음)', doc.count || '0건', '']`;
-  `DOC_KINDS['daily-schedule'] = '일일 일정표'`; 규칙이 `kind == 'daily-schedule'` 를 받는다.
+- Produces: `KINDS['daily-schedule'] = { title: '일일 일정표', noun: '일정표' }`; `rowCells('daily-schedule', doc) → [doc.label || '(날짜 없음)', doc.count || '0건', '']`; `DOC_KINDS['daily-schedule'] = '일일 일정표'`.
+- `allow.py`: `add_viewer(db, email)`, `remove_viewer(db, email)`, `list_viewers(db) -> list[str]` + 명령 `viewer-add` · `viewer-remove` · `viewer-list`(`viewers/{메일 소문자}` 문서).
+- 규칙: `viewer()` = 로그인 · 메일 확인 · `viewers/{메일}` 있음. `docs` 읽기 = `allowed() || (viewer() && resource.data.kind == 'daily-schedule')`; 쓰기 · 지우기 = `allowed()` 만(kind 목록에 `daily-schedule` 추가). `allow/{메일}` · `viewers/{메일}` 은 **그 메일로 로그인한 사람만** `get`.
+- conftest: `custom_token(email, allowed, viewer=False)` · `id_token(email, allowed, viewer=False)` — viewer 면 보기 명단에 넣고 끝나면 뺀다.
 
-- [ ] **Step 1: 실패하는 시험 쓰기**
-
-`doc-model.test.mjs` — 첫 시험의 기대값에 `'daily-schedule': { title: '일일 일정표', noun: '일정표' }` 를 더하고 이름을 `'서류 여섯 종류의 목록 제목과 이름'` 으로. 새 시험:
-
-```js
-test('일정표 줄 = 날짜(요일) · 건수 · 빈 칸', () => {
-  assert.deepEqual(rowCells('daily-schedule', { label: '2026년 10월 20일 (화)', count: '3건', total: '' }),
-    ['2026년 10월 20일 (화)', '3건', '']);
-  assert.deepEqual(rowCells('daily-schedule', { label: '', count: '' }), ['(날짜 없음)', '0건', '']);
-});
-```
-
-`test_backup.py` — `FAKE_DOCS` 에 세 번째 서류를 더하고 기존 시험의 `ws.max_row == 3` 을 `4` 로:
-
-```python
-    ('d3', {'kind': 'daily-schedule', 'label': '2026년 10월 20일 (화)', 'issue': '2026년 10월 20일 (화)', 'total': '',
-            'count': '2건', 'html': '<p>가짜</p>',
-            'createdAt': datetime.datetime(2026, 10, 19, 11, tzinfo=UTC),
-            'updatedAt': datetime.datetime(2026, 10, 19, 11, tzinfo=UTC)}),
-```
-
-```python
-    third = [c.value for c in ws[4]]
-    assert third[1] == '일일 일정표' and third[2] == '2026년 10월 20일 (화)' and third[5] == '2건'
-```
-
-`test_rules_live.py`:
-
-```python
-def test_docs_daily_schedule_kind_allowed(base, doc_id, id_token):
-    token = id_token(ALLOWED, allowed=True)
-    assert put_doc(base, doc_id, token, kind='daily-schedule').status_code == 200
-```
-
-- [ ] **Step 2: 실패 확인**
-
-Run: `node --test "tools/sije_web/js-tests/doc-model.test.mjs"` → FAIL (KINDS 다름, rowCells 가 `(이름 없음)` …).
-Run: `python -m pytest tools/sije_web/tests/test_backup.py tools/sije_web/tests/test_rules_live.py -q -k "docs"` → 백업 FAIL(`daily-schedule` 영문), 규칙 FAIL(403).
-
-- [ ] **Step 3: 구현** — `KINDS` 끝에 한 줄, `rowCells` 에 `if (kind === 'daily-schedule') return [doc.label || '(날짜 없음)', doc.count || '0건', ''];`,
-  `DOC_KINDS` 에 한 쌍, `firestore.rules` 목록 끝에 `'daily-schedule'`.
-
-- [ ] **Step 4: 규칙을 시험 프로젝트에 올리고 통과 확인**
-
-Run: `npx firebase-tools@15.34.0 deploy --only firestore:rules --project test` → `Deploy complete!`
-Run: Step 2 의 두 명령 → PASS. 이어서 `node --test "tools/sije_web/js-tests/*.test.mjs"` 전체 PASS(다른 시험 안 깨짐).
-
-- [ ] **Step 5: 실제 프로젝트에 규칙 올리기 — 사장님께 묻고 나서**
-
-물을 말: "보안 규칙에 '일일 일정표' 종류를 더해 실제 서버에 올려도 될까요? 다른 서류에는 영향이 없습니다."
-허락하면 Run: `npx firebase-tools@15.34.0 deploy --only firestore:rules --project default` → `Deploy complete!`. 허락이 없으면 여기서 멈추고 Task 2 로 가되, 끝날 때 다시 묻는다.
-
-- [ ] **Step 6: 저장** — `git pull --ff-only` → 위 파일들 `git add` → commit `일일 일정표 1: 종류 등록(목록 칸 · 백업 이름 · 보안 규칙)` → `git push`.
+- [ ] **Step 1: 실패하는 시험** — doc-model: 여섯 종류 제목 + `rowCells('daily-schedule', {label:'2026년 10월 21일 (수)', count:'3건'})` → `['2026년 10월 21일 (수)','3건','']`, 빈 것 → `['(날짜 없음)','0건','']`. backup: `FAKE_DOCS` 에 `daily-schedule` 한 장 → 종류 칸 `일일 일정표`. 규칙(`test_rules_live.py`):
+  - `test_docs_daily_schedule_kind_allowed` — 허락된 사람이 만들기 200.
+  - `test_viewer_reads_daily_schedule_only` — 보기 명단 사람: daily-schedule 읽기 200, `staff-pay` 읽기 403.
+  - `test_viewer_cannot_write_or_delete` — 보기 명단 사람: daily-schedule 고치기 · 만들기 · 지우기 403.
+  - `test_own_allow_and_viewer_doc_readable_others_not` — 자기 `allow`/`viewers` 문서 get 200, 남의 것 403(기존 `test_allow_collection_unreadable` 는 "남의 것"으로 바꾼다).
+- [ ] **Step 2: 실패 확인** — node(집 PC 가능) FAIL, 파이썬(열쇠 있는 PC) FAIL.
+- [ ] **Step 3: 구현** — 위 Interfaces 대로.
+- [ ] **Step 4: 시험 프로젝트에 규칙** — `npx firebase-tools@15.34.0 deploy --only firestore:rules --project test` → `Deploy complete!`, **1분 기다린 뒤** Step 2 시험 → PASS, `node --test` 전체 PASS.
+- [ ] **Step 5: 실제 프로젝트 — 사장님께 묻고 나서.** 물을 말: "보안 규칙에 '일일 일정표'와 직원 보기 명단을 더해 실제 서버에 올려도 될까요? 시험 서버에서 시험 N개 통과했고, 다른 서류에는 영향이 없습니다." 허락하면 `--project default`. 없으면 Task 2 까지만 하고 멈춘다(Task 3 은 규칙 뒤).
+- [ ] **Step 6: 기록장** — 바꾼 파일 목록.
 
 ---
 
-### Task 2: 화면 `daily-schedule.html`
+### Task 2: 공통 부품 — 보기 전용 · 이어받기
 
 **Files:**
-- Create: `daily-schedule.html` (본보기 `staff-pay.html` 을 복사해 고친다)
+- Modify: `js/sije/store.js` (`myRole`), `js/docs/doc-page.js`, `css/docs.css`, 다섯 서류 화면의 `doc-page.js?v=` · `docs.css?v=`
 - Test: `tools/sije_web/tests/test_doc_pages.py`
 
 **Interfaces:**
-- Consumes: Task 1 의 `KINDS['daily-schedule']` (공통 부품이 목록 제목 · 버튼 글자로 씀).
-- Produces: `window.FoodbellDoc = { kind: 'daily-schedule', serialize, load, fresh, summary, editing, onSave }`;
-  `summary() → { label: dayText(), issue: dayText(), total: '', count: '<채운 줄 수>건' }`.
-  화면 칸 표지: `[data-k="date"]`(고칠 수 있음) · `[data-k="dow"]`(계산) · `[data-k="memo"]` · 줄 `tr.item` 안
-  `[data-f="time|place|work|staff|car|meet-time|meet-place|memo"]` · 번호 `[data-k="no"]`. Task 3 · 4 는 파일 이름만 쓴다.
+- Consumes: Task 1 규칙(자기 `allow`/`viewers` get).
+- Produces: `myRole(email: string) → Promise<'owner'|'viewer'|'none'>` (allow 문서 있으면 owner, 아니면 viewers 문서 있으면 viewer). doc-page: 로그인 뒤 `document.body.dataset.role` 에 그 값; `viewer` 면 `#doc-new` · `#doc-del` · `#btn-edit` 숨김(`docs.css`), `D.editing()` 이 참이 되지 않게 편집 진입을 막고 저장(`saveDoc`)을 부르지 않는다. 이어받기: 받은 목록을 `lastRows` 에 두고, `makeNew` 에서 `D.fresh()` 다음에 `D.inherit` 가 있으면 `D.inherit(sortDocs(lastRows)[0]?.doc ?? null)`.
 
-- [ ] **Step 1: 실패하는 시험 쓰기** — `test_doc_pages.py`
-
-`today_kr()` 아래에:
-
-```python
-DOW = '월화수목금토일'
-
-def tomorrow_kr():
-    d = datetime.date.today() + datetime.timedelta(days=1)
-    return f'{d.year}년 {d.month}월 {d.day}일 ({DOW[d.weekday()]})'
-```
-
-`PAGES` 끝(이 함수 아래로 `PAGES` 를 옮긴다)에
-`pytest.param('daily-schedule', 'daily-schedule.html', '일정표', '일일 일정표', '직원에게 보내기', tomorrow_kr(), '[data-k="memo"]', id='daily-schedule')`.
-
-공통 시험 두 곳의 기대값을 종류에 맞춘다:
-- `test_new_doc_creates_one_and_opens_it`: `assert doc['issue'] == {'sije-worksheet': '', 'daily-schedule': label}.get(kind, today_kr())`
-- `test_icon_opens_list_sorted_by_updated` 마지막 두 줄을
-
-```python
-    expect = {'staff-pay': ['2026년 10월 16일', '2명', '2,000원'],
-              'daily-schedule': ['가짜동 새 문중', '2명']}.get(kind, ['가짜동 새 문중', '2026년 10월 16일', '2,000원'])
-    assert all(t in row for t in expect) and '10월 16일 고침' in row, row
-```
-
-일정표만의 시험 (파일 끝, `# ---------- 일일 일정표 ----------`):
-
-```python
-DAILY = 'daily-schedule.html'
-
-
-def test_daily_schedule_weekday_follows_date(pc, repo_url, custom_token, test_db, made):
-    open_list(pc, repo_url, DAILY, custom_token(ALLOWED, allowed=True))
-    ref = test_db.collection('docs').document(new_doc(pc, made))
-    pc.click('#btn-edit')
-    set_text(pc, '[data-k="date"]', '2026년 10월 21일')
-    assert pc.inner_text('[data-k="dow"]') == '(수)'
-    pc.click('#btn-edit')
-    wait_db(ref, lambda s: s.get('label') == '2026년 10월 21일 (수)' and s.get('issue') == '2026년 10월 21일 (수)')
-    pc.click('#btn-edit')
-    set_text(pc, '[data-k="date"]', '2026년 2월 30일')            # 없는 날
-    assert pc.inner_text('[data-k="dow"]') == ''
-    pc.click('#btn-edit')
-    wait_db(ref, lambda s: s.get('label') == '2026년 2월 30일')
-
-
-def test_daily_schedule_fresh_date_rolls_over_year(pc, repo_url):
-    """로그인 없이도 빈 서식은 그려진다 — 12월 31일 저녁에 열면 내일 = 2027년 1월 1일 (금)."""
-    pc.clock.set_fixed_time(datetime.datetime(2026, 12, 31, 20, 0))
-    pc.goto(f'{repo_url}{DAILY}')
-    pc.wait_for_function("document.querySelector('[data-k=\"dow\"]').textContent !== ''")
-    assert pc.eval_on_selector('[data-k="date"]', 'e => e.textContent') == '2027년 1월 1일'
-    assert pc.eval_on_selector('[data-k="dow"]', 'e => e.textContent') == '(금)'
-
-
-def test_daily_schedule_counts_filled_rows_only(pc, repo_url, custom_token, test_db, made):
-    open_list(pc, repo_url, DAILY, custom_token(ALLOWED, allowed=True))
-    ref = test_db.collection('docs').document(new_doc(pc, made))
-    pc.click('#btn-edit')
-    set_text(pc, 'tr.item [data-f="work"]', '시제 상차림')
-    pc.click('tr.addrow button')                                  # 빈 줄 하나 더 — 세지 않는다
-    pc.click('#btn-edit')
-    wait_db(ref, lambda s: s.get('count') == '1건')
-    assert pc.locator('tr.item').count() == 2
-
-
-def test_daily_schedule_long_text_fits_phone(phone, repo_url, custom_token, made):
-    open_list(phone, repo_url, DAILY, custom_token(ALLOWED, allowed=True))
-    new_doc(phone, made)
-    phone.click('#btn-edit')
-    set_text(phone, 'tr.item [data-f="place"]', '가짜동 ' * 15 + '선산 묘역 아래 주차장')
-    set_text(phone, 'tr.item [data-f="memo"]', '가짜 메모 ' * 15)
-    phone.click('#btn-edit')
-    assert phone.evaluate('document.documentElement.clientWidth') == 390
-    assert phone.evaluate('document.documentElement.scrollWidth') <= 390
-```
-
-- [ ] **Step 2: 실패 확인**
-
-Run: `python -m pytest tools/sije_web/tests/test_doc_pages.py -q -k daily` → FAIL(화면 파일 없음 404 · 시간 초과).
-
-- [ ] **Step 3: `daily-schedule.html` 만들기** — `staff-pay.html` 을 복사해 아래만 바꾼다(나머지 편집 · 저장 · 보내기 · 인쇄 코드는 그대로).
-
-  머리(`<head>`): 제목 `푸드벨 일일 일정표`, 설명문 일정표용, `manifest-daily.webmanifest`, `icons/app-daily-180.png`,
-  `apple-mobile-web-app-title` = `일정표`. `css/docs.css?v=2` · `js/docs/doc-page.js?v=2` 는 그대로.
-
-  안내문(`.hint`) — 이 글 그대로:
-  `<b>안내</b><strong>편집</strong>을 누르고 맨 위 날짜와 줄마다 시간·장소·행사 내용·담당 직원·차량·집합 시간·장소·메모를 채우세요. 요일은 날짜를 보고 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 카톡 단톡방에 올릴 수 있고, <strong>파일로 저장</strong>하면 일정 날짜로 이름이 붙습니다(예: 일일일정표_2026-10-20.png). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 일정표가 보입니다. 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요.`
-
-  종이(`.sheet`):
-  - 표제 오른쪽: 제목 `일일 일정표` + 인장. 문서번호 · 작성일자(`.meta-list`) 지움.
-  - 겹줄(`.rule-double`) 아래 큰 날짜 줄: `<p class="day"><span data-edit data-t="text" data-k="date"></span> <span data-k="dow"></span></p>`
-    — 명조 · 굵게 · 30px(휴대폰 24px), 서류에서 가장 큰 글자. 빈 요일 칸은 자리를 차지하지 않음.
-  - 섹션 제목 `일정` + 한자 `日程`, 그 아래 전달 메모(알바비와 같은 `.memo`, `data-ph="직원 모두에게 남길 말"`).
-  - 표(`table.stmt.day-table`) 칸 여섯 — 번호 6% / 시간 · 장소 22% / 행사 내용 22% / 담당 직원 · 차량 16% / 집합 시간 · 장소 18% / 메모:
-    `td.c[data-k="no"]` · `td.when` = `<b data-f="time" data-ph="시간">` + `<span class="sub" data-f="place" data-ph="장소">` ·
-    `td.work[data-f="work"][data-ph="행사 내용"]` · `td.crew` = `<b data-f="staff" data-ph="담당 직원">` + `<span class="sub" data-f="car" data-ph="차량">` ·
-    `td.meet` = `<b data-f="meet-time" data-ph="집합 시간">` + `<span class="sub" data-f="meet-place" data-ph="집합 장소">` ·
-    `td.memo-cell` > `<span data-f="memo" data-ph="메모">` (모든 칸 `data-edit data-t="text"`). `ROW_HTML` 도 같은 모양.
-    줄 추가 버튼 글자 `＋ 줄 추가 (일 하나)`. 새 줄을 넣은 뒤 커서는 그 줄의 `[data-f="time"]` 로(알바비의 `date` 는 이 서류에 없다).
-  - 합계(`.totals`) 지움. 쓰지 않게 된 CSS(`.parties` · `.prow` · `.in` · `.stamp` · `.totals` · `.sum*` · `.receiver` · `.meta-list`, 알바비 전용 `table.stmt.pay` 블록)는 빼고 일정표 블록을 쓴다.
-  - 휴대폰(699px 이하) 카드 차례: 번호(1칸) + 시간 · 장소(2칸) / 행사 내용 / 담당 · 차량 / 집합 / 메모(빈 메모는 보기에서 숨김) — 모두 전체 폭, `overflow-wrap:anywhere`.
-
-  스크립트(알바비 IIFE 를 고침):
-  - `NAME = "일일일정표"`, `DOW = ["일","월","화","수","목","금","토"]`.
-  - `parseDate(text: string) → Date|null` — `(\d{4})\D+(\d{1,2})\D+(\d{1,2})` 을 읽어 `new Date(y, m-1, d)`, 월 · 일이 그대로가 아니면(2월 30일) `null`.
-  - `dayText() → string` — `getText("date")` + (요일 있으면 `" " + 요일`).
-  - `recalc()` — 줄 번호, 요일 칸(`parseDate` 결과로 `"(화)"` 또는 `""`), 돌려주는 값 = 칸이 하나라도 적힌 줄 수.
-  - `ymd()` — `parseDate(getText("date"))`, 없으면 오늘. `fileBase() = NAME + "_" + ymd()`.
-  - `fillFreshDefaults()` — 오늘 + 1일(`setDate(getDate()+1)`)을 `fmtDateKR` 로 날짜 칸에. 처음 그릴 때와 `fresh()` 에서 부른다.
-  - `buildText()`: 첫 줄 `[푸드벨 일일 일정표]`, 둘째 줄 `dayText()`, 전달 메모 있으면 `전달 메모: …`, 빈 줄, 채운 줄마다
-    `N. 시간 장소 — 행사 내용` 과 그 아래 `   담당 … · 차량 … / 집합 … … / 메모 …`(빈 조각은 뺌). 빈 줄은 건너뜀.
-  - 보내기 · 파일로 저장: 채운 줄이 0 이면 `confirm("일정을 아직 안 넣으셨습니다. 그래도 보낼까요?")`(저장은 "저장할까요?").
-    공유 제목 `"푸드벨 일일 일정표 (" + dayText() + ")"`, 안내 문구의 "알바비 지급내역서" → "일일 일정표", "직원과의" → "단톡방".
-  - `FoodbellDoc.kind = "daily-schedule"`, `summary()` = Interfaces 의 모양.
-  - `input` 처리에서 날짜 칸이 바뀌어도 `recalc()` 가 요일을 바로 고친다(지금 코드가 모든 입력에 `recalc()` 를 부름 — 그대로).
-
-- [ ] **Step 4: 통과 확인**
-
-Run: `python -m pytest tools/sije_web/tests/test_doc_pages.py -q -k daily` → PASS (공통 9개 + 일정표 4개).
-Run: `python -m pytest tools/sije_web/tests/test_doc_pages.py -q` → 전체 PASS(다른 서류 안 깨짐).
-
-- [ ] **Step 5: 저장** — `git pull --ff-only` → `daily-schedule.html` · 시험 파일 add → commit `일일 일정표 2: 화면` → push.
+- [ ] **Step 1: 실패하는 시험** — `test_viewer_sees_denied_on_other_kinds`(보기 명단 사람이 `staff-pay.html` → 권한 없음 화면). 기존 `test_new_doc_creates_one_and_opens_it` 다섯 종류는 그대로 PASS 여야 함(이어받기가 없는 종류에 영향 없음).
+- [ ] **Step 2: 실패 확인 · Step 3: 구현 · Step 4: 통과**(`test_doc_pages.py -q` 전체 — 열쇠 있는 PC).
+- [ ] **Step 5: `?v=` 올림 확인** — `git grep -n "doc-page.js?v=\|docs.css?v=" -- "*.html"` 에 `v=2` 가 남지 않음.
 
 ---
 
-### Task 3: 오프라인 사본 · 휴대폰 앱 · 아이콘 · 바탕화면
+### Task 3: 화면 `daily-schedule.html` (+ 장 나누기 `js/docs/paging.js`)
 
 **Files:**
-- Modify: `sw.js:3` (`CACHE` v34 → v35), `sw.js:15-16` (`OFFLINE_PAGES` 끝에 `'daily-schedule.html'`)
-- Create: `manifest-daily.webmanifest`, `icons/app-daily-{180,192,512,maskable-512}.png`, `아이콘-일정표.ico`
-- Modify: `바탕화면-바로가기.ps1` (머리 주석 3 · 4줄, 알바비 아래 한 줄), `휴대폰캡처.py:39-40` (`PAGES`)
-- Test: `tools/sije_web/js-tests/sw.test.mjs`
+- Create: `daily-schedule.html`(`staff-pay.html` 복사해 고침), `js/docs/paging.js`, `images/qr-foodbell.png`(= `design/qr/qr-화면.png`)
+- Test: `tools/sije_web/js-tests/paging.test.mjs`, `tools/sije_web/tests/test_doc_pages.py`
 
 **Interfaces:**
-- Consumes: Task 2 의 `daily-schedule.html`(manifest · 아이콘 경로를 이미 가리킴).
+- Consumes: Task 1 `KINDS`, Task 2 `D.inherit` 고리 · `data-role`.
+- Produces: `pageGroups(rowHeights: number[], firstCap: number, nextCap: number) → number[][]` — 줄 번호를 장마다 묶는다(첫 장은 표제 · 순번 · 메모 때문에 자리가 적다). 한 줄이 cap 보다 커도 그 줄 혼자 한 장. `window.FoodbellDoc = { kind:'daily-schedule', serialize, load, fresh, inherit, summary, editing, onSave }`; `summary() → { label, issue: label, total: '', count: '<채운 줄 수>건', text: buildText() }`(`text` 는 Task 4 가 쓴다). 칸 표지: `[data-k="date|dow|order|memo|no"]`, 줄 `tr.item` 안 `[data-f="time|place|tel|work|people|price|staff|car|lead|lead-tel|guide-tel|memo"]`, 금액 표시 `[data-k="amt"]`.
+- 화면 모양은 사장님이 본 견본(설계서 "종이 모양" + 추가 결정 1 · 2)을 따른다: 큰 날짜 → 순번 띠 → 섹션 제목 `일정 日程` → 전달 메모 → 표. 휴대폰(620px 이하)은 줄마다 카드, 빈 메모 · 빈 상조팀장 칸은 보기에서 숨김.
 
-- [ ] **Step 1: 실패하는 시험** — `sw.test.mjs` 의 `'캐시 번호를 올려도 서류 화면 · js/docs · docs.css 사본은 남는다'` 두 목록에 `'daily-schedule.html'` 추가.
-- [ ] **Step 2: 실패 확인** — `node --test "tools/sije_web/js-tests/sw.test.mjs"` → FAIL(`daily-schedule.html`).
-- [ ] **Step 3: `sw.js` 고침** — `OFFLINE_PAGES` 에 더하고 `CACHE = 'foodbell-v35'`. `python 캐시버전올리기.py --check` 로 index 쪽 경고가 없는지 본다(index · css/js 는 안 바꿈).
-- [ ] **Step 4: 통과 확인** — `node --test "tools/sije_web/js-tests/*.test.mjs"` → 전체 PASS.
-- [ ] **Step 5: manifest** — `manifest-pay.webmanifest` 복사, 이름 `푸드벨 일일 일정표` · 짧은 이름 `일정표` · `id`/`start_url`/`scope` = `./daily-schedule.html` · 아이콘 `icons/app-daily-*`.
-- [ ] **Step 6: 아이콘 그리기 (일회용 스크립트는 작업 폴더 밖 — 세션 scratchpad)**
-  1. 글꼴: Gowun Batang Bold(OFL)를 scratchpad 의 빈 폴더에 받는다 — `https://github.com/google/fonts/raw/main/ofl/gowunbatang/GowunBatang-Bold.ttf`.
-  2. `icons/app-pay-512.png` 를 픽셀로 재서(금색 테두리 위치 · 두께, 큰 글자 · 작은 글자 크기와 세로 위치, 가운데 금줄) 같은 값으로 그리는 Pillow 스크립트를 쓴다.
-     **먼저 알바비 아이콘을 다시 그려 원본과 비교**한다(같은 크기에서 픽셀 평균 차이가 작아야 함 — 다르면 측정부터 고친다).
-  3. 맞으면 바탕색만 주홍 `#C4502A`, 큰 글자 `일정표` · 작은 글자 `일일` 로 180 · 192 · 512 · maskable-512(알바비 maskable 처럼 안쪽 테두리)를 만들고,
-     같은 그림으로 `아이콘-일정표.ico`(16 · 24 · 32 · 48 · 64 · 128 · 256).
-  4. **사장님께 512 그림을 보여 드리고 색 · 글자 확인** — 바꾸라면 3 을 다시.
-- [ ] **Step 7: 바탕화면 · 캡처 목록** — `바탕화면-바로가기.ps1`: 주석 목록에 `/ 푸드벨 일정표`, 색 목록에 `/ 일정표=주홍`, 알바비 아래에
-  `New-UrlLink '푸드벨 일정표' "$site/daily-schedule.html" '일일 일정표 - 날짜별 직원 일정 · 직원에게 보내기 (내부용)' '아이콘-일정표.ico'`.
-  파일 첫 3바이트가 `EF BB BF`(BOM)로 남았는지 `head -c3 바탕화면-바로가기.ps1 | od -An -tx1` 로 확인. `휴대폰캡처.py` `PAGES` 에 `"daily-schedule.html"`.
-- [ ] **Step 8: 저장** — `git pull --ff-only` → add → commit `일일 일정표 3: 오프라인 · 휴대폰 앱 · 아이콘` → push.
+- [ ] **Step 1: node 시험** `paging.test.mjs` — `pageGroups([10,10,10],100,100)` → `[[0,1,2]]`; `pageGroups(Array(15).fill(30),200,300)` → 첫 장 6줄 · 다음 장 9줄(`[[0..5],[6..14]]`); 아주 큰 한 줄 `[500]` → `[[0]]`; `[]` → `[]`.
+- [ ] **Step 2: 화면 시험**(`test_doc_pages.py`, `PAGES` 에 `daily-schedule` 추가 — 공통 9개에 들어감) + 일정표 전용:
+  - `test_daily_weekday_follows_date`, `test_daily_fresh_date_rolls_over_year`(옛 계획과 같음)
+  - `test_daily_first_doc_gets_default_memo` — 일정표가 하나도 없을 때 새 일정표의 전달 메모 = Global Constraints 의 글.
+  - `test_daily_new_doc_inherits_order_and_memo` — 순번 `가짜일 · 가짜이`, 메모 `가짜 메모` 인 일정표가 있으면 새 일정표가 둘 다 같고 날짜는 내일.
+  - `test_daily_amount_from_typed_numbers` — 인원 `60명`, 단가 `15,000원` → `[data-k="amt"]` 에 `60명 × 15,000원 = 900,000원`; 둘 중 하나 비우면 그 줄 숨김.
+  - `test_daily_counts_filled_rows_only` · `test_daily_long_text_fits_phone`(옛 계획과 같음, 칸 이름만 새것)
+  - `test_daily_fifteen_rows_split_into_pages` — 15줄 채우고 사진 만들기 → 사진 2장 이상, 어느 줄도 두 장에 갈리지 않음(장마다 `tr.item` 번호 이어짐).
+  - `test_daily_viewer_sees_list_and_doc_without_edit` — 보기 명단 사람: 목록 보임, `#doc-new` 안 보임, 서류 열면 `#btn-edit` · `#doc-del` 안 보임, `#btn-send` · `#btn-print` 보임.
+  - `test_daily_copy_text_ends_with_site_url` — 복사 글 마지막 줄 `https://foodbell.kr/`.
+- [ ] **Step 3: 실패 확인 → 구현** — 보내기는 알바비와 같되 사진을 `pageGroups` 로 나눠 여러 장(휴대폰 공유창에 파일 여러 개; PC 는 모두 내려받고 첫 장을 클립보드에, 안내 "N장"). 인쇄는 `@page{size:A4}` + `tr{break-inside:avoid}` + `thead{display:table-header-group}`. 외부 글꼴은 `media=print onload`.
+- [ ] **Step 4: 통과** — node 전체, `test_doc_pages.py -q` 전체(열쇠 있는 PC).
 
 ---
 
-### Task 4: 문서 · 휴대폰 폭 확인 · 실제 게시 확인
+### Task 4: 옵시디언 사본 (사무실 PC 상주 프로그램)
 
 **Files:**
-- Modify: `CLAUDE.md` (파일 목록 `staff-pay.html` 블록 아래 `daily-schedule.html` 줄, 아이콘 색 목록에 `일일 일정표=주홍(#C4502A)` — Task 3 에서 바뀐 색이 있으면 그 값)
+- Create: `tools/sije_web/obsidian_copy.py`
+- Modify: `tools/sije_web/office_agent.py` (`one_cycle` 에 한 차례)
+- Test: `tools/sije_web/tests/test_obsidian_copy.py`
 
-- [ ] **Step 1: CLAUDE.md** — 파일 목록에 두 줄:
-  `daily-schedule.html   직원용 일일 일정표 (2026-10-19). 사장님이 저녁에 다음 날 일정을 직접 채워 카톡 단톡방에 사진으로(직원에게 보내기).`
-  `                      맨 위 날짜(요일 저절로) · 전달 메모 · 한 줄 = 일 하나(시간·장소 / 행사 내용 / 담당·차량 / 집합 / 메모). 설계 docs/superpowers/specs/2026-10-19-daily-schedule-design.md`
-- [ ] **Step 2: 휴대폰 폭** — `python 휴대폰캡처.py` → 일정표 줄의 되읽은 폭 `390`, 넘침 `0`. 사진(임시 폴더)을 열어 눈으로 확인하고 사장님께 보여 드린다.
-- [ ] **Step 3: 전체 시험** — `node --test "tools/sije_web/js-tests/*.test.mjs"` 와 `python -m pytest tools/sije_web/tests/test_doc_pages.py tools/sije_web/tests/test_backup.py tools/sije_web/tests/test_rules_live.py -q` → 모두 PASS.
-- [ ] **Step 4: 실제 규칙 확인** — Task 1 Step 5 를 아직 못 했으면 지금 사장님께 묻고 올린다.
-- [ ] **Step 5: 저장 · 게시 확인** — `git pull --ff-only` → add → commit `일일 일정표 4: 문서` → push.
-  1~2분 뒤 `curl -s -o /dev/null -w "%{http_code}" https://foodbell.kr/daily-schedule.html` → `200`.
-- [ ] **Step 6: 사장님께 남길 것** — ① 휴대폰에서 실제로 단톡방에 보내 보기(사장님 몫) ② 바탕화면 아이콘은 PC 마다 `바탕화면-바로가기.bat` 한 번
-  ③ 사무실 PC 에서 예약 작업 "푸드벨 시제 PDF" 껐다 켜기(백업에 "일일 일정표" 이름 — 급하지 않음).
+**Interfaces:**
+- Consumes: Task 3 `summary().text`(저장된 서류의 `text` 칸), `source.all_docs()`.
+- Produces: `find_vault(obsidian_json: Path) -> Path | None` — 옵시디언 볼트 목록 중 `푸드벨-업무` 폴더가 있는 볼트; `note_path(vault, label) -> Path` = `vault/푸드벨-업무/일일 일정표/<label>.md`(파일 이름에 못 쓰는 글자는 뺀다); `sync_notes(docs, vault, state: dict) -> list[str]` — `kind=='daily-schedule'` 이고 `updatedAt` 이 state 보다 새것만 쓰고(덮어씀), 쓴 이름을 돌려준다. 지운 일정표의 노트는 그대로 둔다. 볼트를 못 찾으면 `one_cycle` 은 기록에 한 줄 남기고 건너뛴다.
+
+- [ ] **Step 1: 실패하는 시험** — 임시 볼트(`tmp_path/볼트/푸드벨-업무`)와 가짜 서류 둘(일정표 1, staff-pay 1): 일정표만 노트가 생기고 내용이 `text` 와 같음; 같은 `updatedAt` 으로 다시 → 안 씀; 새 `updatedAt` → 덮어씀; `find_vault` 는 그 폴더가 없는 볼트를 고르지 않음.
+- [ ] **Step 2: 실패 확인 · Step 3: 구현 · Step 4: 통과**(`test_obsidian_copy.py` 는 시험 서버를 안 써서 집 PC 에서도 됨).
+- [ ] **Step 5: 사무실 PC 에서 다시 켜기** — 예약 작업 "푸드벨 시제 PDF" 껐다 켜기 → `office_agent` 프로세스 시작 시각이 바꾼 시각보다 나중인지 확인(`foodbell-site-dev` 8절 명령) → 일정표 하나 고치고 5분 안에 볼트에 노트가 생기는지 본다. (사장님이 사무실 PC 에 있을 때.)
+
+---
+
+### Task 5: 오프라인 사본 · 휴대폰 앱 · 아이콘 · 바탕화면
+
+옛 계획 Task 3 그대로(`sw.js` CACHE v34→v35 · `OFFLINE_PAGES` 에 `daily-schedule.html` 과 `js/docs/paging.js` · `images/qr-foodbell.png`, `manifest-daily.webmanifest`, 주홍 `#C4502A` 아이콘 180 · 192 · 512 · maskable-512 · `아이콘-일정표.ico` — **알바비 아이콘을 다시 그려 원본과 비교한 뒤** 만들고 사장님께 512 를 보여 드린다, `바탕화면-바로가기.ps1`(BOM 확인) · `휴대폰캡처.py` `PAGES`). 시험: `sw.test.mjs` 두 목록에 `daily-schedule.html`.
+
+---
+
+### Task 6: 문서 · 휴대폰 폭 · 게시 확인 · 직원 명단
+
+- [ ] `CLAUDE.md` 파일 목록에 `daily-schedule.html` · `js/docs/paging.js` · `tools/sije_web/obsidian_copy.py` 줄, 아이콘 색 목록에 `일일 일정표=주홍`, 보기 명단 명령(`allow.py viewer-add`).
+- [ ] `python 휴대폰캡처.py` → 일정표 폭 390 · 넘침 0, 사진을 눈으로 보고 사장님께 보여 드림.
+- [ ] 전체 시험(node + 파이썬 — 열쇠 있는 PC) PASS.
+- [ ] **(자동 저장으로 올라간 뒤)** `curl -s -o /dev/null -w "%{http_code}" https://foodbell.kr/daily-schedule.html` → `200`.
+- [ ] **직원 명단** — 사장님께 직원 10명의 구글 메일을 받아 `python -m tools.sije_web.allow viewer-add <메일> --key C:\foodbell-keys\sije-admin.json`(열쇠 있는 PC, **넣기 직전에 명단을 보여 드리고 묻는다**) → `viewer-list` 로 10개 확인.
+- [ ] 사장님께 남길 것: ① 휴대폰에서 단톡방에 실제로 보내 보기 ② 직원에게 안내할 글(주소 `https://foodbell.kr/daily-schedule.html` · 구글로 로그인 · 홈 화면에 추가) ③ 바탕화면 아이콘은 PC 마다 `바탕화면-바로가기.bat` 한 번(pc-sync 는 바로가기를 만들지 않는다).
