@@ -20,6 +20,7 @@
 - 표 칸 여섯(이 순서): 번호 / **담당 직원 · 차량** / 시간 · 장소 · 연락처 / 행사 내용 · 인원 · 금액 / 상조팀장 · 현지 안내인 / 메모. **집합 칸 없음.** 휴대폰 카드도 번호 옆 첫 줄이 담당 직원(10-20 사장님).
   칸 폭(PC) 6% / 15% / 23% / 24% / 15% / 나머지.
 - 금액 = 인원 × 단가(저절로), 표시 `60명 × 15,000원 = 900,000원`. 하루 합계 없음.
+- 음력: 큰 날짜 옆 `음력 9월 11일` · 윤달 `음력 윤6월 1일`. **`Intl.DateTimeFormat('ko-KR-u-ca-dangi')` 만 쓴다** — `resolvedOptions().calendar !== 'dangi'` 이면 비움(중국식 대체 금지, 하루 어긋남). 복사 글 · 옵시디언 노트의 날짜 줄에도.
 - 표제 "푸드벨" 옆 `foodbell.kr` 링크(`https://foodbell.kr/`) + QR(`images/qr-foodbell.png`, `design/qr/qr-화면.png` 사본). 복사 글 맨 끝에 `https://foodbell.kr/` 한 줄. 보내기 공유 글에 `https://foodbell.kr/daily-schedule.html` 한 줄.
 - 직원(보기 명단)은 일정표만 읽는다 — 다른 종류 서류 · 쓰기 · 지우기는 규칙이 막고, 화면은 편집 · 새 일정표 · 지우기 버튼을 숨긴다. 알림은 카톡(보내기)뿐 — 푸시 없음.
 - 손님 이름 · 연락처 · 직원 실명을 예시 · 시험 자료에 넣지 않는다(시험 글자는 `가짜동` · `가짜일` · `010-0000-0000`).
@@ -84,14 +85,15 @@
 ### Task 3: 화면 `daily-schedule.html` (+ 장 나누기 `js/docs/paging.js`)
 
 **Files:**
-- Create: `daily-schedule.html`(`staff-pay.html` 복사해 고침), `js/docs/paging.js`, `images/qr-foodbell.png`(= `design/qr/qr-화면.png`)
-- Test: `tools/sije_web/js-tests/paging.test.mjs`, `tools/sije_web/tests/test_doc_pages.py`
+- Create: `daily-schedule.html`(`staff-pay.html` 복사해 고침), `js/docs/paging.js`, `js/docs/lunar.js`, `images/qr-foodbell.png`(= `design/qr/qr-화면.png`)
+- Test: `tools/sije_web/js-tests/paging.test.mjs`, `tools/sije_web/js-tests/lunar.test.mjs`, `tools/sije_web/tests/test_doc_pages.py`
 
 **Interfaces:**
 - Consumes: Task 1 `KINDS`, Task 2 `D.inherit` 고리 · `data-role`.
 - Produces: `pageGroups(rowHeights: number[], firstCap: number, nextCap: number) → number[][]` — 줄 번호를 장마다 묶는다(첫 장은 표제 · 순번 · 메모 때문에 자리가 적다). 한 줄이 cap 보다 커도 그 줄 혼자 한 장. `window.FoodbellDoc = { kind:'daily-schedule', serialize, load, fresh, inherit, summary, editing, onSave }`; `summary() → { label, issue: label, total: '', count: '<채운 줄 수>건', text: buildText() }`(`text` 는 Task 4 가 쓴다). 칸 표지: `[data-k="date|dow|order|memo|no"]`, 줄 `tr.item` 안 `[data-f="time|place|tel|work|people|price|staff|car|lead|lead-tel|guide-tel|memo"]`, 금액 표시 `[data-k="amt"]`.
 - 화면 모양은 사장님이 본 견본(설계서 "종이 모양" + 추가 결정 1 · 2)을 따른다: 큰 날짜 → 순번 띠 → 섹션 제목 `일정 日程` → 전달 메모 → 표. 휴대폰(620px 이하)은 줄마다 카드, 빈 메모 · 빈 상조팀장 칸은 보기에서 숨김.
 
+- [ ] **Step 0: 음력** — `js/docs/lunar.js` 에 `lunarText(date: Date) → string`(`'음력 9월 11일'` · `'음력 윤6월 1일'` · 단기력 없으면 `''`). node 시험 `lunar.test.mjs`: 2026-10-21 → `음력 9월 11일`, 2025-07-25 → `음력 윤6월 1일`, 2025-08-23 → `음력 7월 1일`, 2027-02-07 → `음력 1월 1일`(설). 화면 시험 `test_daily_lunar_follows_date`: 날짜를 2026년 10월 21일로 고치면 `[data-k="lunar"]` = `음력 9월 11일`, 없는 날로 고치면 빈칸.
 - [ ] **Step 1: node 시험** `paging.test.mjs` — `pageGroups([10,10,10],100,100)` → `[[0,1,2]]`; `pageGroups(Array(15).fill(30),200,300)` → 첫 장 6줄 · 다음 장 9줄(`[[0..5],[6..14]]`); 아주 큰 한 줄 `[500]` → `[[0]]`; `[]` → `[]`.
 - [ ] **Step 2: 화면 시험**(`test_doc_pages.py`, `PAGES` 에 `daily-schedule` 추가 — 공통 9개에 들어감) + 일정표 전용:
   - `test_daily_weekday_follows_date`, `test_daily_fresh_date_rolls_over_year`(옛 계획과 같음)
@@ -126,7 +128,7 @@
 
 ### Task 5: 오프라인 사본 · 휴대폰 앱 · 아이콘 · 바탕화면
 
-옛 계획 Task 3 그대로(`sw.js` CACHE v34→v35 · `OFFLINE_PAGES` 에 `daily-schedule.html` 과 `js/docs/paging.js` · `images/qr-foodbell.png`, `manifest-daily.webmanifest`, 주홍 `#C4502A` 아이콘 180 · 192 · 512 · maskable-512 · `아이콘-일정표.ico` — **알바비 아이콘을 다시 그려 원본과 비교한 뒤** 만들고 사장님께 512 를 보여 드린다, `바탕화면-바로가기.ps1`(BOM 확인) · `휴대폰캡처.py` `PAGES`). 시험: `sw.test.mjs` 두 목록에 `daily-schedule.html`.
+옛 계획 Task 3 그대로(`sw.js` CACHE v34→v35 · `OFFLINE_PAGES` 에 `daily-schedule.html` 과 `js/docs/paging.js` · `js/docs/lunar.js` · `images/qr-foodbell.png`, `manifest-daily.webmanifest`, 주홍 `#C4502A` 아이콘 180 · 192 · 512 · maskable-512 · `아이콘-일정표.ico` — **알바비 아이콘을 다시 그려 원본과 비교한 뒤** 만들고 사장님께 512 를 보여 드린다, `바탕화면-바로가기.ps1`(BOM 확인) · `휴대폰캡처.py` `PAGES`). 시험: `sw.test.mjs` 두 목록에 `daily-schedule.html`.
 
 ---
 
