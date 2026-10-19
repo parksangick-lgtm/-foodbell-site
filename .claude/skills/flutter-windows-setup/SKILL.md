@@ -68,6 +68,18 @@ Flutter 를 올렸으면 숫자가 바뀔 수 있다. 첫 빌드가 다른 버�
    기본이 **미리보기(dry run)** 이며, `-Apply` 일 때만 옛 값을 `%TEMP%` 에 백업한 뒤 ExpandString 으로 쓴다.
 9. **`sdkmanager is deprecated … Android CLI will be used instead` 경고는 실패가 아니다**(2026-10-09 처음 봄).
    목록·설치는 정상으로 끝났다. 끝 줄의 결과와 종료 코드로 판단한다.
+10. **인증서 오류(`CERTIFICATE_VERIFY_FAILED`, `unable to find valid certification path`, SSL handshake)가 나면
+    코드를 보기 전에 인증서를 누가 발급했는지 본다.** 노트북에서 브라우저·Node 는 되는데 파이썬(`requests`, gRPC)만
+    googleapis.com 에 못 붙었다. 범인은 백신(Avast)의 웹 검사였다 — 일부 주소만 자기 인증서로 바꿔 끼우고, 그 뿌리
+    인증서는 윈도우 인증서 저장소에만 있다. 오류 문구에는 백신 이름이 안 나온다(2026-10-16).
+    ```bash
+    python -c "import ssl,socket;h='dl.google.com';s=ssl.create_default_context().wrap_socket(socket.create_connection((h,443)),server_hostname=h);print(dict(x[0] for x in s.getpeercert()['issuer']))"
+    ```
+    정상이면 `Google Trust Services` 가 나온다. `Avast`·`AVG`·`Kaspersky`·`ESET` 같은 이름이 나오면 그 도구에 윈도우
+    인증서를 쥐여 준다 — 파이썬은 certifi 와 `ssl.enum_certificates('ROOT')` 를 합친 파일을 `REQUESTS_CA_BUNDLE`·
+    `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` 로 (푸드벨 저장소의 `tools/sije_web/fsdb.py` 가 이렇게 한다).
+    Java·Gradle(sdkmanager 내려받기)은 `-Djavax.net.ssl.trustStoreType=Windows-ROOT` 가 같은 해법일 **것으로 보지만
+    아직 시험해 보지 않았다** — 쓰게 되면 결과를 여기 고쳐 적는다.
 
 ## 실행은 사용자 터미널에서
 

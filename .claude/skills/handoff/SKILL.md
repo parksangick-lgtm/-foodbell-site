@@ -6,12 +6,15 @@ disable-model-invocation: true
 ---
 
 <!-- 원본: github.com/mattpocock/skills  skills/productivity/handoff (49dd158, 2026-10-19 복사, MIT).
-     고친 곳은 저장 위치 한 줄뿐 — 원본은 이 PC 의 임시 폴더라서 노트북 · 집 PC 에서 못 읽는다.
+     고친 곳: 저장 위치 한 줄 — 원본은 이 PC 의 임시 폴더라서 노트북 · 집 PC 에서 못 읽는다.
+     그리고 "작업 폴더" 문단 (2026-10-20 추가).
      C:\dev\vibe-study 는 비공개 저장소이고 사용자 설정 훅이 세 PC 사이에서 자동으로 맞춘다. -->
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to `C:\dev\vibe-study\handoff\` as `YYYY-MM-DD-HHMM-<short-topic>.md` (shared across the user's three PCs by auto-sync; private repo) - not the current workspace, which is published.
 
 Include a "suggested skills" section in the document, naming which skills the next agent should call the Skill tool for.
+
+Name the **work folder** (the repo the next session will edit) near the top of the document, with this line for the next agent: "Before writing anything there, check whether this session was opened in that folder. If not, say so first: that repo's own auto-save and guard hooks run only in sessions opened in it, so edits from here are neither committed nor pushed unless you do it explicitly (or the user reopens the session there)." For example `c:\galleypark` has its own `.claude/hooks/auto-save.sh`, and the user-level hook skips it.
 
 Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
 

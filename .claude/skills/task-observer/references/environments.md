@@ -209,6 +209,37 @@ independently, ids collide, and each session sees only half the history.
 When consolidating, leave a pointer file at the abandoned location so
 sessions anchored there get redirected instead of re-creating the fork.
 
+**Several machines are several scopes unless storage joins them.** A
+user-scope path such as `~/.claude/...` lives on one machine's disk, so a
+user who works from more than one machine gets one stable anchor per
+machine by default, each of which looks like the only one. Settle this
+at install, with the user, and record the choice in the activation block
+that every machine reads:
+
+1. **Anchor on storage the machines share** (a private repository every
+   machine pulls, a synced folder) and pin that path; or
+2. **Keep per-machine logs on purpose** and review them with the
+   aggregate review in `weekly-review.md`, qualifying every id with its
+   machine.
+
+Three follow-ups make either choice hold:
+
+- **Retiring the old home is half the move.** On each machine, search the
+  default and previously pinned paths for a leftover log. Merge its open
+  entries into the pinned log with re-issued ids, carry its history and
+  principles across, repoint every config line and hook default that
+  still names the old path, and only then remove it, after asking. A
+  machine whose activation config still names the old path keeps writing
+  into a fork that looks like a backup.
+- **Verify the write direction once.** "It syncs" is a claim about two
+  directions. Make a change in the log from a session opened in the
+  user's usual folder, let the turn end, and confirm the remote has it.
+  Sync hooks commonly pull a shared repository at session start but
+  commit and push only the folder the session was opened in.
+- **Expect id collisions.** A sync that runs only at session boundaries
+  lets two machines issue the same id between syncs. The review's
+  renumbering step is routine here, not an exception.
+
 **Config detection (once per session):** with filesystem access, check the
 workspace root's CLAUDE.md (or equivalent) for a task-observer activation
 instruction — suggest adding it if absent, creating the file if none

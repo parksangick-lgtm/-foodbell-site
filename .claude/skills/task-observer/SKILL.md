@@ -167,7 +167,20 @@ was handled without its reference loaded, log an observation.
    creating or writing anything: if the resolved workspace folder sits
    under an ephemeral path (e.g. `.claude/worktrees/`, a temporary clone),
    warn the user and re-anchor on the stable project path first — state
-   written to an ephemeral checkout is lost at teardown.
+   written to an ephemeral checkout is lost at teardown. If the user works
+   from more than one machine, the anchoring decision has a second axis —
+   load the "Several machines" paragraph in `references/environments.md`
+   before creating or consolidating anything. Where the workspace sits in
+   a git repository that is meant to sync, run this once at session start,
+   before this session has written anything:
+
+   ```bash
+   git -C "[ABSOLUTE PATH]/skill-observations" status --porcelain --untracked-files=all -- .
+   ```
+
+   Output at that moment means earlier sessions' writes never left this
+   machine — say so in one line; the other machines are reading a log
+   without them.
 2. **Scan.** Read only the frontmatter of each file in `observation-log/`
    — the header block between the first two `---` lines, never the bodies
    — and build awareness from `status`, `skill`, `proposes_skill` and

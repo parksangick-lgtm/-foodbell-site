@@ -1,6 +1,6 @@
 ---
 name: foodbell-site-dev
-description: 푸드벨 사이트(c:\galleypark)를 고치고 확인하고 저장하는 작업 흐름. 화면을 고친 뒤 캐시 번호(?v=) 올리기, 휴대폰 폭을 제대로 만들어 확인하기, 저장이 GitHub 까지 갔는지·버셀 서버에 새 버전이 올라갔는지 확인하기를 담는다. index.html·css/style.css·js/main.js·견적서(sije-quote.html, event-quote.html)를 수정할 때, "사이트가 안 바뀐다", "휴대폰에서 깨진다", "저장했는데 반영이 안 된다", "배포 확인해줘", "휴대폰 확인해줘" 같은 말이 나올 때 쓴다. Working rules for developing, verifying, and saving the Foodbell static site.
+description: 푸드벨 사이트(c:\galleypark)를 고치고 확인하고 저장하는 작업 흐름. 화면을 고친 뒤 캐시 번호(?v=) 올리기, 휴대폰 폭을 제대로 만들어 확인하기, 저장이 GitHub 까지 갔는지·버셀 서버에 새 버전이 올라갔는지 확인하기를 담는다. index.html·css/style.css·js/main.js·견적서(sije-quote.html, event-quote.html)를 수정할 때, "사이트가 안 바뀐다", "휴대폰에서 깨진다", "저장했는데 반영이 안 된다", "배포 확인해줘", "휴대폰 확인해줘", "이 PC 점검해줘" 같은 말이 나올 때 쓴다. Working rules for developing, verifying, and saving the Foodbell static site.
 ---
 
 # 푸드벨 사이트 작업 흐름
@@ -27,6 +27,27 @@ python 캐시버전올리기.py --check  # 올리지 않고 확인만
 - 클로드 작업 중에는 자동 규칙(`.claude/hooks/cache-reminder.sh`, 2026-10-08)이 css/js 를
   고친 직후 "아직 안 올렸다"고 알려 준다. 이미 올렸으면 조용하다 — 알림이 떠도 **한 번만** 올린다.
 - 사진의 `?v=` 는 건드리지 않는다. 전부 올리면 손님이 사진을 다시 다 받는다.
+
+### 올릴 곳은 "바뀐 파일을 불러오는 화면" 이다 — index.html 만이 아니다
+
+`캐시버전올리기.py` 는 **index.html 의 `style.css`·`main.js` 와 `sw.js` CACHE 만** 올린다.
+서류·시제 화면이 생기면서 css/js 를 쓰는 화면이 여럿이 됐으니, 올릴 곳은 이렇게 찾는다.
+
+```bash
+git grep -l "sheet-render.js" -- "*.html"     # 바뀐 파일 이름으로 — 나온 화면마다 그 줄의 ?v= 를 손으로 올린다
+```
+
+| 바뀐 것 | 올릴 곳 |
+|---|---|
+| `css/style.css`·`js/main.js` | `python 캐시버전올리기.py` (index.html + sw.js) |
+| 다른 css/js 중 **화면이 `?v=` 로 불러오는 것** | 위 `git grep` 에 나온 화면의 그 줄만 손으로 |
+| 화면이 직접 부르지 않고 **다른 js 가 `import` 하는 파일**(`js/docs/handoff.js` 등) | `?v=` 붙일 곳이 없다. `sw.js` 가 그 폴더를 네트워크 먼저로 받는지 확인만 |
+| `sw.js` 자체 | `sw.js` 의 `CACHE` |
+
+- **자동 알림(`cache-reminder.sh`)은 아직 "css/js 아무거나 바뀜 = index.html 올려라" 로 판단한다.**
+  표의 둘째·셋째 줄에서는 알림이 떠도 맞는 것이다 — 스크립트를 돌리면 손님이 안 바뀐
+  `style.css`·`main.js` 를 다시 받을 뿐 바뀐 화면은 그대로다. 알림을 끄려고 스크립트를 돌리지 않는다.
+  (2026-10-16 `sheet-render.js`, 2026-10-18 `handoff.js` 두 번 겪었다.)
 
 **같은 교훈이 작업 노트에 세 번 적혔는데도 또 빠졌다.** 그래서 규칙을 더 크게
 적는 대신 저장 단계에 자동 점검으로 붙였다. 반복해서 빠지는 수동 단계는
@@ -199,6 +220,20 @@ with sync_playwright() as p:
 - 한글 값은 도구마다 다르게 읽힌다. 깃배시의 `hostname` 은 깨지고 PowerShell 의
   `$env:COMPUTERNAME` 은 제대로 읽는다. **문서에 적을 값은 제대로 읽히는 도구로
   다시 확인한다.**
+
+### 사람이 손으로 친 값을 읽는 기능은 실제 값으로 시험한다
+
+시제 내역서의 금액 칸을 숫자로 읽는 기능을 `'600,000원'` 같은 **지어낸 값**으로만 시험했다.
+시험은 다 통과했는데, 실제 칸에는 `'360만 VAT별도'`·`'90만원'`·`'132만원(입금가)'`·`'170'` 처럼
+적혀 있어서 **85개 중 83개를 못 읽었고**, 읽힌 `'170'` 은 170원으로 **틀리게** 읽혔다.
+사장님이 처음 써 보자마자 발견했다.
+
+- **읽는 기능을 만들기 전에** 그 칸의 실제 값을 종류별로 뽑는다(읽기만, 손님 이름은 빼고).
+  그 목록이 곧 시험 표다.
+- 고친 뒤에는 **값 → 읽은 결과**를 전부 찍어서 눈으로 본다. "비어 있지 않게 읽힘" 과
+  "맞는 숫자로 읽힘" 은 다른 확인이다.
+- "이건 못 읽어야 한다" 는 시험도 실제 값에서 고른다. 지어낸 거절 사례(`'2.400,000원'`)가
+  사장님 뜻과 반대로 박혀 있었다.
 
 ### 한글 이름·경로를 받는 도구는 일단 의심한다
 
@@ -428,6 +463,15 @@ git 은 한글 파일 이름을 `"\354\213\234..."` 로 바꿔 내보내 `if exi
 | 앞부분 바이트 보기 | `od -c 파일 \| head -20` — 자르는 것은 **뒤에서** | `sed -n '1,5p' 파일 \| od -c` |
 | 줄바꿈 종류 세기 | 파이썬으로 `newline=""` 로 열어 `count(chr(13))`·`count(chr(10))` | `grep -c` 로 세기 |
 | 파이썬으로 파일 고치기 | `open(f, 'rb')` 로 바이트째 읽고 `\r\n` 까지 맞춰 바꾼 뒤 `'wb'` 로 쓴다. 고치기 전후 `count(b'\r')` 가 같은지 본다 | `read_text()`·`write_text()` — CRLF 를 LF 로 읽어 패턴이 "너무 쉽게" 맞고, LF 로 다시 써서 **파일 전체 줄바꿈이 조용히 바뀐다**(2026-10-16) |
+| 셸에서 파일 고치기 | 편집 도구로 고치거나 위의 파이썬 바이트 방식 | `sed -i` — **바꿀 것이 하나도 없는 치환이어도** 깃배시 sed 가 파일 전체를 LF 로 다시 쓴다(`firestore.rules` CRLF 41줄 → 0줄, 2026-10-16). PowerShell `Set-Content` 도 같은 부류 |
+
+**줄바꿈 규칙은 도구가 아니라 파일의 성질로 읽는다.** 위 표의 "하지 않는다" 칸은 예시일 뿐이다 —
+파일을 **글자 단위로 다시 쓰는 도구는 무엇이든** 줄바꿈을 바꿀 수 있다. 그래서:
+
+- 이 저장소의 CRLF 파일(`*.bat`, `firestore.rules` 등)을 편집 도구가 아닌 것으로 고쳤으면,
+  **바로 다음에** 파이썬으로 `\r\n` 과 맨 `\n` 개수를 세어 본다. `git diff` 가 파일 전체를
+  바뀐 것으로 보이면 이미 늦은 것이다.
+- **아무것도 안 바꾸는 명령은 돌리지 않는다.** 바뀌는 게 없으면 남는 건 부작용뿐이다.
 
 **일반형: 판정하려는 성질을 그 자체로 건드리는 도구를 경로에 넣지 않는다.**
 줄바꿈을 판정하는데 줄 단위 도구를, 인코딩을 판정하는데 인코딩을 바꾸는 콘솔을,
@@ -516,3 +560,37 @@ git 은 한글 파일 이름을 `"\354\213\234..."` 로 바꿔 내보내 `if exi
   1049 inlier 로 바로 풀렸다. 점수는 **반드시 대조군 옆에 놓고 읽는다**: 대조군 없이 본 0.22 는 "약하게 맞음"으로 읽힌다.
 - 대표 사진(`hero-sije.jpg`, 825px)은 **E:·G: 어디에도 더 큰 원본이 없다**(2026-10-03 확인).
   사용자는 대표 사진을 그대로 두기로 했다(2026-10-03). 다시 묻지 않는다.
+
+---
+
+## 8. "이 PC 점검해줘" — 세 PC 공통 순서
+
+`c:\galleypark` 에서 위에서부터 차례로 본다. 한글 컴퓨터 이름 때문에 1번은 PowerShell 로 본다.
+
+| # | 볼 것 | 명령 | 정상 |
+|---|---|---|---|
+| 1 | 어느 PC 인가 | `$env:COMPUTERNAME` · `git config user.name` | CLAUDE.md 의 PC 표와 맞음 |
+| 2 | 최신인가 | `git fetch -q; git status -sb` 첫 줄 | `ahead`·`behind` 없음 |
+| 3 | 자동 저장 훅 | `~/.claude/settings.json` 에 `git-auto-sync` · `.claude/hooks/auto-save.sh` 있음 | 둘 다 있음 |
+| 4 | 스킬 설치본 = 저장소 | 아래 bash 줄 | 전부 "같음" (다르면 `스킬설치.bat`) |
+| 5 | 시험 도구 | `python -c "import playwright"` | 오류 없음 |
+| 6 | 사이트 | `curl.exe -s -o NUL -w "%{http_code}" https://foodbell.kr/` | `200` |
+
+```bash
+for s in .claude/skills/*/; do n=$(basename "$s"); if [ ! -d "$HOME/.claude/skills/$n" ]; then echo "$n 설치 안 됨"; elif diff -rq "$s" "$HOME/.claude/skills/$n" >/dev/null; then echo "$n 같음"; else echo "$n 다름"; fi; done
+```
+
+**사무실 PC 만** — 예약 작업 "푸드벨 시제 PDF"(늘 켜져 도는 프로그램)를 더 본다.
+
+| 볼 것 | 명령 (PowerShell) | 읽는 법 |
+|---|---|---|
+| 살아 있나 | `Get-Item "$env:LOCALAPPDATA\foodbell-sije\state-*.json" \| Select Name, LastWriteTime` | **5분 안쪽**이면 살아 있다 |
+| 언제 켜졌나 | `Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" \| ? CommandLine -like '*office_agent*' \| Select ProcessId, CreationDate` | 아래 줄보다 **나중**이어야 새 코드 |
+| 코드가 언제 바뀌었나 | `git log -1 --format=%ci -- tools/sije_web` | 위보다 늦으면 **옛 코드가 돌고 있다** → 예약 작업 껐다 켜기 |
+
+- **작업 스케줄러의 "실행 중" · 결과 `267009` 는 멈춘 게 아니다.** 로그인 때 켜져서 안에서
+  계속 도는 설계라 늘 이렇게 보인다. 살아 있는지는 상태 파일 시각으로만 판단한다 —
+  `agent.log` 는 바뀐 게 있을 때만 쓰므로 조용해도 정상이다.
+- `agent.log` 의 ERROR 중 경로에 `pytest-of-` 가 든 줄은 **시험이 남긴 소음**이다(시험이 진짜 로그 파일에 썼다).
+- 파일을 받아 왔다고(`git pull`) 돌고 있는 프로그램이 바뀌지 않는다. 메모리에 옛 코드가 남아
+  있어서, 백업에 새 시트가 빠진 채 하루를 넘긴 적이 있다.

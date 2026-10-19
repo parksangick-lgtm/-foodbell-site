@@ -16,6 +16,9 @@ To test local web applications, write native Python Playwright scripts.
 ## Decision Tree: Choosing Your Approach
 
 ```
+First: does the page need an object the host injects (e.g. window.claude)?
+    Yes → Read references/host-injected-runtime.md, then continue below.
+
 User task → Is it static HTML?
     ├─ Yes → Read HTML file directly to identify selectors
     │         ├─ Success → Write Playwright script using selectors
@@ -94,3 +97,9 @@ with sync_playwright() as p:
   - `element_discovery.py` - Discovering buttons, links, and inputs on a page
   - `static_html_automation.py` - Using file:// URLs for local HTML
   - `console_logging.py` - Capturing console logs during automation
+  - `mock_claude_runtime.js` - Fake of a host-injected runtime (claude.ai artifact `db`/`user`), for `page.add_init_script`
+- **references/** - Load when the trigger applies:
+  - `host-injected-runtime.md` - Read before testing a page that depends on `window.claude` or another object the host injects
+  - `offline-and-service-worker.md` - Read before any test that uses `set_offline`, waits on a service worker, or checks offline UI
+
+_Local additions (references/, mock_claude_runtime.js, the first branch of the decision tree) were added to this copy and are not part of the upstream skill._
