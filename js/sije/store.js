@@ -47,6 +47,16 @@ export function signOutUser() {
   return au.signOut(auth);
 }
 
+// 로그인한 사람의 자리 — 허락 목록(allow)에 있으면 주인, 아니면 보기 명단(viewers)에 있으면 보기 전용(일일 일정표만).
+// 규칙이 자기 메일의 문서만 읽게 해 준다. 못 읽으면(끊김 · 없음) 그 자리가 아닌 것으로 본다.
+export async function myRole(email) {
+  const key = (email || '').toLowerCase();
+  const has = (c) => fs.getDoc(fs.doc(db, c, key)).then((s) => s.exists(), () => false);
+  if (await has('allow')) return 'owner';
+  if (await has('viewers')) return 'viewer';
+  return 'none';
+}
+
 // 시험 전용 — 이 컴퓨터 미리보기(127.0.0.1)에서만 된다
 export function signInForTest(token) {
   if (location.hostname !== '127.0.0.1') throw new Error('시험 로그인은 127.0.0.1 에서만 됩니다');

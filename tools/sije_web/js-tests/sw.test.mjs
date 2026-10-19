@@ -104,14 +104,14 @@ test('인터넷이 되면 서류 공통 부품은 늘 최신 (저장본 먼저�
 test('캐시 번호를 올려도 서류 화면 · js/docs · docs.css 사본은 남는다', async () => {
   const sw = loadSW(never);
   const old = sw.open('foodbell-v1');
-  for (const u of ['sije-quote.html', 'staff-pay.html', 'js/docs/doc-page.js', 'css/docs.css?v=1']) {
+  for (const u of ['sije-quote.html', 'staff-pay.html', 'daily-schedule.html', 'js/docs/doc-page.js', 'css/docs.css?v=1']) {
     await old.put(SITE + u, new Response('옛 ' + u));
   }
   let done;
   sw.handlers.activate({ waitUntil: (p) => { done = p; } });
   await done;
   const now = sw.open(CACHE);
-  for (const u of ['sije-quote.html', 'staff-pay.html', 'js/docs/doc-page.js', 'css/docs.css?v=1']) {
+  for (const u of ['sije-quote.html', 'staff-pay.html', 'daily-schedule.html', 'js/docs/doc-page.js', 'css/docs.css?v=1']) {
     assert.ok(await now.match(SITE + u), u);
   }
 });

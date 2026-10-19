@@ -75,3 +75,7 @@ body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저
 @media print{
   .doc-gate, .doc-state, .doc-del-wrap, .doc-make, .doc-toast{display:none !important}
 }
+/* 보기 명단(직원) — 일일 일정표 읽기만: 편집 · 새로 만들기 · 지우기 버튼 없음 (js/docs/doc-page.js 가 body[data-role] 을 단다) */
+body[data-role="viewer"] #doc-new,
+body[data-role="viewer"] #doc-del,
+body[data-role="viewer"] #btn-edit{display:none !important}

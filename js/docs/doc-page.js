@@ -4,7 +4,7 @@
 import { KINDS, sortDocs, editedText, rowCells } from './doc-model.js';
 import { putBundle, takeBundle, quoteToEvent, quoteToStatement, NOTES_KEY as NOTES } from './handoff.js';
 import {
-  initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost,
+  initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole,
 } from '../sije/store.js';
 
 const D = window.FoodbellDoc;
@@ -127,6 +127,9 @@ let timer = null;
 let current = null;     // 마지막으로 받은 서류 (저장 표시용)
 let pending = false;
 let failed = false;
+let role = null;        // 'owner' | 'viewer' | 'none' — viewer(직원 보기 명단)는 읽기만: 편집 · 저장 · 새로 만들기 · 지우기 없음
+let lastRows = [];      // 목록에서 받은 서류들 — 새 서류가 가장 최근 것에서 이어받을 때 (일일 일정표의 순번 · 전달 메모)
+const viewerOnly = () => role === 'viewer';
 
 function draw(fn) {
   drawing = true;
@@ -153,7 +156,7 @@ function showState() {
 }
 
 D.onSave = () => {
-  if (drawing || gone || !docId || shownFrom === null) return;
+  if (drawing || gone || !docId || shownFrom === null || viewerOnly()) return;
   clearTimeout(timer);
   timer = null;
   if (!D.editing()) return flush();   // 편집 완료 · 칸 밖에서 바뀜 — 모으지 않고 바로 (그 사이 다른 기기 고침이 덮지 않게)
@@ -164,7 +167,7 @@ D.onSave = () => {
 function flush() {
   clearTimeout(timer);
   timer = null;
-  if (drawing || gone || !docId || shownFrom === null) return;
+  if (drawing || gone || !docId || shownFrom === null || viewerOnly()) return;
   const html = D.serialize();
   if (html === lastHtml) {                       // 이 기기에서 바뀐 것 없음
     if (waiting !== null) apply(waiting);
@@ -233,6 +236,7 @@ function rowEl({ id, doc }) {
 }
 
 function onRows(rows, meta) {
+  lastRows = rows;
   $('doc-rows').replaceChildren(...sortDocs(rows).map(rowEl));
   $('doc-empty').hidden = rows.length > 0;
   trackCache(meta.fromCache);
@@ -251,10 +255,15 @@ document.getElementById('btn-list')?.addEventListener('click', async () => {
 
 // 새 서류 — bundle 이 있으면(3단계) 빈 첫 화면에 받은 칸을 채워서 만든다
 async function makeNew(bundle) {
+  if (viewerOnly()) return;
   const b = $('doc-new');
   b.disabled = true;
   try {
-    draw(() => { D.fresh(); if (bundle) D.prefill(bundle.fields); });
+    draw(() => {
+      D.fresh();
+      if (D.inherit) D.inherit(sortDocs(lastRows)[0]?.doc ?? null);   // 가장 최근에 고친 같은 종류 서류에서 이어받기
+      if (bundle) D.prefill(bundle.fields);
+    });
     const id = await createDoc(D.kind, D.serialize(), D.summary());
     if (bundle?.notes.length) sessionStorage.setItem(NOTES, JSON.stringify(bundle.notes));
     const url = `${listUrl}?id=${encodeURIComponent(id)}`;
@@ -267,7 +276,16 @@ async function makeNew(bundle) {
 }
 $('doc-new').addEventListener('click', () => makeNew(null));
 
+// 보기 전용이면 편집 버튼이 숨어 있어도 눌리지 않게 (서류 화면의 편집 전환보다 먼저 가로챈다)
+document.addEventListener('click', (e) => {
+  if (viewerOnly() && e.target.closest?.('#btn-edit')) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}, true);
+
 $('doc-del').addEventListener('click', async () => {
+  if (viewerOnly()) return;
   if (!confirm(`정말 지울까요? 지운 ${noun}는 되살릴 수 없습니다.`)) return;
   gone = true;
   deleting = true;
@@ -296,11 +314,17 @@ const onError = (e) => {
   if (e.code === 'permission-denied') view('denied');
   else toast(`불러오지 못했습니다 (${why(e)})`);
 };
-onUser((user) => {
+onUser(async (user) => {
   stop?.();
   stop = null;
-  if (!user) return view('login');
+  if (!user) {
+    role = null;
+    delete document.body.dataset.role;
+    return view('login');
+  }
   $('doc-who').textContent = user.email || '';
+  role = await myRole(user.email);
+  document.body.dataset.role = role;
   if (docId) {
     stop = watchDoc(docId, onDoc, onError);
   } else if (incoming && !incoming.used) {

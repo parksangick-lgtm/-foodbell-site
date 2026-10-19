@@ -10,6 +10,7 @@ from google.cloud import firestore
 
 ALLOWED = 'docs-allowed@example.com'
 DENIED = 'docs-denied@example.com'
+VIEWER = 'docs-viewer@example.com'   # 보기 명단(직원) — 일일 일정표만 읽는다
 
 # (종류, 파일, 이름, 목록 제목, 보내기 버튼 글자, 새 서류의 구분값(None = 오늘 작성일), 휴대폰에서 고칠 글자 칸)
 PAGES = [
@@ -23,6 +24,9 @@ PAGES = [
                  '○○ 문중 종친회', '[data-k="cust"]', id='statement'),
     pytest.param('staff-pay', 'staff-pay.html', '지급내역서', '알바비 지급내역서', '직원에게 보내기',
                  None, '[data-k="memo"]', id='staff-pay'),
+    # 일일 일정표 — 새 일정표의 구분값은 내일 날짜(요일)
+    pytest.param('daily-schedule', 'daily-schedule.html', '일정표', '일일 일정표', '직원에게 보내기',
+                 'TOMORROW', '[data-k="memo"]', id='daily-schedule'),
 ]
 PAGE_ARGS = 'kind,file,noun,title,send,label,edit_sel'
 
@@ -30,6 +34,20 @@ PAGE_ARGS = 'kind,file,noun,title,send,label,edit_sel'
 def today_kr():
     d = datetime.date.today()
     return f'{d.year}년 {d.month}월 {d.day}일'
+
+
+WEEK = '월화수목금토일'
+
+
+def day_label(d):
+    """'2026년 10월 21일 (수)' — 일정표의 날짜(요일)."""
+    return f'{d.year}년 {d.month}월 {d.day}일 ({WEEK[d.weekday()]})'
+
+
+def expected_label(label):
+    if label == 'TOMORROW':
+        return day_label(datetime.date.today() + datetime.timedelta(days=1))
+    return label or today_kr()
 
 
 @pytest.fixture
@@ -147,6 +165,9 @@ def test_icon_opens_list_sorted_by_updated(pc, repo_url, custom_token, test_db, 
              if i in ids.values()]
     assert shown == [ids['new'], ids['old']]                    # 최근 고친 것이 위, 다른 종류는 없음
     row = pc.inner_text(f'#doc-rows .doc-row[data-id="{ids["new"]}"]')
+    if kind == 'daily-schedule':                                # 일정표 줄 = 날짜(요일) · 건수 (금액 없음)
+        assert '가짜동 새 문중' in row and '2명' in row and '10월 16일 고침' in row
+        return
     assert '2026년 10월 16일' in row and '2,000원' in row and '10월 16일 고침' in row
     assert ('2명' if kind == 'staff-pay' else '가짜동 새 문중') in row
 
@@ -159,8 +180,11 @@ def test_new_doc_creates_one_and_opens_it(pc, repo_url, custom_token, test_db, m
     snap = wait_db(test_db.collection('docs').document(doc_id), lambda s: s.exists)
     doc = snap.to_dict()
     assert doc['kind'] == kind
-    assert doc['label'] == (label or today_kr())
-    assert doc['issue'] == ('' if kind == 'sije-worksheet' else today_kr())   # 작업지시서는 발행일 칸이 없다 → 봉행 일시(빈 칸)
+    assert doc['label'] == expected_label(label)
+    if kind == 'daily-schedule':
+        assert doc['issue'] == doc['label']                     # 일정표는 일정 날짜가 곧 발행일 칸
+    else:
+        assert doc['issue'] == ('' if kind == 'sije-worksheet' else today_kr())   # 작업지시서는 발행일 칸이 없다 → 봉행 일시(빈 칸)
     assert len(doc['html']) > 1000 and doc['createdAt'] is not None
     assert pc.locator('.sheet').is_visible()
 
@@ -399,3 +423,229 @@ def test_deleted_elsewhere_shows_missing_and_does_not_recreate(pc, repo_url, cus
     pc.goto('about:blank')
     time.sleep(5)
     assert not ref.get().exists
+
+
+# ---------- 보기 명단(직원) — 일일 일정표 계획 Task 2 ----------
+
+def test_viewer_sees_denied_on_other_kinds(pc, repo_url, custom_token):
+    pc.goto(f'{repo_url}staff-pay.html?testToken={custom_token(VIEWER, allowed=False, viewer=True)}')
+    pc.get_by_text('권한이 없습니다').wait_for(timeout=20_000)
+    assert pc.locator('#doc-rows .doc-row').count() == 0
+
+
+def test_body_role_marks_owner_and_viewer(pc, browser, repo_url, custom_token):
+    """화면이 로그인한 사람의 자리를 안다 — 주인(allow)이면 owner, 보기 명단이면 viewer."""
+    open_list(pc, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    pc.wait_for_function("document.body.dataset.role === 'owner'", timeout=10_000)
+    ctx, other = new_ctx(browser)
+    try:
+        other.goto(f'{repo_url}staff-pay.html?testToken={custom_token(VIEWER, allowed=False, viewer=True)}')
+        other.wait_for_function("document.body.dataset.role === 'viewer'", timeout=20_000)
+    finally:
+        ctx.close()
+
+
+# ---------- 일일 일정표 전용 (계획 Task 3) ----------
+
+DAILY = 'daily-schedule.html'
+DEFAULT_MEMO = ('추모공원(협력업체)은 회사에서 출발 전에 전화 · 화장은 시작 5분 후 전화 · 매장은 발인 5분 전에 팀장에게 전화'
+                ' · 상주(직접주문)에게는 가게 출발 전에 전화')
+
+
+def text_of(page, selector):
+    return page.locator(selector).first.inner_text().strip()
+
+
+def daily_new(page, repo_url, token, made):
+    open_list(page, repo_url, DAILY, token)
+    return new_doc(page, made)
+
+
+def edit_cell(page, selector, text):
+    """편집 중에 칸 하나를 바꾸고 칸을 떠난다 (빈 글자면 지운다)."""
+    if text:
+        set_text(page, selector, text)
+    else:
+        page.click(selector)
+        page.keyboard.press('Control+A')
+        page.keyboard.press('Backspace')
+    page.keyboard.press('Tab')
+
+
+@pytest.fixture
+def no_daily(test_db):
+    """시험 프로젝트에 일정표가 하나도 없게 (이어받을 것이 없는 '맨 처음')."""
+    for d in test_db.collection('docs').where('kind', '==', 'daily-schedule').stream():
+        d.reference.delete()
+
+
+def test_daily_weekday_follows_date(pc, repo_url, custom_token, test_db, made):
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', '2026년 10월 21일')
+    assert text_of(pc, '[data-k="dow"]') == '(수)'
+    edit_cell(pc, '[data-k="date"]', '2026년 2월 30일')            # 없는 날
+    assert text_of(pc, '[data-k="dow"]') == ''
+    edit_cell(pc, '[data-k="date"]', '10월 21일')                  # 연도 없음
+    assert text_of(pc, '[data-k="dow"]') == ''
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('label') == '10월 21일')   # 목록 이름은 적힌 그대로
+
+
+def test_daily_lunar_follows_date(pc, repo_url, custom_token, made):
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', '2026년 10월 21일')
+    assert text_of(pc, '[data-k="lunar"]') == '음력 9월 11일'
+    edit_cell(pc, '[data-k="date"]', '2026년 2월 30일')
+    assert text_of(pc, '[data-k="lunar"]') == ''
+
+
+def test_daily_fresh_date_rolls_over_year(pc, repo_url, custom_token, made):
+    pc.clock.set_fixed_time(datetime.datetime(2026, 12, 31, 20, 0))
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    assert text_of(pc, '[data-k="date"]') == '2027년 1월 1일'
+    assert text_of(pc, '[data-k="dow"]') == '(금)'
+
+
+def test_daily_first_doc_gets_default_memo(pc, repo_url, custom_token, made, no_daily):
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    assert text_of(pc, '[data-k="memo"]') == DEFAULT_MEMO
+    assert text_of(pc, '[data-k="order"]') == ''
+
+
+def test_daily_new_doc_inherits_order_and_memo(pc, repo_url, custom_token, test_db, made, no_daily):
+    token = custom_token(ALLOWED, allowed=True)
+    first = daily_new(pc, repo_url, token, made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="order"]', '가짜일 · 가짜이')
+    edit_cell(pc, '[data-k="memo"]', '가짜 메모')
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(first), lambda s: '가짜 메모' in s.get('html'))
+    pc.click('#btn-list')
+    wait_view(pc, 'list')
+    pc.locator(f'#doc-rows .doc-row[data-id="{first}"]').wait_for(timeout=15_000)
+    new_doc(pc, made)
+    assert text_of(pc, '[data-k="order"]') == '가짜일 · 가짜이'
+    assert text_of(pc, '[data-k="memo"]') == '가짜 메모'
+    assert text_of(pc, '[data-k="date"]') + ' ' + text_of(pc, '[data-k="dow"]') == expected_label('TOMORROW')
+
+
+def test_daily_amount_from_typed_numbers(pc, repo_url, custom_token, made):
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="people"]', '60명')
+    edit_cell(pc, 'tr.item [data-f="price"]', '15,000원')
+    assert text_of(pc, 'tr.item [data-k="amt"]') == '60명 × 15,000원 = 900,000원'
+    edit_cell(pc, 'tr.item [data-f="price"]', '')
+    assert pc.locator('tr.item [data-k="amt"]').first.inner_text().strip() == ''
+    assert pc.locator('tr.item [data-k="amt"]').first.is_hidden()
+
+
+def test_daily_counts_filled_rows_only(pc, repo_url, custom_token, test_db, made):
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    pc.click('tr.addrow button')
+    pc.click('tr.addrow button')
+    rows = pc.locator('tr.item')
+    assert rows.count() == 3
+    edit_cell(pc, 'tr.item:nth-child(1) [data-f="work"]', '가짜동 상차림')
+    edit_cell(pc, 'tr.item:nth-child(3) [data-f="time"]', '오전 9:00')
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('count') == '2건')
+
+
+def test_daily_long_text_fits_phone(pc, phone, repo_url, custom_token, made):
+    token = custom_token(ALLOWED, allowed=True)
+    doc_id = daily_new(pc, repo_url, token, made)
+    pc.click('#btn-edit')
+    long = '가짜동가짜리산00번지가짜공원묘지가짜관리사무소옆주차장'
+    edit_cell(pc, 'tr.item [data-f="place"]', long)
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜씨종중시사상차림' * 3)
+    edit_cell(pc, 'tr.item [data-f="tel"]', '010-0000-0000, 010-0000-0001')
+    pc.click('#btn-edit')
+    open_doc(phone, repo_url, DAILY, doc_id, token)
+    phone.locator('tr.item [data-f="place"]', has_text=long[:6]).wait_for(timeout=15_000)
+    assert phone.evaluate('document.documentElement.clientWidth') == 390
+    assert phone.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth')
+
+
+def test_daily_fifteen_rows_split_into_pages(pc, repo_url, custom_token, made, tmp_path):
+    """하루 15건(밴드에 실제로 있었던 최대) — 사진이 장마다 나뉘고, 어느 장도 A4 비율보다 길지 않다(줄이 잘리지 않음)."""
+    from PIL import Image
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    for _ in range(14):
+        pc.click('tr.addrow button')
+    # 밴드 일정처럼 줄마다 칸을 다 채운다 (두 칸만 채우면 15줄이 PC 폭 A4 한 장에 들어가 나눌 일이 없다)
+    pc.evaluate("""() => {
+        const v = { staff: '가짜일 · 가짜이', car: '1톤 탑차', time: '오전 11:00', place: '가짜군 가짜면 가짜리 산 00',
+                    tel: '010-0000-0000', work: '가짜씨 종중 시사 상차림', people: '60명', price: '15,000원',
+                    lead: '가짜팀장', 'lead-tel': '010-0000-1000', 'guide-tel': '010-0000-2000', memo: '가짜 메모' };
+        document.querySelectorAll('tr.item').forEach((tr, i) => {
+            for (const [f, t] of Object.entries(v)) {
+                tr.querySelector(`[data-f="${f}"]`).textContent = f === 'work' ? `${t} ${i + 1}` : t;
+            }
+        });
+        document.querySelector('tr.item [data-f="work"]').dispatchEvent(new Event('input', { bubbles: true }));
+    }""")
+    pc.click('#btn-edit')
+    # 사진을 찍을 때마다 그 장에 보이는 줄 번호를 적어 둔다 — 줄이 두 장에 갈리거나 빠지면 번호가 겹치거나 빈다
+    pc.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    pc.evaluate("""() => {
+        const orig = window.html2canvas;
+        window.__shotRows = [];
+        window.html2canvas = (el, o) => {
+            window.__shotRows.push([...el.querySelectorAll('tr.item:not([data-shot-hide]) [data-k="no"]')].map((n) => +n.textContent));
+            return orig(el, o);
+        };
+    }""")
+    files = []
+    pc.on('download', lambda d: files.append(d))
+    pc.click('#btn-save-file')
+    deadline = time.time() + 30
+    while len(files) < 2 and time.time() < deadline:
+        pc.wait_for_timeout(300)
+    pc.wait_for_timeout(1500)                                   # 마지막 장까지
+    assert len(files) >= 2, f'사진 {len(files)}장'
+    names = sorted(d.suggested_filename for d in files)
+    assert names[0].endswith('_1.png') and names[1].endswith('_2.png'), names
+    shots = pc.evaluate('window.__shotRows')
+    assert len(shots) == len(files) and sum(shots, []) == list(range(1, 16)), shots
+    for d in files:
+        out = tmp_path / d.suggested_filename
+        d.save_as(out)
+        w, h = Image.open(out).size
+        assert h / w <= 297 / 210 * 1.03, (d.suggested_filename, w, h)
+
+
+def test_daily_viewer_sees_list_and_doc_without_edit(pc, browser, repo_url, custom_token, made):
+    owner = custom_token(ALLOWED, allowed=True)
+    doc_id = daily_new(pc, repo_url, owner, made)
+    ctx, staff = new_ctx(browser, phone=True)
+    try:
+        open_list(staff, repo_url, DAILY, custom_token(VIEWER, allowed=False, viewer=True))
+        staff.wait_for_function("document.body.dataset.role === 'viewer'", timeout=10_000)
+        staff.locator(f'#doc-rows .doc-row[data-id="{doc_id}"]').wait_for(timeout=15_000)
+        assert staff.locator('#doc-new').is_hidden()
+        staff.click(f'#doc-rows .doc-row[data-id="{doc_id}"]')
+        wait_view(staff, 'doc')
+        assert staff.locator('#btn-edit').is_hidden() and staff.locator('#doc-del').is_hidden()
+        assert staff.locator('#btn-send').is_visible() and staff.locator('#btn-print').is_visible()
+        assert staff.errors == [], staff.errors
+    finally:
+        ctx.close()
+
+
+def test_daily_copy_text_ends_with_site_url(pc, repo_url, custom_token, made):
+    pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    pc.click('#btn-copy')
+    pc.locator('#btn-copy', has_text='복사됨').wait_for(timeout=5_000)
+    text = pc.evaluate('navigator.clipboard.readText()')
+    lines = text.strip().splitlines()                         # 윈도우 클립보드는 줄바꿈을 \r\n 으로 바꾼다
+    assert lines[0] == '[푸드벨 일일 일정표]' and '가짜동 상차림' in text
+    assert lines[-1] == 'https://foodbell.kr/'

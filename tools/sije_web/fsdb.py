@@ -68,10 +68,11 @@ class FirestoreSource:
     def __init__(self, db):
         self.db = db
 
-    def changed_since(self, since: str | None) -> list[tuple[str, dict]]:
+    def changed_since(self, since: str | None, collection: str = 'events') -> list[tuple[str, dict]]:
+        """since 뒤에 고친 행사 — collection='docs' 면 서류 (옵시디언 사본이 5분마다 묻는다, 전체를 읽지 않게)."""
         from datetime import datetime
         from google.cloud.firestore_v1.base_query import FieldFilter
-        q = self.db.collection('events')
+        q = self.db.collection(collection)
         if since:
             q = q.where(filter=FieldFilter('updatedAt', '>', datetime.fromisoformat(since)))
         rows = [(d.id, d.to_dict()) for d in q.stream()]

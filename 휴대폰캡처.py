@@ -37,7 +37,8 @@ HERE = Path(__file__).resolve().parent
 BASE = "http://127.0.0.1:8123/"
 WIDTH = 390
 PAGES = ["index.html", "sije-quote.html", "event-quote.html",
-         "sije-worksheet.html", "statement.html", "staff-pay.html"]
+         "sije-worksheet.html", "statement.html", "staff-pay.html",
+         "daily-schedule.html"]
 
 # 오른쪽 끝(clientWidth)을 넘어간 요소를 찾는다. 빼는 것:
 #  - 크기 0·숨김 요소, 통째로 화면 밖에 둔 것(접힌 메뉴 — 왼쪽 끝도 화면 밖)

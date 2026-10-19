@@ -1,6 +1,6 @@
 /* 푸드벨 서비스 워커 — 오프라인 기본 지원 + 홈 화면 앱 실행
    내용을 크게 바꿨을 때는 아래 CACHE 버전 숫자를 올리세요. */
-const CACHE = 'foodbell-v34';
+const CACHE = 'foodbell-v35';
 
 /* 처음 설치할 때 미리 받아두는 최소한의 파일 (앱 껍데기) */
 const PRECACHE = [
@@ -11,9 +11,9 @@ const PRECACHE = [
   './icons/icon-512.png',
 ];
 
-/* 인터넷이 없어도 열려야 하는 화면 (페이지마다 자기 사본) — 시제행사 화면 + 2단계 서류 5종 */
+/* 인터넷이 없어도 열려야 하는 화면 (페이지마다 자기 사본) — 시제행사 화면 + 2단계 서류 5종 + 일일 일정표 */
 const OFFLINE_PAGES = ['sije-list.html', 'sije-sheet.html',
-  'sije-quote.html', 'event-quote.html', 'sije-worksheet.html', 'statement.html', 'staff-pay.html'];
+  'sije-quote.html', 'event-quote.html', 'sije-worksheet.html', 'statement.html', 'staff-pay.html', 'daily-schedule.html'];
 /* 그 화면들이 부르는 모듈 · 스타일 — 인터넷 먼저(모듈끼리 부르는 주소에 ?v= 가 없어서), 끊기면 저장본 */
 const isOfflineAsset = (rel) => rel.startsWith('js/sije/') || rel.startsWith('js/docs/')
   || rel === 'css/sije-sheet.css' || rel === 'css/docs.css';

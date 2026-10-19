@@ -300,7 +300,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
   body.editing .memo [data-ph]:empty::after{content:none}
 }
 </style>
-<link rel="stylesheet" href="css/docs.css?v=2">
+<link rel="stylesheet" href="css/docs.css?v=3">
 </head>
 <body>
 <p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 지급내역서가 보입니다. 새 내역은 <strong>목록</strong>에서 <strong>새 지급내역서</strong>를 누르세요.</p>
@@ -698,7 +698,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=2"></script>
+<script type="module" src="js/docs/doc-page.js?v=3"></script>
 
 
 </body>

@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 
-from tools.sije_web import calendar_sync, fsdb
+from tools.sije_web import calendar_sync, fsdb, obsidian_copy
 from tools.sije_web.backup import write_backup
 from tools.sije_web.pdf_sync import STATE_FILE, load_state, save_state, sync_once
 from tools.sije_web.render_pdf import render_pdf, serve_repo
@@ -36,9 +36,10 @@ def setup_log(path: Path) -> logging.Logger:
     return log
 
 
-def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger, calendar=None):
-    """PDF · 백업 · 캘린더는 따로 감싼다 — 하나가 실패해도 나머지는 돈다.
-    calendar 는 calendar_sync.CalendarJob — None 이면(캘린더 ID 파일 없는 PC) 건너뛴다."""
+def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger, calendar=None, vault=None):
+    """PDF · 백업 · 캘린더 · 옵시디언은 따로 감싼다 — 하나가 실패해도 나머지는 돈다.
+    calendar 는 calendar_sync.CalendarJob — None 이면(캘린더 ID 파일 없는 PC) 건너뛴다.
+    vault 는 옵시디언 볼트 — None 이면(푸드벨-업무 볼트를 못 찾은 PC, 시작할 때 기록에 한 줄) 건너뛴다."""
     result = None
     try:
         state = load_state(state_file)
@@ -83,6 +84,15 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
             log.warning('캘린더 차례 실패 (다음 차례에 다시): %s', e)
         except Exception:   # 행사 목록 읽기 실패 등
             log.exception('캘린더 차례 실패 (다음 차례에 다시)')
+    if vault is not None:
+        try:
+            notes_file = state_file.with_name(f'{state_file.stem}-obsidian.json')
+            notes = load_state(notes_file)
+            for name in obsidian_copy.sync_notes(source.changed_since(notes.get('since'), 'docs'), vault, notes):
+                log.info('옵시디언 일정표 노트 씀: %s', name)
+            save_state(notes_file, notes)
+        except Exception:
+            log.exception('옵시디언 차례 실패 (다음 차례에 다시)')
     return result
 
 
@@ -105,13 +115,18 @@ def main(argv=None) -> int:
         ('사장님', calendar_sync.open_calendar(a.key), False),
         ('직원', calendar_sync.open_calendar(a.key, 'staff-calendar'), True)) if cal]
     calendar = calendar_sync.CalendarJob(targets) if targets else None
+    vault = obsidian_copy.find_vault()
     log.info('시작 (열쇠 %s, 폴더 %s, %s초마다, 캘린더 %s)', a.key.name, a.work_root, a.interval,
              ' · '.join(label for label, _, _ in targets) or '끔')
+    if vault is None:
+        log.warning('옵시디언 볼트(푸드벨-업무 폴더가 있는 것)를 못 찾아 일정표 사본은 건너뜁니다')
+    else:
+        log.info('옵시디언 일정표 사본: %s', vault)
     source = fsdb.FirestoreSource(fsdb.open_db(a.key))
     with serve_repo(ROOT) as url:
         while True:
             try:
-                one_cycle(source, a.work_root, state_file, url, log, calendar)
+                one_cycle(source, a.work_root, state_file, url, log, calendar, vault)
             except Exception:       # 인터넷 끊김 등 — 기록하고 다음 차례에
                 log.exception('이번 차례 실패')
                 if a.once:

@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸드벨 일일 일정표</title>
+<meta name="description" content="푸드벨(박상익출장음식) 일일 일정표. 다음 날 일을 줄마다 적어 직원 단톡방에 사진으로 보내는 내부용 서류입니다.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗓</text></svg>">
+<meta name="theme-color" content="#6E1E2B">
+<!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
+<meta name="color-scheme" content="only light">
+<link rel="manifest" href="manifest-daily.webmanifest">
+<link rel="apple-touch-icon" href="icons/app-daily-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 글꼴 · 사진 만들기 부품은 화면을 막지 않게 받는다 — 신호가 약해 안 와도 화면 · 스크립트는 돈다 (2단계 검토 I1, 1단계 sije-list 와 같음) -->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" media="print" onload="this.media='all'">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
+<style>
+@media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
+:root{
+  color-scheme: only light;
+
+  /* 견적서(sije-quote.html)와 같은 값 */
+  --cream:#F7F2E9; --paper:#FFFDF8; --band:#F1EADB; --band2:#EDE4D3;
+  --ink:#120C06; --ink-soft:#1A1409; --ink-mute:#332A1A;
+  --seal:#6E1E2B; --seal-light:#8A2836; --seal-dark:#4E141E;
+  --gold:#B08D57; --gold-deep:#5C4519;
+  --line:#E2D6BF; --line-strong:#CBBB9C;
+
+  --serif:'Gowun Batang','Nanum Myeongjo',serif;
+  --sans:'Pretendard','Pretendard Variable','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+
+  --w-normal:500; --w-medium:600; --w-bold:700;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--cream); color:var(--ink);
+  font-family:var(--sans); font-weight:var(--w-normal); line-height:1.8;
+  font-size:17px;
+  text-rendering:optimizeLegibility;
+  padding:28px 16px 96px;
+}
+@media (min-width:700px){ body{padding:44px 24px 64px} }
+
+/* ---------- 문서면 ---------- */
+.sheet{
+  max-width:880px; margin:0 auto; background:var(--paper);
+  border:1px solid var(--line); border-top:3px solid var(--seal);
+  box-shadow:0 1px 2px rgba(20,12,6,.05), 0 18px 44px -20px rgba(20,12,6,.28);
+  padding:clamp(26px,5vw,58px);
+}
+
+/* ---------- 표제 ---------- */
+.masthead{display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:flex-start}
+.brand{display:flex; flex-direction:column; gap:6px}
+.brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
+.brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
+.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.doc-meta{display:flex; align-items:flex-start; gap:18px}
+.doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.3em; color:var(--ink); margin:0 0 10px; text-indent:.3em}
+.meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
+.meta-list dt{color:var(--ink-mute); font-weight:var(--w-medium); letter-spacing:.04em}
+.meta-list dd{margin:0; font-variant-numeric:tabular-nums; color:var(--ink)}
+.seal{flex:none; width:64px; height:64px; transform:rotate(-4deg)}
+.rule-double{border:0; height:4px; border-top:2px solid var(--seal); border-bottom:1px solid var(--line-strong); margin:22px 0 30px}
+
+/* ---------- 섹션 제목 ---------- */
+.sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
+.sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
+.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
+section + section{margin-top:34px}
+
+/* ---------- 공급받는 자 / 공급자 ---------- */
+.parties{display:grid; gap:16px; align-items:start}
+@media (min-width:640px){ .parties{grid-template-columns:1fr 1fr} }
+.party{border:1px solid var(--line-strong); background:var(--paper)}
+.party h3{
+  margin:0; padding:8px 12px; background:var(--band2); border-bottom:1px solid var(--line-strong);
+  font-family:var(--serif); font-weight:var(--w-bold); font-size:15px; color:var(--ink);
+  letter-spacing:.3em; text-indent:.3em; text-align:center;
+}
+.party dl{margin:0}
+.prow{display:grid; grid-template-columns:86px 1fr; border-bottom:1px solid var(--line)}
+.prow:last-child{border-bottom:0}
+.prow dt{padding:8px 12px; background:var(--band); font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft); letter-spacing:.04em; border-right:1px solid var(--line); display:flex; align-items:center}
+.prow dd{margin:0; padding:8px 12px; font-size:15.5px; color:var(--ink); display:flex; align-items:center; flex-wrap:wrap; gap:4px; min-height:42px}
+.prow .regno{font-weight:var(--w-bold); font-variant-numeric:tabular-nums; letter-spacing:.02em}
+.prow .honor{color:var(--ink-mute); font-size:14.5px}
+body.editing .prow dd > span[data-edit]{flex:1}   /* 편집할 때 입력 칸을 줄 끝까지 넓게 */
+/* 도장 — (인) 위에 겹쳐 찍는다. html2canvas 가 퍼센트 translate 를 잘못 옮겨서 margin 으로 가운데를 잡는다 */
+.in{position:relative; display:inline-block; margin-left:auto; margin-right:12px; color:var(--ink-mute); font-size:14.5px}
+.stamp{position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; transform:rotate(-3deg); pointer-events:none}
+
+/* ---------- 거래 내역 표 ---------- */
+.qwrap{border:1px solid var(--line-strong)}
+table.stmt{width:100%; border-collapse:collapse; font-size:15px}
+table.stmt thead th{
+  background:var(--band2); font-family:var(--serif); font-weight:var(--w-bold); font-size:14px;
+  color:var(--ink); letter-spacing:.04em; padding:9px 8px; text-align:center;
+  border-bottom:1px solid var(--line-strong); white-space:nowrap;
+}
+table.stmt td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+table.stmt td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+table.stmt td.c{text-align:center}
+table.stmt td.item-name{font-weight:var(--w-medium)}
+tr.addrow td{padding:6px 8px; background:rgba(176,141,87,.06)}
+tr.addrow .btn-mini{width:100%}
+
+/* ---------- 합계 ---------- */
+.totals{display:flex; margin-top:22px}
+.sum{min-width:300px; width:min(380px, 100%); margin-left:auto}
+.sum-row{display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft); border-bottom:1px solid var(--line)}
+.sum-row .v{font-variant-numeric:tabular-nums; color:var(--ink)}
+.sum-total{
+  display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+  margin-top:12px; padding:13px 16px; background:var(--seal); color:var(--paper);
+}
+.sum-total .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:16px; letter-spacing:.16em}
+.sum-total .val{font-family:var(--serif); font-weight:var(--w-bold); font-size:25px; font-variant-numeric:tabular-nums}
+/* 큰 금액: 이름(합계금액)은 쪼개지 않고, 금액·원은 한 덩어리 — 자리가 모자라면 금액이 다음 줄 오른쪽으로 내려간다 */
+.sum-total{flex-wrap:wrap; row-gap:2px}
+.sum-total .lab{white-space:nowrap}
+.sum-total .val{margin-left:auto; white-space:nowrap}
+@media (max-width:420px){ .sum-total{padding-left:13px; padding-right:13px} .sum-total .lab{letter-spacing:.1em} .sum-total .val{font-size:23px} }
+.sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
+.sum-total .val:has([data-k="total"]:empty) em{display:none}
+.sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
+.sum-note{margin:4px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
+
+/* ---------- 인수자 ---------- */
+.receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
+.receiver .line{display:inline-block; width:150px; border-bottom:1px solid var(--ink-soft)}
+
+/* ---------- 편집 표시 ---------- */
+[data-edit]{outline:none}
+body.editing [data-edit]{background:rgba(176,141,87,.16); box-shadow:inset 0 -1px 0 0 var(--gold-deep); cursor:text}
+body.editing [data-edit]:focus{background:rgba(110,30,43,.09); box-shadow:inset 0 -2px 0 0 var(--seal)}
+body.editing [data-edit]:empty{display:inline-block; min-width:2.6em}
+body.editing td[data-edit]:empty::after,
+body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
+:focus-visible{outline:2px solid var(--seal); outline-offset:2px}
+
+.rowctl{display:inline-flex; margin-left:6px; vertical-align:middle}
+.btn-mini{
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
+  border-radius:3px; padding:6px 8px; white-space:nowrap;
+}
+.btn-mini:hover{border-color:var(--seal); color:var(--seal); background:#fff}
+.btn-del{color:var(--seal-dark); border-color:rgba(110,30,43,.35)}
+.btn-del:hover{background:var(--seal); color:var(--paper); border-color:var(--seal)}
+body:not(.editing) .rowctl,
+body:not(.editing) tr.addrow{display:none !important}
+
+/* ---------- 도구막대 ---------- */
+.toolbar{
+  position:fixed; top:14px; right:14px; z-index:40; display:flex; gap:4px;
+  background:var(--paper); border:1px solid var(--line-strong); padding:6px;
+  box-shadow:0 6px 20px -10px rgba(20,12,6,.4);
+}
+.toolbar button{
+  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-soft);
+  background:transparent; border:1px solid transparent; padding:6px 11px; cursor:pointer;
+}
+.toolbar button:hover{background:var(--band2); color:var(--ink)}
+.toolbar button[aria-pressed="true"]{background:var(--seal); color:var(--paper)}
+.toolbar button.primary{background:var(--seal); color:var(--paper); border-color:var(--seal); font-weight:var(--w-bold)}
+.toolbar button.primary:hover{background:var(--seal-dark); color:var(--paper)}
+.toolbar button[disabled]{opacity:.55; cursor:default}
+
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  z-index:60; max-width:88vw;
+  background:var(--ink); color:var(--paper); font-size:14px; line-height:1.5;
+  padding:11px 16px; border-radius:8px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
+}
+@media (max-width:699px){ .toast{bottom:calc(120px + env(safe-area-inset-bottom))} }
+.hint{
+  max-width:880px; margin:0 auto 14px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft);
+  line-height:1.6; padding-right:200px;
+}
+.hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
+@media (max-width:700px){ .hint{padding-right:0} }
+/* PC: 오른쪽 위 도구막대(약 470px)가 안내문 첫 줄 끝을 덮었다 → 안내문을 막대 아래에서 시작한다 */
+@media (min-width:701px){ .hint{padding-right:0; padding-top:30px} }
+
+/* ---------- 휴대폰: 도구 버튼은 화면 아래 고정, 편집 칸은 손가락 크기 ----------
+   사장님이 쓰는 화면이라 아래 전화·문자 막대 대신 도구 버튼을 둔다 (2026-10-01 사용자 결정).
+   위에 고정하면 안내문 첫 줄을 가리고, 좁은 칸에서 버튼 글자가 쪼개졌다. */
+@media (max-width:699px){
+  body{padding-bottom:calc(128px + env(safe-area-inset-bottom))}
+  .toolbar{
+    top:auto; right:0; bottom:0; left:0;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+    border:0; border-top:1px solid var(--line-strong);
+    box-shadow:0 -6px 20px -12px rgba(20,12,6,.45);
+  }
+  .toolbar button{min-height:44px; font-size:14px; line-height:1.25; word-break:keep-all; padding:6px 4px; border:1px solid var(--line-strong)}
+  body.editing [data-edit]{min-height:44px}
+  body.editing span[data-edit], body.editing .meta-list dd{display:inline-flex; align-items:center; min-width:44px}
+  .btn-mini{min-height:44px; min-width:44px}
+  .doc-meta{gap:10px}
+  .meta-list{column-gap:8px}
+  .meta-list dt, .meta-list dd{white-space:nowrap}
+}
+@media (max-width:359px){ .seal{width:48px; height:48px} }   /* 아주 좁은 폰: 문서번호 자리를 만든다 */
+
+/* ---------- 좁은 화면: 표를 줄마다 카드로 ---------- */
+@media (max-width:620px){
+  table.stmt thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+  table.stmt, table.stmt tbody{display:block}
+  /* 한 줄 = 카드: 품목 / 월일·규격·수량 / 단가·공급가액·세액 / 비고 */
+  table.stmt tr.item{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; padding:12px; border-bottom:1px solid var(--line)}
+  table.stmt tr.item td{border:0; padding:0; text-align:left; white-space:normal; min-width:0}
+  table.stmt tr.item td.n{white-space:nowrap}
+  table.stmt tr.item td::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
+  table.stmt td.item-name{grid-column:1 / -1; order:-1; font-size:16.5px}
+  table.stmt td[data-label="비고"]{grid-column:1 / -1}
+  body:not(.editing) table.stmt td[data-label="비고"]:has(span:empty){display:none}
+  body.editing table.stmt tr.item td[data-edit], body.editing table.stmt td[data-label="비고"] span[data-edit]{display:block; min-height:44px; padding:4px 6px}
+  tr.addrow{display:block}
+  tr.addrow td{display:block}
+  .sum{max-width:none; min-width:0}
+  .receiver .line{width:120px}
+}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+
+/* ---------- 인쇄 (A4 한 장) ---------- */
+@media print{
+  @page{ size:A4; margin:13mm; }
+  body{padding:0; background:var(--paper); font-size:11.5pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:5mm}
+  .toolbar,.hint,.toast,.rowctl,tr.addrow{display:none !important}
+  body.editing [data-edit]{background:transparent; box-shadow:none}
+  body.editing td[data-edit]:empty::after, body.editing span[data-edit]:empty::after{content:none}
+  .rule-double{margin:12px 0 16px}
+  section + section{margin-top:20px}
+  .sec-head{margin-bottom:8px}
+  .prow dt,.prow dd{padding-top:4px; padding-bottom:4px; min-height:0}
+  table.stmt thead th,table.stmt td{padding-top:6px; padding-bottom:6px}
+  tr{break-inside:avoid}
+  .totals{margin-top:12px}
+  .sum-row{padding:5px 0}
+  .sum-total{margin-top:8px; padding:9px 16px}
+  .receiver{margin-top:22px}
+}
+
+/* ================= 일일 일정표 전용 (거래명세서 · 알바비 스타일 위에 덧붙임 — 견본 2026-10-20 모양) ================= */
+.doc-title{letter-spacing:.12em; text-indent:.12em; white-space:nowrap}
+
+/* 표제: 푸드벨 옆 사이트 주소, 인장 옆 QR (사진으로 받은 폰에서는 못 찍으니 주로 인쇄용) */
+.brand-row{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.brand-url{font-size:16px; font-weight:var(--w-medium); color:var(--seal); text-decoration:none; border-bottom:1px solid var(--gold); letter-spacing:.02em}
+.qr{flex:none; width:64px; height:64px; image-rendering:pixelated}
+
+/* 큰 날짜(요일은 저절로) · 음력 · 장 번호 */
+.day{font-family:var(--serif); font-weight:var(--w-bold); font-size:30px; color:var(--ink); margin:0 0 .6rem; letter-spacing:.02em}
+.lunar{font-size:.6em; font-weight:var(--w-normal); color:var(--ink-mute); margin-left:.4em; white-space:nowrap}
+.pageno{font-size:.6em; font-weight:var(--w-medium); color:var(--ink-mute); margin-left:.6em}
+.pageno:empty{display:none}
+
+/* 순번 · 전달 메모 — 비어 있으면 보기 · 사진 · 인쇄에서 숨긴다 */
+.order{display:flex; gap:.8rem; align-items:baseline; padding:.45rem .8rem; margin:0 0 .6rem; border-left:3px solid var(--gold); background:var(--band)}
+.order b{white-space:nowrap; color:var(--gold-deep); font-weight:var(--w-bold)}
+.order span{flex:1}
+body:not(.editing) .order:has(span:empty){display:none}
+.memo{display:flex; gap:.8rem; align-items:baseline; padding:.55rem .8rem; margin:0 0 1rem;
+  background:rgba(110,30,43,.05); border-left:3px solid var(--seal)}
+.memo b{white-space:nowrap; color:var(--seal); font-weight:var(--w-bold)}
+.memo span{flex:1}
+body:not(.editing) .memo:has(span:empty){display:none}
+
+/* 표: 칸 하나에 두세 줄 — 위(굵게) + 아래 작게 */
+table.stmt.day-table{table-layout:fixed}
+table.stmt.day-table td{vertical-align:top; overflow-wrap:anywhere}
+table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink-mute); font-variant-numeric:tabular-nums}
+table.stmt.day-table [data-f$="tel"]{white-space:nowrap}
+table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
+table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal); font-variant-numeric:tabular-nums}
+table.stmt.day-table .amt:empty{display:none}
+/* 인원 · 단가 입력 칸은 편집할 때만 (보기에서는 '60명 × 15,000원 = 900,000원' 한 줄) */
+table.stmt.day-table .qty{display:none}
+body.editing table.stmt.day-table .qty{display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; font-size:.9em; color:var(--ink-mute)}
+/* 현지 안내인 전화가 비면 '안내' 글자도 숨긴다 */
+body:not(.editing) table.stmt.day-table .guide:has([data-f="guide-tel"]:empty){display:none}
+
+/* 편집할 때: 두세 줄 칸도 한 칸씩 따로 누르게, 빈 칸에는 무엇을 적을지 흐린 글자로 */
+body.editing table.stmt.day-table td > [data-edit],
+body.editing table.stmt.day-table td .guide,
+body.editing table.stmt.day-table td .qty [data-edit]{display:flex; align-items:center; margin-bottom:4px; min-width:3em}
+body.editing table.stmt.day-table [data-ph]:empty::after,
+body.editing .memo [data-ph]:empty::after,
+body.editing .order [data-ph]:empty::after,
+body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
+
+/* 사진을 장마다 나눌 때 다른 장의 줄 · 첫 장에만 있는 부분을 잠깐 숨긴다 (js 가 data-shot-hide 를 붙였다 뗀다) */
+.sheet [data-shot-hide]{display:none !important}
+
+@media (max-width:699px){
+  .doc-title{font-size:21px; letter-spacing:.06em; text-indent:.06em}
+}
+/* 휴대폰: 줄마다 카드 — 번호 · 담당 직원 · 차량 / 시간 · 장소 · 연락처 / 행사 · 인원 · 금액 / 상조팀장 · 현지 안내인 / 메모 */
+@media (max-width:620px){
+  .day{font-size:24px}
+  table.stmt.day-table, table.stmt.day-table tbody{display:block}
+  table.stmt.day-table tr.item{display:grid; grid-template-columns:2.2em minmax(0, 1fr); gap:6px 10px; padding:12px; border-bottom:1px solid var(--line)}
+  table.stmt.day-table tr.item td{display:block; border:0; padding:0; min-width:0}
+  table.stmt.day-table tr.item td:not(.c){grid-column:1 / -1}
+  table.stmt.day-table tr.item td.crew{grid-column:2}
+  table.stmt.day-table tr.item td:not(.c):not(.crew)::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
+  body:not(.editing) table.stmt.day-table td.memo-cell:has(span:empty),
+  body:not(.editing) table.stmt.day-table td.meet:has(b:empty):has([data-f="lead-tel"]:empty):has([data-f="guide-tel"]:empty){display:none}
+}
+@media print{
+  table.stmt.day-table thead{display:table-header-group}   /* 넘치면 다음 장에 표 제목 줄이 다시 나온다 */
+  table.stmt.day-table .qty{display:none !important}
+  body.editing table.stmt.day-table [data-ph]:empty::after,
+  body.editing .memo [data-ph]:empty::after,
+  body.editing .order [data-ph]:empty::after,
+  body.editing .day [data-ph]:empty::after{content:none}
+}
+</style>
+<link rel="stylesheet" href="css/docs.css?v=3">
+</head>
+<body>
+<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 담당 직원 · 차량, 시간 · 장소 · 연락처, 행사 내용 · 인원 · 단가를 채우면 금액이 저절로 계산됩니다. 맨 위 날짜만 고치면 요일 · 음력은 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 단톡방에 보낼 수 있습니다(일이 많으면 여러 장). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요 — 순번과 전달 메모는 지난 일정표에서 이어받습니다.</p>
+
+<div class="toolbar">
+  <button type="button" id="btn-edit" aria-pressed="false">편집</button>
+  <button type="button" id="btn-save-file">파일로 저장</button>
+  <button type="button" id="btn-send" class="primary">직원에게 보내기</button>
+  <button type="button" id="btn-copy">복사</button>
+  <button type="button" id="btn-print">인쇄 · PDF</button>
+  <button type="button" id="btn-list">목록</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<article class="sheet">
+
+  <!-- ================= 표제 ================= -->
+  <header class="masthead">
+    <div class="brand">
+      <div class="brand-row"><h1 class="brand-name">푸드벨</h1><a class="brand-url" href="https://foodbell.kr/" target="_blank" rel="noopener">foodbell.kr</a></div>
+      <span class="brand-tag">전통 제례 · 시제 맞춤 출장음식 | 전국 출장 · 현장 세팅</span>
+      <a class="brand-tel" href="tel:01053533477">010-5353-3477</a>
+    </div>
+    <div class="doc-meta">
+      <div><h2 class="doc-title">일일 일정표</h2></div>
+      <img class="qr" src="images/qr-foodbell.png" alt="foodbell.kr QR 코드" width="64" height="64">
+      <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
+        <rect x="1.5" y="1.5" width="61" height="61" rx="4" fill="#6E1E2B"></rect>
+        <rect x="5.5" y="5.5" width="53" height="53" rx="2" fill="none" stroke="#FFFDF8" stroke-width="1.2" opacity=".6"></rect>
+        <text x="32" y="20" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">푸</text>
+        <text x="32" y="37.5" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">드</text>
+        <text x="32" y="55" text-anchor="middle" fill="#FFFDF8" font-family="'Gowun Batang',serif" font-weight="700" font-size="15">벨</text>
+      </svg>
+    </div>
+  </header>
+
+  <hr class="rule-double">
+
+  <!-- ================= 날짜 · 순번 ================= -->
+  <p class="day"><span data-edit data-t="text" data-k="date" data-ph="날짜 (예: 2026년 10월 21일)"></span> <span data-k="dow"></span><span class="lunar" data-k="lunar"></span><span class="pageno" data-k="pageno"></span></p>
+  <p class="order"><b>순번</b><span data-edit data-t="text" data-k="order" data-ph="순번 (예: ○○ · ○○ · ○○)"></span></p>
+
+  <!-- ================= 일정 (한 줄 = 일 하나) ================= -->
+  <section>
+    <div class="sec-head"><h2>일정</h2><span class="hanja">日程</span></div>
+
+    <p class="memo"><b>전달 메모</b><span data-edit data-t="text" data-k="memo" data-ph="직원에게 남길 말"></span></p>
+
+    <div class="qwrap">
+      <table class="stmt day-table">
+        <colgroup>
+          <col style="width:6%"><col style="width:15%"><col style="width:23%"><col style="width:24%"><col style="width:15%"><col>
+        </colgroup>
+        <thead>
+          <tr><th>번호</th><th>담당 직원 · 차량</th><th>시간 · 장소 · 연락처</th><th>행사 내용 · 인원 · 금액</th><th>상조팀장 · 현지 안내인</th><th>메모</th></tr>
+        </thead>
+        <tbody>
+          <tr class="item">
+            <td class="c" data-label="번호" data-k="no"></td>
+            <td class="crew" data-label="담당 직원 · 차량"><b data-edit data-t="text" data-f="staff" data-ph="담당 직원"></b><span class="sub" data-edit data-t="text" data-f="car" data-ph="차량"></span></td>
+            <td class="when" data-label="시간 · 장소 · 연락처"><b data-edit data-t="text" data-f="time" data-ph="시간"></b><span class="sub" data-edit data-t="text" data-f="place" data-ph="장소"></span><span class="sub" data-edit data-t="text" data-f="tel" data-ph="연락처"></span></td>
+            <td class="work" data-label="행사 내용 · 인원 · 금액"><span data-edit data-t="text" data-f="work" data-ph="행사 내용"></span><span class="qty"><span data-edit data-t="text" data-f="people" data-ph="인원"></span>×<span data-edit data-t="text" data-f="price" data-ph="단가"></span></span><span class="amt" data-k="amt"></span></td>
+            <td class="meet" data-label="상조팀장 · 현지 안내인"><b data-edit data-t="text" data-f="lead" data-ph="상조팀장"></b><span class="sub" data-edit data-t="text" data-f="lead-tel" data-ph="팀장 전화"></span><span class="sub guide">안내 <span data-edit data-t="text" data-f="guide-tel" data-ph="현지 안내인 전화"></span></span></td>
+            <td class="memo-cell" data-label="메모"><span data-edit data-t="text" data-f="memo" data-ph="메모 (예: 연기)"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</article>
+
+<script type="module">
+/* 일일 일정표 — 알바비 지급내역서(staff-pay.html)의 편집 · 저장 · 보내기 틀을 그대로 쓴다.
+   다른 점: 한 줄 = 일 하나 / 날짜를 보고 요일 · 음력을 저절로 / 금액 = 인원 × 단가(저절로, 하루 합계 없음)
+            / 새 일정표는 내일 날짜 + 지난 일정표의 순번 · 전달 메모 / 사진은 A4 장마다 나눠 여러 장
+            / 파일 이름은 일정 날짜로: 일일일정표_2026-10-21 (여러 장이면 _1 · _2 …) */
+import { lunarText } from './js/docs/lunar.js?v=1';
+import { pageGroups } from './js/docs/paging.js?v=1';
+
+const NAME = '일일일정표';
+const SITE = 'https://foodbell.kr/';
+const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
+const WEEK = '일월화수목금토';
+// 이어받을 일정표가 하나도 없을 때(맨 처음)의 전달 메모 — 사장님 결정 2026-10-20
+const FIRST_MEMO = '추모공원(협력업체)은 회사에서 출발 전에 전화 · 화장은 시작 5분 후 전화 · 매장은 발인 5분 전에 팀장에게 전화 · 상주(직접주문)에게는 가게 출발 전에 전화';
+const FIELDS = ['staff', 'car', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'guide-tel', 'memo'];
+
+const sheet = document.querySelector('.sheet');
+const body = document.body;
+const each = (list, fn) => Array.prototype.forEach.call(list, fn);
+const fmt = (n) => (n || 0).toLocaleString('ko-KR');
+const pad2 = (n) => (n < 10 ? '0' : '') + n;
+const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
+const el = (tag, cls, txt) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt != null) e.textContent = txt;
+  return e;
+};
+const setText = (k, v) => { const e = sheet.querySelector(`[data-k="${k}"]`); if (e) e.textContent = v; };
+const getText = (k) => { const e = sheet.querySelector(`[data-k="${k}"]`); return e ? clean(e.textContent) : ''; };
+const field = (tr, f) => { const e = tr.querySelector(`[data-f="${f}"]`); return e ? clean(e.textContent) : ''; };
+const num = (s) => parseInt((s || '').replace(/[^0-9]/g, ''), 10) || 0;
+const dateKR = (d) => `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+
+/* 날짜 글자 → Date. 연 · 월 · 일 숫자 셋이 없거나 없는 날(2월 30일)이면 null */
+function parseDay(text) {
+  const m = (text || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? d : null;
+}
+function ymd() {
+  const d = parseDay(getText('date')) || new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+const fileBase = () => `${NAME}_${ymd()}`;
+/* 목록 · 공유 제목: '2026년 10월 21일 (수)' — 요일을 못 구하면 적힌 그대로 */
+const label = () => [getText('date'), getText('dow')].filter(Boolean).join(' ');
+const filled = (tr) => FIELDS.some((f) => field(tr, f));
+
+/* ---------- 줄 번호 · 요일 · 음력 · 금액 ---------- */
+function recalc() {
+  const d = parseDay(getText('date'));
+  setText('dow', d ? `(${WEEK[d.getDay()]})` : '');
+  setText('lunar', d ? lunarText(d) : '');
+  let count = 0;
+  each(sheet.querySelectorAll('tr.item'), (tr, i) => {
+    const no = tr.querySelector('[data-k="no"]');
+    if (no) no.textContent = String(i + 1);
+    const people = num(field(tr, 'people'));
+    const price = num(field(tr, 'price'));
+    const amt = tr.querySelector('[data-k="amt"]');
+    if (amt) amt.textContent = people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : '';
+    if (filled(tr)) count++;
+  });
+  return count;
+}
+
+/* ---------- 문자 · 카톡용 요약 (복사 · 옵시디언 사본) ---------- */
+function buildText() {
+  recalc();
+  const L = ['[푸드벨 일일 일정표]', [label(), getText('lunar')].filter(Boolean).join(' · ')];
+  if (getText('order')) L.push('순번: ' + getText('order'));
+  if (getText('memo')) L.push('전달 메모: ' + getText('memo'));
+  L.push('', '[일정]');
+  each(sheet.querySelectorAll('tr.item'), (tr, i) => {
+    if (!filled(tr)) return;
+    const where = [field(tr, 'time'), field(tr, 'place'), field(tr, 'tel')].filter(Boolean).join(' ');
+    const what = [field(tr, 'work'), clean(tr.querySelector('[data-k="amt"]')?.textContent)].filter(Boolean).join(' ');
+    const crew = [field(tr, 'staff'), field(tr, 'car')].filter(Boolean).join(' · ');
+    const lead = [[field(tr, 'lead'), field(tr, 'lead-tel')].filter(Boolean).join(' '),
+      field(tr, 'guide-tel') ? '안내 ' + field(tr, 'guide-tel') : ''].filter(Boolean).join(' · ');
+    const head = [where, what].filter(Boolean).join(' — ');
+    L.push(`${i + 1}. ` + [head, crew, lead, field(tr, 'memo')].filter(Boolean).join(' / '));
+  });
+  L.push('', SITE);
+  return L.join('\n');
+}
+
+/* ---------- 저장 / 복원 : 문서면 전체 HTML (줄 추가 · 삭제까지) ---------- */
+function serialize() {
+  const c = sheet.cloneNode(true);
+  each(c.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove());
+  each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
+  each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
+  return c.innerHTML;
+}
+/* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
+function save() { const D = window.FoodbellDoc; if (D && D.onSave) D.onSave(); }
+
+/* ---------- 편집 모드: 줄 삭제 · 줄 추가 버튼 ---------- */
+const ROW_HTML = sheet.querySelector('tr.item').innerHTML;
+function addControls() {
+  const tb = sheet.querySelector('table.stmt tbody');
+  each(tb.querySelectorAll('tr.item'), (tr) => {
+    if (tr.querySelector('.rowctl')) return;
+    const box = el('span', 'rowctl');
+    const d = el('button', 'btn-mini btn-del', '✕ 줄 삭제'); d.type = 'button';
+    box.appendChild(d);
+    tr.querySelector('td.memo-cell').appendChild(box);
+  });
+  if (!tb.querySelector('tr.addrow')) {
+    const ar = el('tr', 'addrow'), td = el('td');
+    td.colSpan = 6;
+    const ab = el('button', 'btn-mini', '＋ 줄 추가 (일 하나)'); ab.type = 'button';
+    td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
+  }
+}
+function removeControls() { each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove()); }
+function setCE(on) { each(sheet.querySelectorAll('[data-edit]'), (e) => { e.contentEditable = on ? 'true' : 'false'; }); }
+
+const btnEdit = document.getElementById('btn-edit');
+function setEditing(on) {
+  body.classList.toggle('editing', on);
+  btnEdit.setAttribute('aria-pressed', String(on));
+  btnEdit.textContent = on ? '편집 완료' : '편집';
+  if (on) { addControls(); setCE(true); }
+  else { removeControls(); setCE(false); save(); }
+}
+
+/* ---------- 입력 처리 (새로 추가한 줄까지) ---------- */
+sheet.addEventListener('input', (e) => {
+  if (!e.target.closest?.('[data-edit]')) return;
+  recalc();
+  save();
+});
+sheet.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const t = e.target.closest?.('[data-edit]');
+  if (t) { e.preventDefault(); t.blur(); }
+});
+sheet.addEventListener('click', (e) => {
+  const b = e.target.closest?.('button.btn-mini');
+  if (!b) return;
+  e.preventDefault();
+  if (b.classList.contains('btn-del')) {
+    b.closest('tr.item')?.remove();
+  } else if (b.closest('tr.addrow')) {
+    const tr = el('tr', 'item'); tr.innerHTML = ROW_HTML;
+    b.closest('tr.addrow').parentNode.insertBefore(tr, b.closest('tr.addrow'));
+    addControls(); setCE(true);
+    tr.querySelector('[data-f="staff"]').focus();
+  }
+  recalc(); save();
+});
+
+/* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
+const toastEl = document.getElementById('toast');
+let toastT;
+function toast(msg, ms) {
+  toastEl.textContent = msg; toastEl.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, ms || 3200);
+}
+/* 사진을 클립보드에 넣는다 — PC 카카오톡 대화창에서 Ctrl+V 로 바로 붙는다 */
+function copyImage(blob) {
+  if (!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem)) return Promise.resolve(false);
+  return navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => true, () => false);
+}
+function copyFallback(text) {
+  const ta = el('textarea'); ta.value = text;
+  ta.style.position = 'fixed'; ta.style.top = '-9999px';
+  body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch { window.prompt('아래 내용을 복사하세요', text); }
+  body.removeChild(ta);
+}
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(() => copyFallback(text));
+  copyFallback(text); return Promise.resolve();
+}
+function downloadBlob(blob, name) {
+  const a = el('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ---------- 문서면을 사진(PNG)으로 — A4 비율을 넘으면 장마다 나눠 여러 장 ---------- */
+function renderImage() {
+  if (typeof html2canvas !== 'function') return Promise.resolve(null);
+  const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  return ready.then(() => html2canvas(sheet, {
+    backgroundColor: '#FFFDF8', scale: 1.7, useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth,
+  })).then((canvas) => new Promise((res) => canvas.toBlob((b) => res(b), 'image/png'))).catch(() => null);
+}
+async function renderPages() {
+  const rows = [...sheet.querySelectorAll('tr.item')];
+  const firstOnly = [...sheet.querySelectorAll('.masthead, .rule-double, .order, .memo, .sec-head')];
+  const hide = (list, on) => list.forEach((e) => e.toggleAttribute('data-shot-hide', on));
+  const pageH = sheet.offsetWidth * 297 / 210;               // A4 세로 비율
+  setText('pageno', '1/1');                                   // 장 번호 자리까지 재어 둔다
+  const heights = rows.map((r) => r.offsetHeight);
+  hide(rows, true);
+  const first = sheet.offsetHeight;                           // 첫 장: 표제 · 날짜 · 순번 · 메모 · 표 제목 줄
+  hide(firstOnly, true);
+  const next = sheet.offsetHeight;                            // 다음 장: 날짜 · 표 제목 줄
+  hide(firstOnly, false);
+  hide(rows, false);
+  const groups = pageGroups(heights, pageH - first, pageH - next);
+  const out = [];
+  try {
+    if (groups.length <= 1) {
+      setText('pageno', '');
+      out.push({ blob: await renderImage(), name: fileBase() + '.png' });
+    } else {
+      for (let g = 0; g < groups.length; g++) {
+        rows.forEach((r, i) => r.toggleAttribute('data-shot-hide', !groups[g].includes(i)));
+        hide(firstOnly, g > 0);
+        setText('pageno', `${g + 1}/${groups.length}`);
+        out.push({ blob: await renderImage(), name: `${fileBase()}_${g + 1}.png` });
+      }
+    }
+  } finally {
+    hide(rows, false);
+    hide(firstOnly, false);
+    setText('pageno', '');
+  }
+  return out.every((p) => p.blob) ? out : [];
+}
+
+/* 인쇄 · PDF: 저장 창에 뜨는 파일 이름이 문서 제목을 따르므로, 그동안만 제목을 날짜 이름으로 바꾼다 */
+const pageTitle = document.title;
+window.addEventListener('afterprint', () => { document.title = pageTitle; });
+document.getElementById('btn-print').addEventListener('click', () => {
+  setEditing(false);
+  document.title = fileBase();
+  window.print();
+  setTimeout(() => { document.title = pageTitle; }, 1500);
+});
+
+document.getElementById('btn-copy').addEventListener('click', function () {
+  const btn = this, old = btn.textContent;
+  copyText(buildText()).then(() => {
+    btn.textContent = '복사됨'; setTimeout(() => { btn.textContent = old; }, 1400);
+  });
+});
+
+document.getElementById('btn-send').addEventListener('click', function () {
+  if (!recalc() && !window.confirm('일정을 아직 안 넣으셨습니다. 그래도 보낼까요?')) return;
+  const btn = this, old = btn.textContent;
+  btn.disabled = true; btn.textContent = '준비 중…';
+  setEditing(false);
+  const title = `푸드벨 일일 일정표 (${label()})`;
+  const text = `${title}\n${PAGE_URL}`;
+  const done = () => { btn.disabled = false; btn.textContent = old; };
+  renderPages().then((pages) => {
+    const files = pages.map((p) => new File([p.blob], p.name, { type: 'image/png' }));
+    function fallback() {
+      if (!pages.length) { copyText(buildText()); toast('요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요.'); return done(); }
+      pages.forEach((p) => downloadBlob(p.blob, p.name));
+      copyImage(pages[0].blob).then((ok) => {
+        const many = pages.length > 1 ? ` (사진 ${pages.length}장 — 첫 장만 복사됨, 모두 다운로드 폴더에)` : ` (다운로드 폴더에도 ${pages[0].name} 저장됨)`;
+        if (ok) toast('일정표 사진을 복사했습니다. 직원 단톡방 대화창에서 Ctrl+V 로 붙여넣으세요.' + many, 8000);
+        else { copyText(buildText()); toast(`사진 ${pages.length}장을 저장하고 요약 문구를 복사했습니다. 카톡으로 단톡방에 보내세요.`); }
+        done();
+      });
+    }
+    // 휴대폰: 공유창(카톡 단톡방 고르기)으로 사진(장마다)을 넘긴다. PC 공유 창에는 카카오톡 PC 가 안 나와서 쓰지 않는다
+    if (files.length && matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files })) {
+      navigator.share({ files, title, text }).then(done, (e) => {
+        if (e && e.name === 'AbortError') return done();
+        fallback();
+      });
+      return;
+    }
+    fallback();
+  });
+});
+
+document.getElementById('btn-save-file').addEventListener('click', function () {
+  if (!recalc() && !window.confirm('일정을 아직 안 넣으셨습니다. 그래도 저장할까요?')) return;
+  const btn = this, old = btn.textContent;
+  btn.disabled = true; btn.textContent = '저장 중…';
+  setEditing(false);
+  renderPages().then((pages) => {
+    btn.disabled = false; btn.textContent = old;
+    if (!pages.length) return toast('저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.');
+    pages.forEach((p) => downloadBlob(p.blob, p.name));
+    toast(pages.length > 1 ? `사진 ${pages.length}장으로 저장했습니다 (${pages[0].name} …). 다운로드 폴더에서 확인하세요.`
+      : `${pages[0].name} 으로 저장했습니다. (다운로드 폴더에서 확인하세요)`);
+  });
+});
+
+btnEdit.addEventListener('click', () => { setEditing(!body.classList.contains('editing')); });
+
+/* 새 일정표: 날짜 = 내일, 전달 메모 = 맨 처음 글 (지난 일정표가 있으면 inherit 가 순번 · 메모를 덮는다) */
+function fillFresh() {
+  const t = new Date();
+  t.setDate(t.getDate() + 1);
+  setText('date', dateKR(t));
+  setText('memo', FIRST_MEMO);
+  recalc();
+}
+
+/* 웹 저장소 연결 고리 — 공통 부품(js/docs/doc-page.js)이 이것으로 서류를 그리고 · 새로 만들고 · 저장한다.
+   목록 구분값은 일정 날짜(요일) */
+const FRESH = sheet.innerHTML;
+window.FoodbellDoc = {
+  kind: 'daily-schedule',
+  serialize,
+  load(html) {
+    sheet.innerHTML = html; recalc();
+    if (body.classList.contains('editing')) { addControls(); setCE(true); }   /* 편집 중에 다른 기기 고침이 와도 고칠 수 있게 */
+  },
+  fresh() { sheet.innerHTML = FRESH; fillFresh(); },
+  // 가장 최근에 고친 일정표(저장된 화면)에서 순번 · 전달 메모만 이어받는다 — 없으면 맨 처음 글 그대로
+  inherit(doc) {
+    if (!doc || !doc.html) return;
+    const t = document.createElement('template');
+    t.innerHTML = doc.html;
+    const pick = (k) => clean(t.content.querySelector(`[data-k="${k}"]`)?.textContent);
+    setText('order', pick('order'));
+    setText('memo', pick('memo'));
+  },
+  summary() {
+    const count = recalc();
+    return { label: label(), issue: label(), total: '', count: `${count}건`, text: buildText() };
+  },
+  editing() { return body.classList.contains('editing'); },
+  onSave: null,
+};
+fillFresh();
+</script>
+<script>
+// 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
+if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+</script>
+<script type="module" src="js/docs/doc-page.js?v=3"></script>
+</body>
+</html>
