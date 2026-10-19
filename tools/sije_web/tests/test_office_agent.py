@@ -40,8 +40,28 @@ def test_backup_includes_docs_from_source(tmp_path):
 def test_calendar_synced_even_when_pdf_fails(tmp_path):
     cal = FakeCalendar()
     office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
-                           calendar_sync.CalendarJob(cal))
+                           calendar_sync.CalendarJob([('사장님', cal, False)]))
     assert set(cal.list_tagged()) == {'a'}
+
+
+def test_staff_calendar_synced_and_logged_with_label(tmp_path, caplog):
+    owner, staff = FakeCalendar(), FakeCalendar()
+    with caplog.at_level(logging.INFO, logger='t'):
+        office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
+                               calendar_sync.CalendarJob([('사장님', owner, False), ('직원', staff, True)]))
+    assert set(owner.list_tagged()) == {'a'} and set(staff.list_tagged()) == {'a'}
+    msgs = [r.getMessage() for r in caplog.records]
+    assert any(m.startswith('캘린더 만듦:') for m in msgs) and any(m.startswith('캘린더(직원) 만듦:') for m in msgs)
+
+
+def test_one_calendar_failing_does_not_stop_the_other(tmp_path):
+    class Revoked(FakeCalendar):
+        def list_tagged(self):
+            raise calendar_sync.CalendarError(403, '캘린더 권한 없음 — 흉내')
+    owner = FakeCalendar()
+    office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
+                           calendar_sync.CalendarJob([('직원', Revoked(), True), ('사장님', owner, False)]))
+    assert set(owner.list_tagged()) == {'a'}
 
 
 def test_calendar_failure_does_not_stop_backup(tmp_path):
@@ -49,7 +69,7 @@ def test_calendar_failure_does_not_stop_backup(tmp_path):
         def list_tagged(self):
             raise ConnectionError('흉내: 끊김')
     office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
-                           calendar_sync.CalendarJob(Broken()))
+                           calendar_sync.CalendarJob([('사장님', Broken(), False)]))
     assert list((tmp_path / '백업').glob('*시제행사 백업.xlsx'))
 
 
@@ -60,7 +80,7 @@ def test_calendar_permission_error_is_a_short_warning(tmp_path, caplog):
             raise calendar_sync.CalendarError(403, '캘린더 권한 없음 — 흉내')
     with caplog.at_level(logging.INFO, logger='t'):
         office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
-                               calendar_sync.CalendarJob(Revoked()))
+                               calendar_sync.CalendarJob([('사장님', Revoked(), False)]))
     recs = [r for r in caplog.records if '캘린더' in r.getMessage()]
     assert recs and all(r.levelno == logging.WARNING and not r.exc_info for r in recs)
 

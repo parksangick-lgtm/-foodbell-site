@@ -63,17 +63,25 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
         log.exception('백업 실패 (다음 차례에 다시)')
     if calendar is not None:
         try:
-            cal = calendar.run(source, time.time())
-            for word, key in (('만듦', 'made'), ('고침', 'updated'), ('지움', 'removed')):
-                for title in (cal or {}).get(key, []):
-                    log.info('캘린더 %s: %s', word, title)
-            for id, why in (cal or {}).get('failed', []):
-                log.warning('캘린더 실패 (다음 차례에 다시): %s — %s', id, why)
-            if cal and cal['guarded']:
-                log.warning('캘린더: 행사 목록이 0개로 읽혀 지우기를 건너뜀')
-        except calendar_sync.CalendarError as e:   # 공유가 풀림 · 서비스 꺼짐 등 — 5분마다 긴 오류 대신 한 줄
+            for label, cal in (calendar.run(source, time.time()) or {}).items():
+                name = '캘린더' if label == '사장님' else f'캘린더({label})'   # 사장님 캘린더는 예전 기록 모양 그대로
+                err = cal.get('error')
+                if isinstance(err, calendar_sync.CalendarError):   # 공유가 풀림 · 서비스 꺼짐 등 — 긴 오류 대신 한 줄
+                    log.warning('%s 차례 실패 (다음 변경이나 1시간 뒤 다시): %s', name, err)
+                    continue
+                if err is not None:
+                    log.error('%s 차례 실패 (다음 변경이나 1시간 뒤 다시)', name, exc_info=err)
+                    continue
+                for word, key in (('만듦', 'made'), ('고침', 'updated'), ('지움', 'removed')):
+                    for title in cal[key]:
+                        log.info('%s %s: %s', name, word, title)
+                for id, why in cal['failed']:
+                    log.warning('%s 실패 (다음 차례에 다시): %s — %s', name, id, why)
+                if cal['guarded']:
+                    log.warning('%s: 행사 목록이 0개로 읽혀 지우기를 건너뜀', name)
+        except calendar_sync.CalendarError as e:
             log.warning('캘린더 차례 실패 (다음 차례에 다시): %s', e)
-        except Exception:
+        except Exception:   # 행사 목록 읽기 실패 등
             log.exception('캘린더 차례 실패 (다음 차례에 다시)')
     return result
 
@@ -92,10 +100,13 @@ def main(argv=None) -> int:
         return 2
     # 상태 기록은 열쇠(프로젝트)마다 따로 — 시험 프로젝트로 돌려 본 기록이 실제와 섞이지 않게
     state_file = STATE_FILE.with_name(f'state-{a.key.stem}.json')
-    cal = calendar_sync.open_calendar(a.key)
-    calendar = calendar_sync.CalendarJob(cal) if cal else None
+    # 캘린더: 사장님용(확정 · 미확정, 금액 · 내역서 주소) + 직원용(확정만, 출발 · 도착 · 꼭 지킬 것). ID 파일이 있는 것만
+    targets = [(label, cal, staff) for label, cal, staff in (
+        ('사장님', calendar_sync.open_calendar(a.key), False),
+        ('직원', calendar_sync.open_calendar(a.key, 'staff-calendar'), True)) if cal]
+    calendar = calendar_sync.CalendarJob(targets) if targets else None
     log.info('시작 (열쇠 %s, 폴더 %s, %s초마다, 캘린더 %s)', a.key.name, a.work_root, a.interval,
-             '켬' if calendar else '끔')
+             ' · '.join(label for label, _, _ in targets) or '끔')
     source = fsdb.FirestoreSource(fsdb.open_db(a.key))
     with serve_repo(ROOT) as url:
         while True:

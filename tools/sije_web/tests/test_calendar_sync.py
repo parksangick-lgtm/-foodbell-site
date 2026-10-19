@@ -150,9 +150,39 @@ class CountingSource:
 
 def test_job_reads_everything_only_when_needed():
     src = CountingSource([('a', fake_event(updatedAt=T0))])
-    job = CalendarJob(FakeCalendar())
-    assert job.run(src, now=0)['made']                                   # 처음: 전체
+    job = CalendarJob([('사장님', FakeCalendar(), False)])
+    assert job.run(src, now=0)['사장님']['made']                          # 처음: 전체
     assert job.run(src, now=300) is None and src.full == 1                # 바뀐 것 없음: 전체를 안 읽는다
     src.events = [('a', fake_event(time='11시', updatedAt=T0 + timedelta(minutes=7)))]
-    assert job.run(src, now=600)['updated'] and src.full == 2             # 바뀜: 5분 안에 반영
+    assert job.run(src, now=600)['사장님']['updated'] and src.full == 2    # 바뀜: 5분 안에 반영
     assert job.run(src, now=600 + 3600) is not None and src.full == 3     # 한 시간마다: 전체 (캘린더에서 손댄 것 되돌리기)
+
+
+# ---------- 직원용 캘린더 (2026-10-19) ----------
+
+def test_staff_event_shows_only_what_staff_need():
+    b = to_calendar_event('abc', fake_event(), staff=True)
+    assert b['summary'] == '가짜동 1-1 놀이터 위 · 7치 1상'
+    assert b['start'] == {'dateTime': '2026-11-13T10:00:00', 'timeZone': 'Asia/Seoul'}
+    assert b['description'] == ('고객: 가짜 문중\n연락처: 010-0000-0000\n출발: 07시\n도착: 09시 30분\n'
+                                '꼭 지킬 것: 산신제 상은 따로 차린다 / 도착하면 먼저 전화\n메모: 주차는 가짜 마을회관 앞')
+    assert '금액' not in b['description'] and 'sije-sheet' not in b['description']   # 금액 · 내역서 주소는 직원에게 안 보인다
+    assert 'colorId' not in b
+
+
+def test_staff_gets_confirmed_only():
+    assert to_calendar_event('x', fake_event(status='미확정'), staff=True) is None
+    assert to_calendar_event('x', fake_event(status='주문없음'), staff=True) is None
+
+
+def test_staff_description_skips_blank_lines():
+    b = to_calendar_event('x', fake_event(customer='', contacts=[], departTime='', arriveTime='', mustDo='', memo=''), staff=True)
+    assert b['description'] == ''
+
+
+def test_job_syncs_both_calendars_with_one_read():
+    src = CountingSource([('a', fake_event(updatedAt=T0)), ('b', fake_event(status='미확정', updatedAt=T0))])
+    owner, staff = FakeCalendar(), FakeCalendar()
+    r = CalendarJob([('사장님', owner, False), ('직원', staff, True)]).run(src, now=0)
+    assert set(owner.list_tagged()) == {'a', 'b'} and set(staff.list_tagged()) == {'a'}   # 직원은 확정만
+    assert len(r['사장님']['made']) == 2 and len(r['직원']['made']) == 1 and src.full == 1  # 읽기는 한 번

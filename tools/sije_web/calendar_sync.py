@@ -18,6 +18,7 @@ KST = timezone(timedelta(hours=9))   # 서울은 서머타임이 없다 — 시�
 HOURS = 2            # 행사 길이 — 자료에 없어서 정한 값 (설계 · 사장님 확인 2026-10-18)
 GRAY = '8'           # 미확정 일정 색
 PUT_ON = ('확정', '미확정')
+STAFF_PUT_ON = ('확정',)   # 직원용 캘린더는 실제로 나가는 행사만 (사장님 결정 2026-10-19)
 
 _TIME = re.compile(r'^\s*(오전|오후)?\s*(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?\s*$')
 
@@ -42,10 +43,16 @@ def event_id(doc_id: str) -> str:
     return 'fb' + doc_id.encode('utf-8').hex()
 
 
-def to_calendar_event(doc_id: str, ev: dict) -> dict | None:
-    """행사 하나 → 구글 일정 본문. 캘린더에 넣지 않을 행사(주문없음 · 날짜 없음)면 None."""
+def _one_line(text) -> str:
+    """여러 줄 칸(꼭 지킬 것 · 메모)을 메모 한 줄로 — 줄마다 ' / ' 로 잇는다."""
+    return ' / '.join(x.strip() for x in str(text or '').splitlines() if x.strip())
+
+
+def to_calendar_event(doc_id: str, ev: dict, staff: bool = False) -> dict | None:
+    """행사 하나 → 구글 일정 본문. 캘린더에 넣지 않을 행사(주문없음 · 날짜 없음)면 None.
+    staff=True 는 직원용 캘린더(2026-10-19): 확정만, 메모는 손님 · 연락처 · 출발 · 도착 · 꼭 지킬 것 · 메모 (금액 · 내역서 주소 없음)."""
     status, day = ev.get('status'), ev.get('date')
-    if status not in PUT_ON or not day:
+    if status not in (STAFF_PUT_ON if staff else PUT_ON) or not day:
         return None
     place = ev.get('place') or ev.get('titlePlace') or ''
     title = ' · '.join(x for x in (place, ev.get('setting') or '') if x) or '시제행사'
@@ -53,9 +60,15 @@ def to_calendar_event(doc_id: str, ev: dict) -> dict | None:
         title = '[미확정] ' + title
     contacts = ', '.join(c for c in ev.get('contacts') or [] if c)
     lines = [f'고객: {ev["customer"]}' if ev.get('customer') else '',
-             f'연락처: {contacts}' if contacts else '',
-             f'금액: {ev["amount"]}' if ev.get('amount') else '',
-             f'내역서: {SITE}{doc_id}']
+             f'연락처: {contacts}' if contacts else '']
+    if staff:
+        lines += [f'출발: {ev["departTime"]}' if ev.get('departTime') else '',
+                  f'도착: {ev["arriveTime"]}' if ev.get('arriveTime') else '',
+                  f'꼭 지킬 것: {_one_line(ev.get("mustDo"))}' if _one_line(ev.get('mustDo')) else '',
+                  f'메모: {_one_line(ev.get("memo"))}' if _one_line(ev.get('memo')) else '']
+    else:
+        lines += [f'금액: {ev["amount"]}' if ev.get('amount') else '',
+                  f'내역서: {SITE}{doc_id}']
     hm = parse_time(ev.get('time'))
     if hm:
         start = datetime.fromisoformat(day).replace(hour=hm[0], minute=hm[1])
@@ -89,14 +102,14 @@ def same_event(existing: dict, desired: dict) -> bool:
     return key(existing) == key(desired)
 
 
-def sync_calendar(cal, events: list[tuple[str, dict]]) -> dict:
+def sync_calendar(cal, events: list[tuple[str, dict]], staff: bool = False) -> dict:
     """캘린더의 꼬리표 일정 ↔ 행사 전체를 비교해 만들기 · 고치기 · 지우기. 일정 하나가 실패해도 나머지는 계속.
     행사가 0개로 읽히면 '목록을 못 읽은 것'으로 보고 아무것도 지우지 않는다(guarded)."""
     result = {'made': [], 'updated': [], 'removed': [], 'failed': [], 'guarded': False}
     desired, broken = {}, set()
     for doc_id, ev in events:
         try:
-            body = to_calendar_event(doc_id, ev)
+            body = to_calendar_event(doc_id, ev, staff)
         except Exception as e:   # 날짜가 틀린 행사 등 — 그 행사만 건너뛰고, 캘린더의 기존 일정도 지우지 않는다
             result['failed'].append((doc_id, f'일정 모양 실패: {e}'))
             broken.add(doc_id)
@@ -136,18 +149,26 @@ class CalendarJob:
 
     FULL_EVERY = 3600   # 초
 
-    def __init__(self, cal):
-        self.cal = cal
+    def __init__(self, targets):
+        """targets = [(이름표, 캘린더 부품, 직원용인가)] — 예: [('사장님', cal, False), ('직원', staff_cal, True)].
+        행사는 한 번만 읽어 모든 캘린더에 쓴다 (캘린더가 늘어도 파이어베이스 읽기는 그대로)."""
+        self.targets = list(targets)
         self.since = None     # 마지막으로 본 가장 늦은 updatedAt (isoformat)
         self.full_at = None   # 마지막 전체 맞추기 시각 (time.time())
 
     def run(self, source, now: float) -> dict | None:
-        """맞추기 결과(sync_calendar 와 같은 모양). 바뀐 것이 없어 건너뛰면 None."""
+        """{이름표: 맞추기 결과(sync_calendar 모양)}. 바뀐 것이 없어 건너뛰면 None.
+        캘린더 하나가 실패하면 그 결과는 {'error': 예외} — 나머지 캘린더는 계속, 실패한 것은 다음 변경이나 1시간 뒤 다시."""
         recent = self.full_at is not None and now - self.full_at < self.FULL_EVERY
         if recent and self.since and not source.changed_since(self.since):
             return None
         events = source.all_events()
-        result = sync_calendar(self.cal, events)
+        result = {}
+        for label, cal, staff in self.targets:
+            try:
+                result[label] = sync_calendar(cal, events, staff)
+            except Exception as e:
+                result[label] = {'error': e}
         self.full_at = now
         stamps = [ev['updatedAt'] for _, ev in events if ev.get('updatedAt')]
         if stamps:
@@ -212,14 +233,15 @@ class GoogleCalendar:
         self._check(self.s.delete(f'{self.base}/{event_id}', timeout=30))
 
 
-def calendar_file(key: Path) -> Path:
-    """열쇠 옆의 캘린더 ID 파일 (sije-admin.json → sije-calendar.txt). 저장소에는 넣지 않는다."""
-    return key.with_name(key.stem.replace('-admin', '-calendar') + '.txt')
+def calendar_file(key: Path, name: str = 'calendar') -> Path:
+    """열쇠 옆의 캘린더 ID 파일 (sije-admin.json → sije-calendar.txt, 직원용은 name='staff-calendar' → sije-staff-calendar.txt).
+    저장소에는 넣지 않는다."""
+    return key.with_name(key.stem.replace('-admin', f'-{name}') + '.txt')
 
 
-def open_calendar(key: Path) -> GoogleCalendar | None:
-    """캘린더 ID 파일이 없는 PC(집 · 노트북)면 None — 캘린더 단계를 건너뛴다."""
-    f = calendar_file(Path(key))
+def open_calendar(key: Path, name: str = 'calendar') -> GoogleCalendar | None:
+    """캘린더 ID 파일이 없는 PC(집 · 노트북)면 None — 그 캘린더 단계를 건너뛴다."""
+    f = calendar_file(Path(key), name)
     if not f.exists():
         return None
     return GoogleCalendar(Path(key), f.read_text(encoding='utf-8').strip())

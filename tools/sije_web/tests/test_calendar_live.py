@@ -21,6 +21,7 @@ def live_cal():
 def test_calendar_file_name():
     assert calendar_file(Path(r'C:\k\sije-admin.json')) == Path(r'C:\k\sije-calendar.txt')
     assert calendar_file(Path(r'C:\k\sije-test-admin.json')) == Path(r'C:\k\sije-test-calendar.txt')
+    assert calendar_file(Path(r'C:\k\sije-admin.json'), 'staff-calendar') == Path(r'C:\k\sije-staff-calendar.txt')   # 직원용
 
 
 def test_open_calendar_without_file_is_none(tmp_path):
