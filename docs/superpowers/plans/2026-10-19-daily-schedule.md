@@ -109,6 +109,23 @@
 
 ---
 
+### Task 3b: 문자 붙여넣기 (`js/docs/order-text.js`)
+
+**먼저 할 것: 사장님께 실제 주문 문자 표본(5개 이상, 이름 · 번호는 바꿔도 됨)을 받는다.** 표본 없이 시작하지 않는다 — 지어낸 값으로 만든 읽기 기능은 실제 값에서 틀린다(`foodbell-site-dev` 2절, 85개 중 83개 실패 사례).
+
+**Files:**
+- Create: `js/docs/order-text.js`, `tools/sije_web/js-tests/order-text.test.mjs`, `tools/sije_web/js-tests/fixtures/order-samples.json`(표본 — 이름 · 번호 · 주소를 `가짜`/`010-0000-0000` 으로 바꾼 것만)
+- Modify: `daily-schedule.html`(줄마다 편집 중에만 보이는 "문자 붙여넣기" 단추)
+
+**Interfaces:**
+- Produces: `parseOrder(text: string) → { tel: string[], time: string, people: number|null, price: number|null, rest: string }` — 모양이 분명한 것만 뽑고 나머지는 `rest`. 화면은 빈 칸에만 채우고(이미 적힌 칸은 그대로), `rest` 는 메모 칸 끝에 덧붙인다.
+
+- [ ] **Step 1:** 표본마다 사장님이 "이 문자면 이 칸에 이것"을 말한 기대값을 `order-samples.json` 에 적는다(표본에서 정한다 — 여기서 미리 정하지 않는다). 거절 사례(뽑으면 안 되는 숫자, 예: 날짜 · 주소 번지)도 표본에서 고른다.
+- [ ] **Step 2: 시험** `order-text.test.mjs` — 표본 전부 `parseOrder` 결과 = 기대값. 그리고 표본마다 `값 → 뽑은 결과`를 찍어 눈으로 본다(비어 있지 않음 ≠ 맞음).
+- [ ] **Step 3: 구현 → 통과.** 화면 시험 `test_daily_paste_order_fills_empty_cells_only` — 연락처가 이미 적힌 줄에 붙여넣으면 연락처는 그대로, 빈 시간 · 인원 · 단가만 채워지고 원문 나머지는 메모에.
+
+---
+
 ### Task 4: 옵시디언 사본 (사무실 PC 상주 프로그램)
 
 **Files:**
