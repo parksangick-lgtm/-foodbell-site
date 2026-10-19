@@ -55,6 +55,6 @@ service cloud.firestore {
         && request.resource.data.html.size() < 300000;
     }
 
-    // allow/* 와 그 밖의 모든 곳은 규칙이 없으므로 모두 거부된다.
+    // allow/* · viewers/* 는 위에서 자기 메일 문서 하나 읽기(get)만 된다. 그 밖의 모든 곳은 규칙이 없으므로 모두 거부된다.
   }
 }

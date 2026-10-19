@@ -48,10 +48,10 @@ export function signOutUser() {
 }
 
 // 로그인한 사람의 자리 — 허락 목록(allow)에 있으면 주인, 아니면 보기 명단(viewers)에 있으면 보기 전용(일일 일정표만).
-// 규칙이 자기 메일의 문서만 읽게 해 준다. 못 읽으면(끊김 · 없음) 그 자리가 아닌 것으로 본다.
+// 규칙이 자기 메일의 문서만 읽게 해 준다. 문서가 없으면 그 자리가 아니고, 못 읽으면(끊김) 실패 — 부르는 쪽이 지난번 것을 쓴다.
 export async function myRole(email) {
   const key = (email || '').toLowerCase();
-  const has = (c) => fs.getDoc(fs.doc(db, c, key)).then((s) => s.exists(), () => false);
+  const has = (c) => fs.getDoc(fs.doc(db, c, key)).then((s) => s.exists());   // 못 읽으면(끊김) 실패로 — '없음' 과 섞지 않는다
   if (await has('allow')) return 'owner';
   if (await has('viewers')) return 'viewer';
   return 'none';

@@ -101,6 +101,24 @@ def test_doc_list_and_opened_doc_load_offline(ctx, repo_url, custom_token, made)
     page.locator('#doc-state', has_text='연결 안 됨').wait_for(timeout=5_000)
 
 
+def test_doc_opens_fast_on_weak_signal(ctx, repo_url, custom_token, made):
+    """신호가 약해 저장소가 답을 안 줄 때(끊긴 것은 아님) — 한 번 연 서류는 몇 초 안에 기기 사본으로 뜬다.
+    '주인 · 직원' 확인(myRole)을 기다리느라 10초쯤 멈췄다 (일일 일정표 최종 검토 I3)."""
+    page = ctx.new_page()
+    page.goto(f'{repo_url}sije-quote.html?testToken={custom_token(EMAIL, allowed=True)}')
+    page.wait_for_function("document.body.dataset.docView === 'list'", timeout=20_000)
+    doc_id = _new_quote(page, made)
+    page.goto(f'{repo_url}sije-quote.html?id={doc_id}')
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+    page.route('https://firestore.googleapis.com/**', lambda route: None)   # 답이 안 온다
+    start = time.time()
+    page.goto(f'{repo_url}sije-quote.html?id={doc_id}')
+    page.wait_for_function("document.body.dataset.docView === 'doc'", timeout=20_000)
+    took = time.time() - start
+    assert took < 6, f'{took:.1f}초 걸림'
+    assert page.evaluate('document.body.dataset.role') == 'owner'   # 지난번 확인한 것으로
+
+
 def test_new_doc_offline_then_syncs(ctx, repo_url, custom_token, test_db, made):
     """Review Focus 4 — 인터넷 없이 새 서류를 만들고 고쳐도 멈추지 않고, 연결되면 올라간다."""
     page = ctx.new_page()

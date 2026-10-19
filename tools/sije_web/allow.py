@@ -1,7 +1,8 @@
 r"""허락 목록 — 로그인해서 내역서를 볼 수 있는 구글 메일.
 
 규칙 파일(firestore.rules)은 공개 저장소에 올라가므로 메일 주소를 거기 쓰지 않고,
-저장소 안 `allow` 묶음에 둔다. 이 묶음은 화면에서 아무도 못 읽고, 관리자 열쇠로만 고친다.
+저장소 안 `allow` 묶음에 둔다. 화면에서는 로그인한 사람이 자기 메일 문서 하나만 읽을 수 있고(내가 주인인지 확인),
+남의 것 · 목록은 못 읽는다. 고치기는 관리자 열쇠로만.
 
     python -m tools.sije_web.allow list --key C:\foodbell-keys\sije-admin.json
     python -m tools.sije_web.allow add 메일주소 --key C:\foodbell-keys\sije-admin.json

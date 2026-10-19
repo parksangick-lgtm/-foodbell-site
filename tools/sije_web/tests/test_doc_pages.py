@@ -1,6 +1,7 @@
 """웹 서류 5종 화면 시험 (2단계) — 시험 프로젝트의 docs 에 가짜 서류를 넣거나 화면으로 만들고, 끝나면 지운다.
 PC 창(1280px)과 휴대폰 창(390px)을 같이 띄워 같은 서류를 고친다. 손님 정보는 전부 가짜."""
 import datetime
+import re
 import threading
 import time
 import uuid
@@ -542,6 +543,55 @@ def test_daily_amount_from_typed_numbers(pc, repo_url, custom_token, made):
     assert pc.locator('tr.item [data-k="amt"]').first.is_hidden()
 
 
+def test_daily_amount_reads_man_and_skips_ranges(pc, repo_url, custom_token, made):
+    """설계서: 실제 주문은 단가를 ○만 으로 쓴다. 범위 · 숫자 둘은 금액을 만들지 않는다 (검토 I2)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="people"]', '60명')
+    edit_cell(pc, 'tr.item [data-f="price"]', '2만')
+    assert text_of(pc, 'tr.item [data-k="amt"]') == '60명 × 20,000원 = 1,200,000원'
+    edit_cell(pc, 'tr.item [data-f="people"]', '60~70명')
+    assert pc.locator('tr.item [data-k="amt"]').first.inner_text().strip() == ''
+
+
+def test_daily_two_phone_numbers_stay_in_their_cell(pc, repo_url, custom_token, made):
+    """연락처 칸은 상주 · 담당자 전화 — 번호 둘이 흔하다. 칸 밖으로 넘치지 않고, 번호 하나가 두 줄로 갈리지 않는다 (검토 I4)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    for f in ('tel', 'lead-tel', 'guide-tel'):
+        edit_cell(pc, f'tr.item [data-f="{f}"]', '010-0000-0000, 010-0000-0001')
+    pc.click('#btn-edit')
+    bad = pc.evaluate(r"""() => [...document.querySelectorAll('tr.item [data-f$="tel"]')].flatMap((e) => {
+        const out = [];
+        const td = e.closest('td').getBoundingClientRect();
+        const all = document.createRange();
+        all.selectNodeContents(e);
+        if (all.getBoundingClientRect().right > td.right + 0.5) out.push(e.dataset.f + ' 칸 넘침');
+        const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+        for (let t; (t = w.nextNode());) {
+            for (const m of t.textContent.matchAll(/\d{2,3}-\d{3,4}-\d{4}/g)) {
+                const r = document.createRange();
+                r.setStart(t, m.index);
+                r.setEnd(t, m.index + m[0].length);
+                if (new Set([...r.getClientRects()].map((q) => Math.round(q.top))).size > 1) out.push(e.dataset.f + ' 번호 갈림');
+            }
+        }
+        return out;
+    })""")
+    assert bad == []
+    assert text_of(pc, 'tr.item [data-f="lead-tel"]') == '010-0000-0000, 010-0000-0001'   # 글자는 그대로
+    saved = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert '010-0000-0000, 010-0000-0001' in saved and 'tel1' not in saved                 # 저장은 묶음 표시 없이
+
+
+def test_daily_table_headers_fit_their_columns(pc, repo_url, custom_token, made):
+    """표 머리줄이 칸을 넘치면 사진에서는 잘린다('상조팀장 · 현지 안'). 최종 검토 I1 을 고친 뒤 사진을 보다 찾음."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    over = pc.evaluate("""() => [...document.querySelectorAll('table.day-table thead th')]
+        .filter((th) => th.scrollWidth > th.clientWidth + 1).map((th) => th.textContent.trim())""")
+    assert over == []
+
+
 def test_daily_counts_filled_rows_only(pc, repo_url, custom_token, test_db, made):
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
@@ -570,10 +620,43 @@ def test_daily_long_text_fits_phone(pc, phone, repo_url, custom_token, made):
     assert phone.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth')
 
 
-def test_daily_fifteen_rows_split_into_pages(pc, repo_url, custom_token, made, tmp_path):
-    """하루 15건(밴드에 실제로 있었던 최대) — 사진이 장마다 나뉘고, 어느 장도 A4 비율보다 길지 않다(줄이 잘리지 않음)."""
+def save_pages(page, out_dir):
+    """'파일로 저장' → (사진 이름들, 장마다 보인 줄 번호, 사진 크기들). 줄 번호는 사진을 찍는 사본(html2canvas)에서 읽는다 —
+    줄이 두 장에 갈리거나 빠지면 번호가 겹치거나 빈다."""
     from PIL import Image
-    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    page.evaluate("""() => {
+        const orig = window.html2canvas;
+        window.__shotRows = [];
+        window.html2canvas = (el, o) => orig(el, { ...o, onclone: async (doc, ref) => {
+            if (o && o.onclone) await o.onclone(doc, ref);
+            const root = ref || doc.querySelector('.sheet');
+            window.__shotRows.push([...root.querySelectorAll('tr.item:not([data-shot-hide]) [data-k="no"]')].map((n) => +n.textContent));
+        } });
+    }""")
+    files = []
+    page.on('download', lambda d: files.append(d))
+    page.click('#btn-save-file')
+    deadline, last = time.time() + 90, None
+    while time.time() < deadline:                                  # 장 수를 모르니 사진 · 기록이 같아지고 멈출 때까지
+        page.wait_for_timeout(1500)
+        now = (page.evaluate('window.__shotRows.length'), len(files))
+        if now[0] and now[0] == now[1] and now == last:
+            break
+        last = now
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sizes = []
+    files.sort(key=lambda d: int((re.search(r'_(\d+)[.]png$', d.suggested_filename) or [0, 0])[1]))   # _2 가 _10 보다 앞
+    for d in files:
+        d.save_as(out_dir / d.suggested_filename)
+        sizes.append(Image.open(out_dir / d.suggested_filename).size)
+    return [d.suggested_filename for d in files], page.evaluate('window.__shotRows'), sizes
+
+
+def test_daily_fifteen_rows_split_into_pages(pc, browser, repo_url, custom_token, made, tmp_path):
+    """하루 15건(밴드에 실제로 있었던 최대) — 사진이 장마다 나뉘고, 어느 장도 A4 비율보다 길지 않다(줄이 잘리지 않음).
+    휴대폰에서 보내도 PC 와 같은 종이(표) 모양 · 같은 장 나눔 (최종 검토 I1 — 휴대폰은 일 하나마다 사진 한 장이었다)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
     for _ in range(14):
         pc.click('tr.addrow button')
@@ -590,33 +673,21 @@ def test_daily_fifteen_rows_split_into_pages(pc, repo_url, custom_token, made, t
         document.querySelector('tr.item [data-f="work"]').dispatchEvent(new Event('input', { bubbles: true }));
     }""")
     pc.click('#btn-edit')
-    # 사진을 찍을 때마다 그 장에 보이는 줄 번호를 적어 둔다 — 줄이 두 장에 갈리거나 빠지면 번호가 겹치거나 빈다
-    pc.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
-    pc.evaluate("""() => {
-        const orig = window.html2canvas;
-        window.__shotRows = [];
-        window.html2canvas = (el, o) => {
-            window.__shotRows.push([...el.querySelectorAll('tr.item:not([data-shot-hide]) [data-k="no"]')].map((n) => +n.textContent));
-            return orig(el, o);
-        };
-    }""")
-    files = []
-    pc.on('download', lambda d: files.append(d))
-    pc.click('#btn-save-file')
-    deadline = time.time() + 30
-    while len(files) < 2 and time.time() < deadline:
-        pc.wait_for_timeout(300)
-    pc.wait_for_timeout(1500)                                   # 마지막 장까지
-    assert len(files) >= 2, f'사진 {len(files)}장'
-    names = sorted(d.suggested_filename for d in files)
-    assert names[0].endswith('_1.png') and names[1].endswith('_2.png'), names
-    shots = pc.evaluate('window.__shotRows')
-    assert len(shots) == len(files) and sum(shots, []) == list(range(1, 16)), shots
-    for d in files:
-        out = tmp_path / d.suggested_filename
-        d.save_as(out)
-        w, h = Image.open(out).size
-        assert h / w <= 297 / 210 * 1.03, (d.suggested_filename, w, h)
+    results = {'PC': save_pages(pc, tmp_path / 'pc')}
+    ctx, ph = new_ctx(browser, phone=True)
+    try:
+        open_list(ph, repo_url, DAILY, custom_token(ALLOWED, allowed=True))
+        ph.click(f'#doc-rows .doc-row[data-id="{doc_id}"]')
+        wait_view(ph, 'doc')
+        results['휴대폰'] = save_pages(ph, tmp_path / 'phone')
+    finally:
+        ctx.close()
+    for where, (names, shots, sizes) in results.items():
+        assert len(names) >= 2 and names[0].endswith('_1.png') and names[1].endswith('_2.png'), (where, names)
+        assert len(shots) == len(names) and sum(shots, []) == list(range(1, 16)), (where, shots)
+        for w, h in sizes:
+            assert h / w <= 297 / 210 * 1.03, (where, w, h)
+    assert results['휴대폰'][1] == results['PC'][1], results     # 휴대폰도 PC 와 같은 장 나눔
 
 
 def test_daily_viewer_sees_list_and_doc_without_edit(pc, browser, repo_url, custom_token, made):

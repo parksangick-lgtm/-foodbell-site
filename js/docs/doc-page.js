@@ -128,8 +128,13 @@ let current = null;     // 마지막으로 받은 서류 (저장 표시용)
 let pending = false;
 let failed = false;
 let role = null;        // 'owner' | 'viewer' | 'none' — viewer(직원 보기 명단)는 읽기만: 편집 · 저장 · 새로 만들기 · 지우기 없음
+let who = null;         // 지금 로그인한 메일 — 늦게 온 역할 확인이 다른 사람 것이면 버린다
 let lastRows = [];      // 목록에서 받은 서류들 — 새 서류가 가장 최근 것에서 이어받을 때 (일일 일정표의 순번 · 전달 메모)
 const viewerOnly = () => role === 'viewer';
+// 역할 확인은 저장소 읽기라 신호가 약하면 10초쯤 걸린다 — 이 기기가 지난번에 확인한 것을 먼저 쓴다 (일일 일정표 최종 검토 I3)
+const ROLE_KEY = 'foodbell-doc-role:';
+const lastRole = (email) => { try { return localStorage.getItem(ROLE_KEY + email); } catch { return null; } };
+const keepRole = (email, r) => { try { localStorage.setItem(ROLE_KEY + email, r); } catch { /* 저장 못 해도 이번 화면은 된다 */ } };
 
 function draw(fn) {
   drawing = true;
@@ -318,12 +323,20 @@ onUser(async (user) => {
   stop?.();
   stop = null;
   if (!user) {
-    role = null;
+    role = who = null;
     delete document.body.dataset.role;
     return view('login');
   }
   $('doc-who').textContent = user.email || '';
-  role = await myRole(user.email);
+  const email = who = (user.email || '').toLowerCase();
+  // 3초 안에 확인되면 그것, 아니면 지난번 것(처음이면 'none' — 저장소 규칙이 어차피 막는다). 늦게 확인되면 그때 바꾼다
+  const asked = myRole(email).then((r) => {
+    keepRole(email, r);
+    if (who === email && role !== r) { role = r; document.body.dataset.role = r; }
+    return r;
+  }, () => null);
+  role = (await atMost(asked)) ?? lastRole(email) ?? 'none';
+  if (who !== email) return;            // 기다리는 동안 로그아웃 · 다른 사람 로그인
   document.body.dataset.role = role;
   if (docId) {
     stop = watchDoc(docId, onDoc, onError);

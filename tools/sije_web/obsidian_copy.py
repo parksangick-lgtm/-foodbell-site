@@ -45,16 +45,30 @@ def _stamp(v) -> str:
     return str(v or '')
 
 
+def _own_path(vault: Path, label: str, id: str, owners: dict) -> Path:
+    """이 일정표의 노트 자리. 같은 이름을 다른 일정표가 썼거나 사장님이 손으로 만든 노트가 있으면 '… (2).md' 처럼 비켜 간다
+    (새 일정표는 날짜가 늘 내일로 시작해서 같은 날짜가 흔하다 — 최종 검토 I5)."""
+    base = note_path(vault, label)
+    p, n = base, 1
+    while owners.get(p.stem, id if not p.exists() else None) != id:
+        n += 1
+        p = base.with_name(f'{base.stem} ({n}).md')
+    owners[p.stem] = id
+    return p
+
+
 def sync_notes(docs, vault: Path, state: dict) -> list[str]:
-    """state['since'] = 마지막으로 본 판(updatedAt). 그보다 새 일정표만 노트로 쓰고(덮어씀), 쓴 노트 이름들을 돌려준다."""
+    """state['since'] = 마지막으로 본 판(updatedAt), state['notes'] = 노트 이름 → 그 노트를 쓴 일정표 id.
+    since 보다 새 일정표만 자기 노트에 쓰고(덮어씀), 쓴 노트 이름들을 돌려준다."""
     since = state.get('since', '')
+    owners = state.setdefault('notes', {})
     written = []
-    for _, doc in docs:
+    for id, doc in docs:
         at = _stamp(doc.get('updatedAt'))
         if at <= since:
             continue
         if doc.get('kind') == 'daily-schedule':
-            p = note_path(vault, doc.get('label', ''))
+            p = _own_path(vault, doc.get('label', ''), id, owners)
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(doc.get('text', ''), encoding='utf-8', newline='\n')
             written.append(p.stem)

@@ -54,6 +54,25 @@ def test_deleted_schedule_keeps_its_note(tmp_path):
     assert note_of(vault).exists()
 
 
+def test_other_schedule_with_same_date_gets_its_own_note(tmp_path):
+    """새 일정표는 날짜가 늘 내일로 시작한다 — 같은 날짜의 다른 일정표가 앞 노트를 덮지 않는다 (검토 I5)."""
+    vault, state = make_vault(tmp_path), {}
+    obsidian_copy.sync_notes([('d1', daily('첫 일정표'))], vault, state)
+    assert obsidian_copy.sync_notes([('d2', daily('둘째 일정표', T2))], vault, state) == ['2026-10-21 (수) (2)']
+    assert note_of(vault).read_text(encoding='utf-8') == '첫 일정표'
+    assert note_of(vault, '2026-10-21 (수) (2)').read_text(encoding='utf-8') == '둘째 일정표'
+    T3 = T2 + datetime.timedelta(minutes=5)
+    assert obsidian_copy.sync_notes([('d1', daily('첫 일정표 고침', T3))], vault, state) == ['2026-10-21 (수)']
+
+
+def test_note_written_by_hand_is_not_overwritten(tmp_path):
+    vault = make_vault(tmp_path)
+    note_of(vault).parent.mkdir(parents=True)
+    note_of(vault).write_text('사장님이 손으로 쓴 노트', encoding='utf-8')
+    assert obsidian_copy.sync_notes([('d1', daily())], vault, {}) == ['2026-10-21 (수) (2)']
+    assert note_of(vault).read_text(encoding='utf-8') == '사장님이 손으로 쓴 노트'
+
+
 def test_note_path_uses_date_and_drops_bad_characters(tmp_path):
     base = tmp_path / '푸드벨-업무' / '일일 일정표'
     assert obsidian_copy.note_path(tmp_path, '2026년 10월 21일 (수)') == base / '2026-10-21 (수).md'

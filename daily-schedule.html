@@ -280,11 +280,12 @@ body:not(.editing) .memo:has(span:empty){display:none}
 
 /* 표: 칸 하나에 두세 줄 — 위(굵게) + 아래 작게 */
 table.stmt.day-table{table-layout:fixed}
+table.stmt.day-table thead th{white-space:normal; word-break:keep-all}   /* 좁은 칸의 머리줄은 낱말 사이에서 두 줄로 — 넘치면 사진에서 잘린다 */
 table.stmt.day-table td{vertical-align:top; overflow-wrap:anywhere}
-table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink-mute); font-variant-numeric:tabular-nums}
-table.stmt.day-table [data-f$="tel"]{white-space:nowrap}
+table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink-mute)}
+table.stmt.day-table .tel1{white-space:nowrap}   /* 전화번호 하나는 한 줄로 — 번호 둘이면 사이에서 줄바꿈 (telsWrapped) */
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
-table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal); font-variant-numeric:tabular-nums}
+table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
 table.stmt.day-table .amt:empty{display:none}
 /* 인원 · 단가 입력 칸은 편집할 때만 (보기에서는 '60명 × 15,000원 = 900,000원' 한 줄) */
 table.stmt.day-table .qty{display:none}
@@ -303,6 +304,7 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
 
 /* 사진을 장마다 나눌 때 다른 장의 줄 · 첫 장에만 있는 부분을 잠깐 숨긴다 (js 가 data-shot-hide 를 붙였다 뗀다) */
 .sheet [data-shot-hide]{display:none !important}
+html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍는 순간 — renderImage */
 
 @media (max-width:699px){
   .doc-title{font-size:21px; letter-spacing:.06em; text-indent:.06em}
@@ -409,6 +411,7 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
             / 파일 이름은 일정 날짜로: 일일일정표_2026-10-21 (여러 장이면 _1 · _2 …) */
 import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
+import { readNumber } from './js/docs/amount.js?v=1';
 
 const NAME = '일일일정표';
 const SITE = 'https://foodbell.kr/';
@@ -433,7 +436,6 @@ const el = (tag, cls, txt) => {
 const setText = (k, v) => { const e = sheet.querySelector(`[data-k="${k}"]`); if (e) e.textContent = v; };
 const getText = (k) => { const e = sheet.querySelector(`[data-k="${k}"]`); return e ? clean(e.textContent) : ''; };
 const field = (tr, f) => { const e = tr.querySelector(`[data-f="${f}"]`); return e ? clean(e.textContent) : ''; };
-const num = (s) => parseInt((s || '').replace(/[^0-9]/g, ''), 10) || 0;
 const dateKR = (d) => `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 
 /* 날짜 글자 → Date. 연 · 월 · 일 숫자 셋이 없거나 없는 날(2월 30일)이면 null */
@@ -461,8 +463,8 @@ function recalc() {
   each(sheet.querySelectorAll('tr.item'), (tr, i) => {
     const no = tr.querySelector('[data-k="no"]');
     if (no) no.textContent = String(i + 1);
-    const people = num(field(tr, 'people'));
-    const price = num(field(tr, 'price'));
+    const people = readNumber(field(tr, 'people'));     // 애매하면(범위 · 숫자 둘) null → 금액 줄 숨김
+    const price = readNumber(field(tr, 'price'));
     const amt = tr.querySelector('[data-k="amt"]');
     if (amt) amt.textContent = people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : '';
     if (filled(tr)) count++;
@@ -497,6 +499,7 @@ function serialize() {
   each(c.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove());
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
+  telsPlain(c);
   return c.innerHTML;
 }
 /* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
@@ -522,14 +525,24 @@ function addControls() {
 }
 function removeControls() { each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove()); }
 function setCE(on) { each(sheet.querySelectorAll('[data-edit]'), (e) => { e.contentEditable = on ? 'true' : 'false'; }); }
+/* 전화번호 칸: 보기에서만 번호마다 한 덩어리(.tel1)로 묶어 번호 사이에서만 줄이 바뀌게 — 크롬은 하이픈 뒤에서도 끊는다.
+   편집 · 저장은 글자 그대로 (최종 검토 I4) */
+const TEL = /(\d{2,4}-\d{3,4}-\d{4})/;
+function telsPlain(root) { each(root.querySelectorAll('[data-f$="tel"]'), (n) => { if (n.children.length) n.textContent = n.textContent; }); }
+function telsWrapped() {
+  each(sheet.querySelectorAll('[data-f$="tel"]'), (n) => {
+    if (n.children.length || !TEL.test(n.textContent)) return;
+    n.replaceChildren(...n.textContent.split(TEL).map((p, i) => (i % 2 ? el('span', 'tel1', p) : document.createTextNode(p))));
+  });
+}
 
 const btnEdit = document.getElementById('btn-edit');
 function setEditing(on) {
   body.classList.toggle('editing', on);
   btnEdit.setAttribute('aria-pressed', String(on));
   btnEdit.textContent = on ? '편집 완료' : '편집';
-  if (on) { addControls(); setCE(true); }
-  else { removeControls(); setCE(false); save(); }
+  if (on) { telsPlain(sheet); addControls(); setCE(true); }
+  else { removeControls(); setCE(false); telsWrapped(); save(); }
 }
 
 /* ---------- 입력 처리 (새로 추가한 줄까지) ---------- */
@@ -587,46 +600,56 @@ function downloadBlob(blob, name) {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 
-/* ---------- 문서면을 사진(PNG)으로 — A4 비율을 넘으면 장마다 나눠 여러 장 ---------- */
-function renderImage() {
+/* ---------- 문서면을 사진(PNG)으로 — A4 비율을 넘으면 장마다 나눠 여러 장 ----------
+   사진은 기기와 상관없이 종이(표) 모양: html2canvas 가 만드는 사본을 이 창 폭으로 그린다(종이는 최대 880px).
+   화면 폭으로 그리면 휴대폰에서는 줄마다 카드가 돼 일 하나마다 사진 한 장이 나왔다 (최종 검토 I1) */
+const SHOT_W = 1000;
+function renderImage(prepare) {
   if (typeof html2canvas !== 'function') return Promise.resolve(null);
   const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  return ready.then(() => html2canvas(sheet, {
-    backgroundColor: '#FFFDF8', scale: 1.7, useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth,
-  })).then((canvas) => new Promise((res) => canvas.toBlob((b) => res(b), 'image/png'))).catch(() => null);
+  return ready.then(() => {
+    // html2canvas 는 부르는 순간 원본 화면의 ::before 글자를 사본에 진짜 글자로 박는다 — 휴대폰 카드 머리글('번호' 등)이
+    // 종이 모양 사진에 찍히지 않게 그 순간에만 끈다 (같은 동작 안이라 화면은 안 깜빡인다)
+    document.documentElement.classList.add('shot');
+    try {
+      return html2canvas(sheet, {
+        backgroundColor: '#FFFDF8', scale: 1.7, useCORS: true, logging: false, windowWidth: SHOT_W,
+        onclone: (doc) => prepare(doc.querySelector('.sheet')),
+      });
+    } finally {
+      document.documentElement.classList.remove('shot');
+    }
+  }).then((canvas) => new Promise((res) => canvas.toBlob((b) => res(b), 'image/png'))).catch(() => null);
 }
 async function renderPages() {
-  const rows = [...sheet.querySelectorAll('tr.item')];
-  const firstOnly = [...sheet.querySelectorAll('.masthead, .rule-double, .order, .memo, .sec-head')];
-  const hide = (list, on) => list.forEach((e) => e.toggleAttribute('data-shot-hide', on));
-  const pageH = sheet.offsetWidth * 297 / 210;               // A4 세로 비율
-  setText('pageno', '1/1');                                   // 장 번호 자리까지 재어 둔다
-  const heights = rows.map((r) => r.offsetHeight);
-  hide(rows, true);
-  const first = sheet.offsetHeight;                           // 첫 장: 표제 · 날짜 · 순번 · 메모 · 표 제목 줄
-  hide(firstOnly, true);
-  const next = sheet.offsetHeight;                            // 다음 장: 날짜 · 표 제목 줄
-  hide(firstOnly, false);
-  hide(rows, false);
-  const groups = pageGroups(heights, pageH - first, pageH - next);
-  const out = [];
-  try {
-    if (groups.length <= 1) {
-      setText('pageno', '');
-      out.push({ blob: await renderImage(), name: fileBase() + '.png' });
-    } else {
-      for (let g = 0; g < groups.length; g++) {
-        rows.forEach((r, i) => r.toggleAttribute('data-shot-hide', !groups[g].includes(i)));
-        hide(firstOnly, g > 0);
-        setText('pageno', `${g + 1}/${groups.length}`);
-        out.push({ blob: await renderImage(), name: `${fileBase()}_${g + 1}.png` });
-      }
+  let groups = null;
+  // 사본 s 를 g 번째 장으로 만든다. 첫 장을 찍을 때 사본(종이 모양)에서 줄 높이를 재어 장을 나눈다 — 화면의 원본은 그대로
+  const pageOf = (g) => (s) => {
+    const rows = [...s.querySelectorAll('tr.item')];
+    const firstOnly = [...s.querySelectorAll('.masthead, .rule-double, .order, .memo, .sec-head')];
+    const hide = (list, on) => list.forEach((e) => e.toggleAttribute('data-shot-hide', on));
+    const no = s.querySelector('[data-k="pageno"]');
+    if (!groups) {
+      const pageH = s.offsetWidth * 297 / 210;               // A4 세로 비율
+      no.textContent = '1/1';                                 // 장 번호 자리까지 재어 둔다
+      const heights = rows.map((r) => r.offsetHeight);
+      hide(rows, true);
+      const first = s.offsetHeight;                           // 첫 장: 표제 · 날짜 · 순번 · 메모 · 표 제목 줄
+      hide(firstOnly, true);
+      const next = s.offsetHeight;                            // 다음 장: 날짜 · 표 제목 줄
+      hide(firstOnly, false);
+      hide(rows, false);
+      groups = pageGroups(heights, pageH - first, pageH - next);
     }
-  } finally {
-    hide(rows, false);
-    hide(firstOnly, false);
-    setText('pageno', '');
-  }
+    if (groups.length <= 1) { no.textContent = ''; return; }
+    rows.forEach((r, i) => r.toggleAttribute('data-shot-hide', !groups[g].includes(i)));
+    hide(firstOnly, g > 0);
+    no.textContent = `${g + 1}/${groups.length}`;
+  };
+  const first = await renderImage(pageOf(0));
+  if (!groups || groups.length <= 1) return first ? [{ blob: first, name: fileBase() + '.png' }] : [];
+  const out = [{ blob: first, name: `${fileBase()}_1.png` }];
+  for (let g = 1; g < groups.length; g++) out.push({ blob: await renderImage(pageOf(g)), name: `${fileBase()}_${g + 1}.png` });
   return out.every((p) => p.blob) ? out : [];
 }
 
@@ -713,6 +736,7 @@ window.FoodbellDoc = {
   load(html) {
     sheet.innerHTML = html; recalc();
     if (body.classList.contains('editing')) { addControls(); setCE(true); }   /* 편집 중에 다른 기기 고침이 와도 고칠 수 있게 */
+    else telsWrapped();
   },
   fresh() { sheet.innerHTML = FRESH; fillFresh(); },
   // 가장 최근에 고친 일정표(저장된 화면)에서 순번 · 전달 메모만 이어받는다 — 없으면 맨 처음 글 그대로
@@ -737,6 +761,6 @@ fillFresh();
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=3"></script>
+<script type="module" src="js/docs/doc-page.js?v=4"></script>
 </body>
 </html>
