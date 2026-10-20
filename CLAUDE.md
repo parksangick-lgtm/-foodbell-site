@@ -220,7 +220,8 @@ daily-schedule.html   직원용 일일 일정표 (2026-10-20, 설계 docs/superp
                       맨 위 날짜만 고치면 요일 · 음력(js/docs/lunar.js — 브라우저의 한국 음력)이 저절로. 새 일정표는 내일 날짜 + 지난 일정표의 순번 · 전달 메모.
                       줄마다 '문자 붙여넣기'(js/docs/order-text.js) — 카톡 주문 글에서 시간 · 휴대폰 번호 · 단가만 빈 칸에, 원문은 메모에.
                       규칙은 실제 주문 9개로 정함(표본 tools/sije_web/js-tests/fixtures/order-samples.json — 이름 · 번호 · 거래처는 가짜, 설계서 '추가 결정 3').
-                      직원은 구글로 로그인해 일정표만 보기 — 보기 명단(viewers)에 넣는다. 편집 · 새로 만들기 · 지우기 버튼이 없고 다른 서류는 못 읽는다.
+                      직원 보기(구글 로그인 → 일정표만 읽기, 보기 명단 viewers)는 만들어 두었지만 **쓰지 않는다**(2026-10-20 사장님 결정 —
+                      직원들 구글 계정이 없음, 직원은 카톡 단톡방 사진만). 켜려면 직원 메일을 viewer-add. 편집 · 새로 만들기 · 지우기 버튼이 없고 다른 서류는 못 읽는다.
                       python -m tools.sije_web.allow viewer-add|viewer-remove 메일주소 --key C:\foodbell-keys\sije-admin.json (viewer-list 는 메일 없이).
                       직원이 그만두면 viewer-remove. 사무실 PC 프로그램이 바뀐 일정표를 옵시디언 푸드벨-업무/일일 일정표/ 에 복사(tools/sije_web/obsidian_copy.py).
 sije-list.html        시제행사 목록 (2026-10-16 서류 자동화 1단계). 구글 로그인 → 확정·미확정·주문없음·전체, 새 행사(빈 양식에서).
