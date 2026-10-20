@@ -554,6 +554,42 @@ def test_daily_amount_reads_man_and_skips_ranges(pc, repo_url, custom_token, mad
     assert text_of(pc, 'tr.item [data-k="amt"]') == '20,000원'   # 인원이 애매하면 곱하지 않고 단가만 (사장님 결정 2026-10-20)
 
 
+def test_daily_bare_number_price_asks_for_unit(pc, repo_url, custom_token, test_db, made):
+    """단가 칸에 단위(만 · 천 · 원) 없이 숫자만 적으면 금액을 짐작하지 않는다. 사장님이 '250' · '300' 을 25만 · 30만 뜻으로
+    손으로 쳤는데 250원 · 300원으로 읽혀 직원 단톡방 사진에 나갔다(2026-10-21, 실제 값). 화면에는 빨간 글씨로 단위를 적으라고
+    알리고, 사진 · 요약 글(옵시디언 사본)에는 넣지 않는다 — 사장님 결정 2026-10-21."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '삼우제')
+    amt = pc.locator('tr.item [data-k="amt"]').first
+    for bare in ('250', '300', '15000'):
+        edit_cell(pc, 'tr.item [data-f="price"]', bare)
+        assert amt.inner_text().strip() == '단위를 적어 주세요(예: 25만)', bare
+        assert 'warn' in (amt.get_attribute('class') or ''), bare
+    edit_cell(pc, 'tr.item [data-f="people"]', '60명')              # 인원이 있어도 곱하지 않는다
+    assert amt.inner_text().strip() == '단위를 적어 주세요(예: 25만)'
+    # 사진은 html2canvas 가 만든 사본을 찍는다 — 그 사본에서 알림이 보이는지 본다. 'shot' 표시 없이는 보이고(대조), 있으면 안 보인다.
+    pc.wait_for_function("typeof html2canvas === 'function'", timeout=30_000)
+    in_copy = """(shot) => new Promise((res) => {
+      document.documentElement.classList.toggle('shot', shot);
+      html2canvas(document.querySelector('.sheet'), { logging: false, onclone: (doc) =>
+        res(doc.defaultView.getComputedStyle(doc.querySelector('tr.item [data-k="amt"]')).display) })
+        .finally(() => document.documentElement.classList.remove('shot'));
+    })"""
+    assert pc.evaluate(in_copy, False) != 'none'
+    assert pc.evaluate(in_copy, True) == 'none'
+    pc.click('#btn-edit')
+    ref = test_db.collection('docs').document(doc_id)
+    wait_db(ref, lambda s: '삼우제' in (s.to_dict() or {}).get('text', ''))
+    text = ref.get().to_dict()['text']
+    assert '15,000원' not in text and '단위' not in text, text
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="people"]', '')
+    edit_cell(pc, 'tr.item [data-f="price"]', '25만')                # 단위를 적으면 전처럼
+    assert amt.inner_text().strip() == '250,000원'
+    assert 'warn' not in (amt.get_attribute('class') or '')
+
+
 def test_daily_paste_order_fills_empty_cells_only(pc, repo_url, custom_token, made):
     """'문자 붙여넣기' — 비어 있는 시간 · 단가만 채우고 이미 적힌 연락처는 그대로, 인원은 안 뽑고, 원문은 메모 끝에.
     단가만 있으면 사진의 금액 자리에 단가가 보인다 (사장님 결정 2026-10-20 · 표본 tools/sije_web/js-tests/fixtures/order-samples.json)."""

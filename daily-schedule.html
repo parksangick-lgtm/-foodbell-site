@@ -296,6 +296,10 @@ table.stmt.day-table [data-f="memo"]{white-space:pre-line}   /* 붙여넣은 주
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
 table.stmt.day-table .amt:empty{display:none}
+/* 단위 없는 단가('250') 알림 — 화면에서만 보이고 직원 사진(html.shot) · 인쇄에는 안 나간다 (2026-10-21) */
+table.stmt.day-table .amt.warn{color:#c62828; font-weight:700; white-space:normal}
+html.shot table.stmt.day-table .amt.warn{display:none !important}
+@media print{ table.stmt.day-table .amt.warn{display:none !important} }
 /* 인원 · 단가 입력 칸은 편집할 때만 (보기에서는 '60명 × 15,000원 = 900,000원' 한 줄) */
 table.stmt.day-table .qty{display:none}
 body.editing table.stmt.day-table .qty{display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; font-size:.9em; color:var(--ink-mute)}
@@ -480,10 +484,18 @@ function recalc() {
     const no = tr.querySelector('[data-k="no"]');
     if (no) no.textContent = String(i + 1);
     const people = readNumber(field(tr, 'people'));     // 애매하면(범위 · 숫자 둘) null → 곱하지 않고 단가만
-    const price = readNumber(field(tr, 'price'));
+    // 단위(만 · 천 · 원) 없이 숫자만('250')이면 25만인지 250원인지 모른다 — 금액을 만들지 않고 단위를 적으라고 알린다.
+    // 사장님이 '250' 을 25만 뜻으로 쳤는데 250원으로 직원 사진에 나갔다 (사장님 결정 2026-10-21)
+    const priceText = field(tr, 'price');
+    const bare = /\d/.test(priceText) && !/[만천원]/.test(priceText);
+    const price = bare ? null : readNumber(priceText);
     const amt = tr.querySelector('[data-k="amt"]');
     // 둘 다 있으면 곱셈, 단가만 있으면(상 주문 '35만' · 인원이 애매함) 단가만 — 사장님 결정 2026-10-20
-    if (amt) amt.textContent = people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : price ? `${fmt(price)}원` : '';
+    if (amt) {
+      amt.classList.toggle('warn', bare);
+      amt.textContent = bare ? '단위를 적어 주세요(예: 25만)'
+        : people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : price ? `${fmt(price)}원` : '';
+    }
     if (filled(tr)) count++;
   });
   return count;
@@ -499,7 +511,8 @@ function buildText() {
   each(sheet.querySelectorAll('tr.item'), (tr, i) => {
     if (!filled(tr)) return;
     const where = [field(tr, 'time'), field(tr, 'place'), field(tr, 'tel')].filter(Boolean).join(' ');
-    const what = [field(tr, 'work'), clean(tr.querySelector('[data-k="amt"]')?.textContent)].filter(Boolean).join(' ');
+    const amtEl = tr.querySelector('[data-k="amt"]:not(.warn)');   // '단위를 적어 주세요' 는 요약 글에 넣지 않는다
+    const what = [field(tr, 'work'), clean(amtEl?.textContent)].filter(Boolean).join(' ');
     const crew = [field(tr, 'staff'), field(tr, 'car')].filter(Boolean).join(' · ');
     const lead = [[field(tr, 'lead'), field(tr, 'lead-tel')].filter(Boolean).join(' '),
       field(tr, 'guide-tel') ? '안내 ' + field(tr, 'guide-tel') : ''].filter(Boolean).join(' · ');
