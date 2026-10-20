@@ -271,7 +271,7 @@ body:not(.editing) tr.addrow{display:none !important}
 
 /* 큰 날짜(요일은 저절로) · 음력 · 장 번호 */
 .day{font-family:var(--serif); font-weight:var(--w-bold); font-size:30px; color:var(--ink); margin:0 0 .6rem; letter-spacing:.02em}
-.lunar{font-size:.6em; font-weight:var(--w-normal); color:var(--ink-mute); margin-left:.4em; white-space:nowrap}
+.lunar{font-size:.6em; font-weight:var(--w-normal); color:var(--ink); margin-left:.4em; white-space:nowrap}
 .pageno{font-size:.6em; font-weight:var(--w-medium); color:var(--ink-mute); margin-left:.6em}
 .pageno:empty{display:none}
 
@@ -290,7 +290,7 @@ body:not(.editing) .memo:has(span:empty){display:none}
 table.stmt.day-table{table-layout:fixed}
 table.stmt.day-table thead th{white-space:normal; word-break:keep-all}   /* 좁은 칸의 머리줄은 낱말 사이에서 두 줄로 — 넘치면 사진에서 잘린다 */
 table.stmt.day-table td{vertical-align:top; overflow-wrap:anywhere}
-table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink-mute)}
+table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink); font-weight:var(--w-medium)}   /* 장소 · 연락처 · 팀장 전화 — 큰 글씨와 같은 톤 (사장님 2026-10-21) */
 table.stmt.day-table .tel1{white-space:nowrap}   /* 전화번호 하나는 한 줄로 — 번호 둘이면 사이에서 줄바꿈 (telsWrapped) */
 table.stmt.day-table [data-f="memo"]{white-space:pre-line}   /* 붙여넣은 주문 글은 줄을 바꿔 그대로 (문자 붙여넣기) */
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
