@@ -181,6 +181,14 @@ body:not(.editing) tr.addrow{display:none !important}
   padding:11px 16px; border-radius:8px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
 }
 @media (max-width:699px){ .toast{bottom:calc(120px + env(safe-area-inset-bottom))} }
+/* 문자 붙여넣기 창 */
+.paste-dlg{width:min(560px, calc(100vw - 32px)); border:1px solid var(--line-strong); border-top:3px solid var(--seal); background:var(--paper); color:var(--ink); padding:16px}
+.paste-dlg::backdrop{background:rgba(18,12,6,.45)}
+.paste-dlg p{margin:0 0 10px; font-size:15px; line-height:1.6}
+.paste-dlg textarea{width:100%; font:inherit; font-size:16px; line-height:1.5; padding:10px; border:1px solid var(--line-strong); background:#fff; color:var(--ink); resize:vertical}
+.paste-btns{display:flex; justify-content:flex-end; gap:8px; margin-top:10px}
+.paste-btns button{min-height:44px; min-width:88px; font:inherit; font-size:15px; font-weight:var(--w-medium); border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft); cursor:pointer}
+.paste-btns button.primary{background:var(--seal); border-color:var(--seal); color:var(--paper)}
 .hint{
   max-width:880px; margin:0 auto 14px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft);
   line-height:1.6; padding-right:200px;
@@ -284,6 +292,7 @@ table.stmt.day-table thead th{white-space:normal; word-break:keep-all}   /* 좁�
 table.stmt.day-table td{vertical-align:top; overflow-wrap:anywhere}
 table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink-mute)}
 table.stmt.day-table .tel1{white-space:nowrap}   /* 전화번호 하나는 한 줄로 — 번호 둘이면 사이에서 줄바꿈 (telsWrapped) */
+table.stmt.day-table [data-f="memo"]{white-space:pre-line}   /* 붙여넣은 주문 글은 줄을 바꿔 그대로 (문자 붙여넣기) */
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
 table.stmt.day-table .amt:empty{display:none}
@@ -333,7 +342,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 <link rel="stylesheet" href="css/docs.css?v=3">
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 담당 직원 · 차량, 시간 · 장소 · 연락처, 행사 내용 · 인원 · 단가를 채우면 금액이 저절로 계산됩니다. 맨 위 날짜만 고치면 요일 · 음력은 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 단톡방에 보낼 수 있습니다(일이 많으면 여러 장). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요 — 순번과 전달 메모는 지난 일정표에서 이어받습니다.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 담당 직원 · 차량, 시간 · 장소 · 연락처, 행사 내용 · 인원 · 단가를 채우면 금액이 저절로 계산됩니다. 줄마다 <strong>문자 붙여넣기</strong>로 카톡 주문 글을 넣으면 시간 · 연락처 · 단가가 빈 칸에 들어가고 글 전체는 메모에 남습니다. 맨 위 날짜만 고치면 요일 · 음력은 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 단톡방에 보낼 수 있습니다(일이 많으면 여러 장). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요 — 순번과 전달 메모는 지난 일정표에서 이어받습니다.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -345,6 +354,12 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog class="paste-dlg" id="paste-dlg" aria-labelledby="paste-title">
+  <p id="paste-title"><strong>문자 붙여넣기</strong> — 카톡 주문 글을 아래에 붙여넣고 <strong>넣기</strong>를 누르세요. 비어 있는 시간 · 연락처 · 단가만 채우고, 글 전체는 메모에 들어갑니다.</p>
+  <textarea id="paste-text" rows="8" placeholder="여기를 길게 누르고 붙여넣기"></textarea>
+  <div class="paste-btns"><button type="button" id="paste-cancel">닫기</button><button type="button" id="paste-ok" class="primary">넣기</button></div>
+</dialog>
 
 <article class="sheet">
 
@@ -412,6 +427,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
+import { parseOrder } from './js/docs/order-text.js?v=1';
 
 const NAME = '일일일정표';
 const SITE = 'https://foodbell.kr/';
@@ -466,7 +482,8 @@ function recalc() {
     const people = readNumber(field(tr, 'people'));     // 애매하면(범위 · 숫자 둘) null → 금액 줄 숨김
     const price = readNumber(field(tr, 'price'));
     const amt = tr.querySelector('[data-k="amt"]');
-    if (amt) amt.textContent = people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : '';
+    // 둘 다 있으면 곱셈, 단가만 있으면(상 주문 '35만' · 인원이 애매함) 단가만 — 사장님 결정 2026-10-20
+    if (amt) amt.textContent = people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : price ? `${fmt(price)}원` : '';
     if (filled(tr)) count++;
   });
   return count;
@@ -512,8 +529,9 @@ function addControls() {
   each(tb.querySelectorAll('tr.item'), (tr) => {
     if (tr.querySelector('.rowctl')) return;
     const box = el('span', 'rowctl');
+    const p = el('button', 'btn-mini btn-paste', '문자 붙여넣기'); p.type = 'button';
     const d = el('button', 'btn-mini btn-del', '✕ 줄 삭제'); d.type = 'button';
-    box.appendChild(d);
+    box.append(p, d);
     tr.querySelector('td.memo-cell').appendChild(box);
   });
   if (!tb.querySelector('tr.addrow')) {
@@ -560,6 +578,13 @@ sheet.addEventListener('click', (e) => {
   const b = e.target.closest?.('button.btn-mini');
   if (!b) return;
   e.preventDefault();
+  if (b.classList.contains('btn-paste')) {
+    pasteRow = b.closest('tr.item');
+    pasteText.value = '';
+    pasteDlg.showModal();
+    pasteText.focus();
+    return;
+  }
   if (b.classList.contains('btn-del')) {
     b.closest('tr.item')?.remove();
   } else if (b.closest('tr.addrow')) {
@@ -570,6 +595,27 @@ sheet.addEventListener('click', (e) => {
   }
   recalc(); save();
 });
+
+/* ---------- 문자 붙여넣기 (편집 중, 줄마다) — 카톡 주문 글에서 모양이 분명한 것만 그 줄의 빈 칸에 (js/docs/order-text.js).
+   이미 적힌 칸은 그대로, 원문은 메모 끝에 그대로 (사장님 결정 2026-10-20) ---------- */
+const pasteDlg = document.getElementById('paste-dlg');
+const pasteText = document.getElementById('paste-text');
+let pasteRow = null;
+function pasteOrder(tr, text) {
+  const o = parseOrder(text);
+  const put = (f, v) => { const e = tr.querySelector(`[data-f="${f}"]`); if (e && v && !clean(e.textContent)) e.textContent = v; };
+  put('tel', o.tel.join(', '));
+  put('time', o.time);
+  put('price', o.price ? `${fmt(o.price)}원` : '');
+  const m = tr.querySelector('[data-f="memo"]');
+  if (m && o.memo) m.textContent = [m.textContent.trim(), o.memo].filter(Boolean).join('\n');
+  recalc(); save();
+}
+document.getElementById('paste-ok').addEventListener('click', () => {
+  if (pasteRow && pasteRow.isConnected) pasteOrder(pasteRow, pasteText.value);
+  pasteDlg.close();
+});
+document.getElementById('paste-cancel').addEventListener('click', () => pasteDlg.close());
 
 /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
 const toastEl = document.getElementById('toast');

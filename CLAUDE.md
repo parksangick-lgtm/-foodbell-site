@@ -218,6 +218,8 @@ staff-pay.html        알바비 지급내역서 (내부용, 2026-10-02). 한 줄
 daily-schedule.html   직원용 일일 일정표 (2026-10-20, 설계 docs/superpowers/specs/2026-10-19-daily-schedule-design.md). 사장님이 저녁에 다음 날 일을
                       줄마다 채워 직원 단톡방에 사진으로(직원에게 보내기 — 줄이 많으면 A4 비율로 여러 장, 장 나누기는 js/docs/paging.js).
                       맨 위 날짜만 고치면 요일 · 음력(js/docs/lunar.js — 브라우저의 한국 음력)이 저절로. 새 일정표는 내일 날짜 + 지난 일정표의 순번 · 전달 메모.
+                      줄마다 '문자 붙여넣기'(js/docs/order-text.js) — 카톡 주문 글에서 시간 · 휴대폰 번호 · 단가만 빈 칸에, 원문은 메모에.
+                      규칙은 실제 주문 9개로 정함(표본 tools/sije_web/js-tests/fixtures/order-samples.json — 이름 · 번호 · 거래처는 가짜, 설계서 '추가 결정 3').
                       직원은 구글로 로그인해 일정표만 보기 — 보기 명단(viewers)에 넣는다. 편집 · 새로 만들기 · 지우기 버튼이 없고 다른 서류는 못 읽는다.
                       python -m tools.sije_web.allow viewer-add|viewer-remove 메일주소 --key C:\foodbell-keys\sije-admin.json (viewer-list 는 메일 없이).
                       직원이 그만두면 viewer-remove. 사무실 PC 프로그램이 바뀐 일정표를 옵시디언 푸드벨-업무/일일 일정표/ 에 복사(tools/sije_web/obsidian_copy.py).

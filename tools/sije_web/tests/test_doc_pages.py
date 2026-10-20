@@ -551,7 +551,29 @@ def test_daily_amount_reads_man_and_skips_ranges(pc, repo_url, custom_token, mad
     edit_cell(pc, 'tr.item [data-f="price"]', '2만')
     assert text_of(pc, 'tr.item [data-k="amt"]') == '60명 × 20,000원 = 1,200,000원'
     edit_cell(pc, 'tr.item [data-f="people"]', '60~70명')
-    assert pc.locator('tr.item [data-k="amt"]').first.inner_text().strip() == ''
+    assert text_of(pc, 'tr.item [data-k="amt"]') == '20,000원'   # 인원이 애매하면 곱하지 않고 단가만 (사장님 결정 2026-10-20)
+
+
+def test_daily_paste_order_fills_empty_cells_only(pc, repo_url, custom_token, made):
+    """'문자 붙여넣기' — 비어 있는 시간 · 단가만 채우고 이미 적힌 연락처는 그대로, 인원은 안 뽑고, 원문은 메모 끝에.
+    단가만 있으면 사진의 금액 자리에 단가가 보인다 (사장님 결정 2026-10-20 · 표본 tools/sije_web/js-tests/fixtures/order-samples.json)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="tel"]', '010-0000-9999')
+    edit_cell(pc, 'tr.item [data-f="memo"]', '먼저 쓴 메모')
+    order = '가짜라이프\n가짜팔팀장 입니다 제사상 부탁드립니다\n08시20분 화장\n선산 도착시간\n약 11시\n가격은 35만\n상주 010-0000-0005'
+    pc.click('tr.item .btn-paste')
+    pc.fill('#paste-text', order)
+    pc.click('#paste-ok')
+    assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999'
+    assert text_of(pc, 'tr.item [data-f="time"]') == '11시'
+    assert text_of(pc, 'tr.item [data-f="price"]') == '350,000원'
+    assert text_of(pc, 'tr.item [data-f="people"]') == ''
+    memo = pc.locator('tr.item [data-f="memo"]').first.text_content()
+    assert memo == '먼저 쓴 메모\n' + order, memo
+    pc.click('#btn-edit')
+    assert text_of(pc, 'tr.item [data-k="amt"]') == '350,000원'
+    assert pc.locator('#paste-dlg').is_hidden()
 
 
 def test_daily_two_phone_numbers_stay_in_their_cell(pc, repo_url, custom_token, made):
