@@ -561,7 +561,7 @@ def test_daily_paste_order_fills_empty_cells_only(pc, repo_url, custom_token, ma
     pc.click('#btn-edit')
     edit_cell(pc, 'tr.item [data-f="tel"]', '010-0000-9999')
     edit_cell(pc, 'tr.item [data-f="memo"]', '먼저 쓴 메모')
-    order = '가짜라이프\n가짜팔팀장 입니다 제사상 부탁드립니다\n08시20분 화장\n선산 도착시간\n약 11시\n가격은 35만\n상주 010-0000-0005'
+    order = '가짜상조\n가짜팔팀장 입니다 제사상 부탁드립니다\n08시20분 화장\n선산 도착시간\n약 11시\n가격은 35만\n상주 010-0000-0005'
     pc.click('tr.item .btn-paste')
     pc.fill('#paste-text', order)
     pc.click('#paste-ok')

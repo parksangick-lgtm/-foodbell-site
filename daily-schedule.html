@@ -427,7 +427,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
-import { parseOrder } from './js/docs/order-text.js?v=1';
+import { parseOrder } from './js/docs/order-text.js?v=2';
 
 const NAME = '일일일정표';
 const SITE = 'https://foodbell.kr/';
@@ -479,7 +479,7 @@ function recalc() {
   each(sheet.querySelectorAll('tr.item'), (tr, i) => {
     const no = tr.querySelector('[data-k="no"]');
     if (no) no.textContent = String(i + 1);
-    const people = readNumber(field(tr, 'people'));     // 애매하면(범위 · 숫자 둘) null → 금액 줄 숨김
+    const people = readNumber(field(tr, 'people'));     // 애매하면(범위 · 숫자 둘) null → 곱하지 않고 단가만
     const price = readNumber(field(tr, 'price'));
     const amt = tr.querySelector('[data-k="amt"]');
     // 둘 다 있으면 곱셈, 단가만 있으면(상 주문 '35만' · 인원이 애매함) 단가만 — 사장님 결정 2026-10-20
