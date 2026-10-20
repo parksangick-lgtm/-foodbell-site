@@ -66,16 +66,16 @@
 | `coding-study` | 코딩 공부 기록 |
 | `design-taste-frontend` | 뻔한 AI 템플릿 디자인을 피하게 하는 화면 디자인 규칙 (외부 스킬) |
 | `redesign-existing-projects` | 있는 사이트를 점검하고 고급스럽게 다듬기 (외부 스킬) |
-| `grill-me` | `/grill-me` — 계획을 꼬치꼬치 캐물어 빈틈을 찾는다 (맷 포콕) |
-| `to-spec` | `/to-spec` — 대화를 작업 명세서로 정리해 이슈에 올린다. 먼저 `/setup-matt-pocock-skills` 한 번 (맷 포콕) |
-| `improve-codebase-architecture` | `/improve-codebase-architecture` — 코드 구조 점검 보고서 + 개선점 캐묻기 (맷 포콕) |
-| `setup-matt-pocock-skills` | 위 스킬들이 쓸 이슈 게시판·문서 위치를 정하는 첫 설정 (맷 포콕) |
+| `grill-me` | "꼬치꼬치 캐물어줘" 또는 `/grill-me` — 계획을 꼬치꼬치 캐물어 빈틈을 찾는다 (맷 포콕) |
+| `to-spec` | "명세서로 정리해줘" 또는 `/to-spec` — 대화를 작업 명세서로 정리해 이슈에 올린다. 먼저 `/setup-matt-pocock-skills` 한 번 (맷 포콕) |
+| `improve-codebase-architecture` | "코드 구조 점검해줘" 또는 `/improve-codebase-architecture` — 코드 구조 점검 보고서 + 개선점 캐묻기 (맷 포콕) |
+| `setup-matt-pocock-skills` | "맷 포콕 스킬 설정해줘" — 위 스킬들이 쓸 이슈 게시판·문서 위치를 정하는 첫 설정 (맷 포콕) |
 | `grilling` · `codebase-design` · `domain-modeling` | 위 스킬들이 안에서 쓰는 도우미 (맷 포콕) |
-| `teach` | `/teach 주제` — 여러 날에 걸친 맞춤 수업 (맷 포콕). **이 폴더에서 쓰지 말 것** — 수업 파일(`lessons/*.html` 등)을 작업 폴더에 만들어 foodbell.kr 에 올라간다. `C:\dev\vibe-study` 를 VS Code 로 열고 쓴다 |
+| `teach` | "○○ 수업해줘" 또는 `/teach 주제` — 여러 날에 걸친 맞춤 수업 (맷 포콕). **이 폴더에서 쓰지 말 것** — 수업 파일(`lessons/*.html` 등)을 작업 폴더에 만들어 foodbell.kr 에 올라간다. `C:\dev\vibe-study` 를 VS Code 로 열고 쓴다 |
 | `web-design-guidelines` | "내 사이트 점검해줘" — 웹 화면 규칙과 대조 (Vercel, MIT). 쓸 때마다 규칙을 인터넷에서 새로 받아온다 |
 | `webapp-testing` | 브라우저 자동 시험·휴대폰 폭 캡처 (Anthropic, Apache-2.0). Playwright 필요 — 컴퓨터마다 `python -m pip install playwright` + `python -m playwright install chromium` 한 번 |
 | `flutter-windows-setup` | 새 PC 에 Flutter 세팅 → 에뮬레이터에서 my_app 첫 실행 (2026-10-09). 이 사이트와 무관하지만 세 PC 에 따라가게 여기 둔다. 스크립트 2개 포함 |
-| `handoff` | `/handoff` (또는 `/handoff 다음엔 ○○`) — 대화를 인수인계 문서로 정리해 `C:\dev\vibe-study\handoff\` 에 저장 (맷 포콕, 2026-10-19). 대화가 길어졌거나 다른 PC 로 옮길 때. 이어받을 때는 새 대화에서 "인수인계 이어받아줘" → 그 폴더의 가장 최근 파일을 읽는다. 사람이 불러야만 돈다 |
+| `handoff` | `/handoff` (또는 `/handoff 다음엔 ○○`) — 대화를 인수인계 문서로 정리해 `C:\dev\vibe-study\handoff\` 에 저장 (맷 포콕, 2026-10-19). 대화가 길어졌거나 다른 PC 로 옮길 때. 이어받을 때는 새 대화에서 "인수인계 이어받아줘" → 그 폴더의 가장 최근 파일을 읽는다. "인수인계해줘" 라고 말해도 돈다 |
 
 **외부 스킬**은 남이 만든 것이다 — 디자인 두 개는 원본 `github.com/leonxlnx/taste-skill`(MIT),
 2026-09-23 `c184364` 시점 사본. "맷 포콕" 일곱 개는 원본 `github.com/mattpocock/skills`(MIT),
@@ -84,7 +84,9 @@ superpowers 스킬(`test-driven-development`·`systematic-debugging`)과 겹쳐�
 2026-09-24 추가: `teach`(mattpocock/skills `c55ee46`), `web-design-guidelines`(vercel-labs/agent-skills `063bee9`),
 `webapp-testing`(anthropics/skills `34040c9`). 2026-10-19 추가: `handoff`(mattpocock/skills `49dd158`) — 원본에서
 **저장 위치 한 줄만 고쳤다**(원본은 PC 임시 폴더 → 세 PC 가 함께 보는 비공개 `C:\dev\vibe-study\handoff\`). 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
-`SKILL.md` 를 다시 복사해 온다. React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
+`SKILL.md` 를 다시 복사해 온다 — 이때 맷 포콕 여섯 개(`grill-me`·`to-spec`·`improve-codebase-architecture`·
+`setup-matt-pocock-skills`·`teach`·`handoff`)는 2026-10-21 에 고친 두 곳을 다시 해 준다: `disable-model-invocation: true`
+줄 지우기, 설명 끝에 한국어 요청 예 붙이기(사장님 요청 — 말로 불러도 돌게). React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
 **이 사이트에서는 위 "화면 만들 때"·"사진" 규칙이 먼저다.**
 
 **스킬을 고쳤으면 이 폴더의 사본도 같이 올린다.** 스킬 원본은

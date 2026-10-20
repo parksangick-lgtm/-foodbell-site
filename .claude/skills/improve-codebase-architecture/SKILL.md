@@ -1,7 +1,6 @@
 ---
 name: improve-codebase-architecture
-description: Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.
-disable-model-invocation: true
+description: Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick. 한국어 요청 예 — "코드 구조 점검해줘", "코드 구조 개선할 곳 찾아줘".
 ---
 
 # Improve Codebase Architecture

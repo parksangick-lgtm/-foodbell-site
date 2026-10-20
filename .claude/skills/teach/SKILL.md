@@ -1,7 +1,6 @@
 ---
 name: teach
-description: Teach the user a new skill or concept, within this workspace.
-disable-model-invocation: true
+description: Teach the user a new skill or concept, within this workspace. 한국어 요청 예 — "○○ 수업해줘", "여러 날에 걸쳐 가르쳐줘", "수업 만들어줘". 짧은 질문("○○ 가 뭐야?")에는 쓰지 않는다. 수업 파일이 사이트에 올라가므로 c:\galleypark 폴더에서는 쓰지 않는다.
 argument-hint: "What would you like to learn about?"
 ---
 

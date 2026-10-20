@@ -1,13 +1,13 @@
 ---
 name: handoff
-description: Compact the current conversation into a handoff document for another agent to pick up.
+description: Compact the current conversation into a handoff document for another agent to pick up. 한국어 요청 예 — "인수인계해줘", "인수인계 문서 만들어줘", "다른 PC 에서 이어서 하게 정리해줘".
 argument-hint: "What will the next session be used for?"
-disable-model-invocation: true
 ---
 
 <!-- 원본: github.com/mattpocock/skills  skills/productivity/handoff (49dd158, 2026-10-19 복사, MIT).
      고친 곳: 저장 위치 한 줄 — 원본은 이 PC 의 임시 폴더라서 노트북 · 집 PC 에서 못 읽는다.
      그리고 "작업 폴더" 문단 (2026-10-20 추가).
+     그리고 2026-10-21: disable-model-invocation 줄을 지우고 설명 끝에 한국어 요청 예를 붙였다(말로 불러도 돌게).
      C:\dev\vibe-study 는 비공개 저장소이고 사용자 설정 훅이 세 PC 사이에서 자동으로 맞춘다. -->
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to `C:\dev\vibe-study\handoff\` as `YYYY-MM-DD-HHMM-<short-topic>.md` (shared across the user's three PCs by auto-sync; private repo) - not the current workspace, which is published.
