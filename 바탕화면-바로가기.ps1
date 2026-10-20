@@ -1,4 +1,5 @@
-﻿# 바탕화면에 푸드벨 바로가기(아이콘)를 만든다.
+﻿# 바탕화면의 "푸드벨" 폴더 안에 푸드벨 바로가기(아이콘)를 만든다.
+# (2026-10-21 사장님: 아이콘 11개가 흩어져 관리가 힘들다 → 한 폴더로. 바탕화면에 남아 있던 같은 이름 아이콘은 지운다.)
 # 만들어지는 것: 푸드벨 시작 / 푸드벨 저장 / 푸드벨 스킬설치 / 푸드벨 홈페이지 /
 #              푸드벨 시제 견적서 / 푸드벨 행사 견적서 / 푸드벨 작업지시서 / 푸드벨 거래명세서 / 푸드벨 알바비 / 푸드벨 일정표 / 푸드벨 시제행사 목록
 # 서류 아이콘은 바탕색으로 구별한다: 시제=버건디 / 행사=미색 / 작업지시서=먹색 / 거래명세서=황동 / 알바비=흐린 먹색 / 일정표=주홍 / 시제행사 목록=남색
@@ -7,12 +8,14 @@
 
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
 $desktop = [Environment]::GetFolderPath('Desktop')
-$icon = Join-Path $repo '아이콘.ico'
+$folder = Join-Path $desktop '푸드벨'
+New-Item -ItemType Directory -Force -Path $folder | Out-Null
+$icon =Join-Path $repo '아이콘.ico'
 $site = 'https://foodbell.kr'
 $shell = New-Object -ComObject WScript.Shell
 
 function New-Link($name, $bat, $desc, $icoName) {
-    $lnk = $shell.CreateShortcut((Join-Path $desktop ($name + '.lnk')))
+    $lnk = $shell.CreateShortcut((Join-Path $folder ($name + '.lnk')))
     $lnk.TargetPath = Join-Path $repo $bat
     $lnk.WorkingDirectory = $repo
     $ico = Join-Path $repo $icoName
@@ -26,7 +29,7 @@ function New-Link($name, $bat, $desc, $icoName) {
 # 홈페이지·견적서는 인터넷 주소를 바로 여는 아이콘 (미리보기 서버를 안 켜도 열린다)
 # .url 파일은 아이콘 경로의 한글이 깨져서, explorer 로 주소를 여는 .lnk 로 만든다.
 function New-UrlLink($name, $url, $desc, $icoName) {
-    $lnk = $shell.CreateShortcut((Join-Path $desktop ($name + '.lnk')))
+    $lnk = $shell.CreateShortcut((Join-Path $folder ($name + '.lnk')))
     $lnk.TargetPath = Join-Path $env:WINDIR 'explorer.exe'
     $lnk.Arguments = $url
     $ico = Join-Path $repo $icoName
@@ -58,10 +61,16 @@ New-UrlLink '푸드벨 일정표' "$site/daily-schedule.html" `
 New-UrlLink '푸드벨 시제행사 목록' "$site/sije-list.html" `
     '시제행사 목록 · 내역서 - 로그인해서 보고 고치기 (내부용)' '아이콘-시제행사목록.ico'
 
+# 폴더로 옮기기 전에 바탕화면에 만들어 두었던 같은 이름 아이콘은 지운다(폴더 안에 새로 만들었으므로).
+Get-ChildItem -Path $folder -Filter '*.lnk' | ForEach-Object {
+    $old = Join-Path $desktop $_.Name
+    if (Test-Path $old) { Remove-Item $old; Write-Host ("  바탕화면에서 폴더로 옮김: " + $_.BaseName) }
+}
+
 Write-Host ''
 if (Test-Path (Join-Path $desktop '푸드벨 견적서.lnk')) {
     Write-Host '예전에 만든 "푸드벨 견적서" 아이콘이 남아 있습니다.'
     Write-Host '이제 "푸드벨 시제 견적서" 로 이름이 바뀌었으니, 예전 것은 지우셔도 됩니다.'
     Write-Host ''
 }
-Write-Host '바탕화면을 확인하세요. (F5 로 새로고침)'
+Write-Host '바탕화면의 "푸드벨" 폴더를 확인하세요. (F5 로 새로고침)'
