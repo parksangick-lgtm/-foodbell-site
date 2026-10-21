@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>공유 시험</title>
+<!-- 잠깐 쓰는 시험 화면 (2026-10-21) — 카톡이 '사진 + 글' 공유에서 제목 칸을 올리는지, 글 첫 줄만 올리는지 가린다.
+     일일 일정표 '직원에게 보내기'에서 링크 줄이 빠지고 제목만 올라갔다. 확인이 끝나면 지운다 -->
+<style>
+body{margin:0; background:#F7F2E9; color:#120C06; font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif; line-height:1.7}
+main{max-width:480px; margin:0 auto; padding:24px 16px}
+h1{font-size:20px; margin:0 0 12px}
+button{display:block; width:100%; margin:12px 0; padding:16px; font-size:17px; font-weight:600; border:0; border-radius:10px; background:#6E1E2B; color:#fff}
+#who,#out{font-size:15px; color:#6B5E48}
+</style>
+</head>
+<body>
+<main>
+  <h1>공유 시험 (카톡 '나와의 채팅'으로 보내 주세요)</h1>
+  <p id="who"></p>
+  <button type="button" id="b1">버튼 1 — 사진 + 글</button>
+  <button type="button" id="b2">버튼 2 — 글만 (사진 없이)</button>
+  <p id="out"></p>
+</main>
+<script>
+(function () {
+  var LINK = 'https://foodbell.kr/call.html#1c01000001234';
+  var ua = navigator.userAgent;
+  document.getElementById('who').textContent = '브라우저: ' + (/KAKAOTALK/i.test(ua) ? '카톡 안' : /SamsungBrowser/i.test(ua) ? '삼성 인터넷' : /Chrome/i.test(ua) ? '크롬' : '기타');
+  var out = document.getElementById('out');
+  function say(t) { out.textContent = t; }
+  function picture() {
+    var c = document.createElement('canvas');
+    c.width = 400; c.height = 200;
+    var g = c.getContext('2d');
+    g.fillStyle = '#FFFDF8'; g.fillRect(0, 0, 400, 200);
+    g.fillStyle = '#120C06'; g.font = 'bold 32px sans-serif'; g.fillText('공유 시험 사진', 80, 110);
+    return new Promise(function (res) { c.toBlob(function (b) { res(new File([b], 'share-test.png', { type: 'image/png' })); }, 'image/png'); });
+  }
+  function share(data) {
+    if (!navigator.share) return say('이 브라우저는 공유창을 못 엽니다');
+    if (data.files && !(navigator.canShare && navigator.canShare({ files: data.files }))) return say('이 브라우저는 사진 공유를 못 합니다');
+    navigator.share(data).then(function () { say('공유창으로 넘겼습니다'); }, function (e) { say('공유 실패: ' + (e && e.name)); });
+  }
+  document.getElementById('b1').addEventListener('click', function () {
+    picture().then(function (f) {
+      share({ files: [f], title: '[제목칸] 시험', text: '[글첫줄] 시험\n[글둘째줄] 안내\n' + LINK });
+    });
+  });
+  document.getElementById('b2').addEventListener('click', function () {
+    share({ text: '[글만] 시험\n' + LINK });
+  });
+})();
+</script>
+</body>
+</html>
