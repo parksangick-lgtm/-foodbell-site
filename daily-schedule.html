@@ -566,6 +566,34 @@ function telsWrapped() {
     n.replaceChildren(...n.textContent.split(TEL).map((p, i) => (i % 2 ? el('span', 'tel1', p) : document.createTextNode(p))));
   });
 }
+/* 숫자만 쓴 번호 → 작대기 넣은 꼴, 전화번호 모양이 아니면 null — 휴대폰 · 지역번호(02 · 031 …) · 070 · 대표번호(1588 …).
+   call.html 에도 같은 것이 있다 */
+function telShape(d) {
+  const m = d.match(/^(02|0\d{2})(\d{3,4})(\d{4})$/) || d.match(/^(1[5-9]\d{2})(\d{4})$/);
+  return m ? m.slice(1).join('-') : null;
+}
+/* 전화번호 칸에 숫자만 친 번호에 작대기 — 01012345678 → 010-1234-5678 (칸을 떠날 때, 사장님 2026-10-21).
+   날짜 같은 숫자 · 이미 작대기가 있는 번호 · 번호 앞뒤 글자는 그대로 */
+const dashTels = (s) => s.replace(/(^|[^\d-])(\d{8,11})(?![\d-])/g, (all, pre, d) => (telShape(d) ? pre + telShape(d) : all));
+
+/* 휴대폰으로 보낼 때 사진과 같이 가는 '전화 걸기' 링크(call.html) — 직원 폰 카톡은 사진 속 번호도, 글 속 번호도 눌리지 않았다
+   (사장님 시험 2026-10-21). 번호는 # 뒤에만(서버로 안 감): 날짜 - 줄 번호 + 칸(c 연락처 · t 팀장 · g 안내) + 숫자만 쓴 번호.
+   번호가 하나도 없으면 '' */
+const CALL_KIND = { tel: 'c', 'lead-tel': 't', 'guide-tel': 'g' };
+function callLink() {
+  const parts = [];
+  each(sheet.querySelectorAll('tr.item'), (tr, i) => {
+    for (const [f, k] of Object.entries(CALL_KIND)) {
+      for (const n of field(tr, f).match(/\d[\d-]*\d/g) || []) {
+        const d = n.replace(/-/g, '');
+        if (telShape(d)) parts.push(`${i + 1}${k}${d}`);
+      }
+    }
+  });
+  const d = parseDay(getText('date'));
+  const day = d ? [`${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`] : [];
+  return parts.length ? `${SITE}call.html#${day.concat(parts).join('-')}` : '';
+}
 
 const btnEdit = document.getElementById('btn-edit');
 function setEditing(on) {
@@ -581,6 +609,12 @@ sheet.addEventListener('input', (e) => {
   if (!e.target.closest?.('[data-edit]')) return;
   recalc();
   save();
+});
+sheet.addEventListener('focusout', (e) => {
+  const t = e.target.closest?.('[data-edit][data-f$="tel"]');
+  if (!t) return;
+  const v = dashTels(t.textContent);
+  if (v !== t.textContent) { t.textContent = v; save(); }
 });
 sheet.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
@@ -735,7 +769,8 @@ document.getElementById('btn-send').addEventListener('click', function () {
   btn.disabled = true; btn.textContent = '준비 중…';
   setEditing(false);
   const title = `푸드벨 일일 일정표 (${label()})`;
-  const text = `${title}\n${PAGE_URL}`;
+  const call = callLink();   // 번호가 있으면 일정표 주소(직원은 로그인이 없어 못 연다) 대신 '전화 걸기' 링크 — 링크는 줄에 혼자
+  const text = call ? `${title}\n번호를 눌러 전화하려면 아래 링크를 누르세요\n${call}` : `${title}\n${PAGE_URL}`;
   const done = () => { btn.disabled = false; btn.textContent = old; };
   renderPages().then((pages) => {
     const files = pages.map((p) => new File([p.blob], p.name, { type: 'image/png' }));

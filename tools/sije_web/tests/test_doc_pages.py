@@ -642,6 +642,109 @@ def test_daily_two_phone_numbers_stay_in_their_cell(pc, repo_url, custom_token, 
     assert '010-0000-0000, 010-0000-0001' in saved and 'tel1' not in saved                 # 저장은 묶음 표시 없이
 
 
+def test_daily_phone_numbers_get_dashes(pc, repo_url, custom_token, made):
+    """전화번호 칸에 숫자만 치면 칸을 떠날 때 작대기가 들어간다 — 01000001234 → 010-0000-1234 (사장님 2026-10-21).
+    지역번호 · 070 · 대표번호도. 전화번호 모양이 아닌 숫자 · 이미 작대기가 있는 번호 · 번호 앞뒤 글자는 그대로."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    cases = [
+        ('01000001234', '010-0000-1234'),
+        ('0110001234', '011-000-1234'),
+        ('0200001234', '02-0000-1234'),
+        ('020001234', '02-000-1234'),
+        ('03100001234', '031-0000-1234'),
+        ('0310001234', '031-000-1234'),
+        ('07000001234', '070-0000-1234'),
+        ('15880000', '1588-0000'),
+        ('상주 01000001234, 01000005678', '상주 010-0000-1234, 010-0000-5678'),
+        ('010-0000-1234', '010-0000-1234'),        # 이미 작대기
+        ('1234567', '1234567'),                    # 너무 짧다
+        ('010000012345', '010000012345'),          # 너무 길다
+        ('20261022', '20261022'),                  # 날짜 같은 숫자
+    ]
+    for typed, want in cases:
+        edit_cell(pc, 'tr.item [data-f="tel"]', typed)
+        assert text_of(pc, 'tr.item [data-f="tel"]') == want, typed
+    for f in ('lead-tel', 'guide-tel'):
+        edit_cell(pc, f'tr.item [data-f="{f}"]', '01000002000')
+        assert text_of(pc, f'tr.item [data-f="{f}"]') == '010-0000-2000', f
+    edit_cell(pc, 'tr.item [data-f="place"]', '01000003000')      # 전화번호 칸이 아니면 그대로
+    assert text_of(pc, 'tr.item [data-f="place"]') == '01000003000'
+    set_text(pc, 'tr.item [data-f="tel"]', '01000009999')        # 칸을 안 떠나고 바로 '편집 완료'
+    pc.click('#btn-edit')
+    assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999'
+
+
+def stub_share(page):
+    """휴대폰 공유창 대신 넘긴 것(사진 수 · 글)을 모은다 — 시험 브라우저에는 카톡 공유창이 없다."""
+    page.evaluate("""() => {
+        window.__shared = [];
+        Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+        Object.defineProperty(navigator, 'share', { configurable: true, value: (d) => {
+            window.__shared.push({ files: (d.files || []).length, text: d.text });
+            return Promise.resolve();
+        } });
+    }""")
+
+
+def shared(page, n):
+    page.wait_for_function(f'window.__shared.length >= {n}', timeout=60_000)
+    return page.evaluate(f'window.__shared[{n - 1}]')
+
+
+def test_daily_phone_send_adds_call_link(phone, repo_url, custom_token, made):
+    """직원은 카톡 사진만 받는다 — 사진 속 번호는 못 누르고, 직원 폰 카톡은 글 속 번호도 안 눌린다(2026-10-21 사장님 시험).
+    그래서 휴대폰으로 보낼 때 사진과 같이 가는 글의 일정표 주소(직원은 로그인이 없어 못 연다)를 '전화 걸기' 링크로 바꾼다.
+    링크는 줄에 혼자(카톡이 링크로 알아보게), 번호는 # 뒤(서버로 안 감). 번호가 없으면 글은 전과 같다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    stub_share(phone)
+    phone.click('#btn-edit')
+    edit_cell(phone, '[data-k="date"]', '2026년 10월 22일')
+    edit_cell(phone, 'tr.item [data-f="work"]', '가짜동 상차림')
+    phone.click('#btn-send')                                      # 번호가 없으면 전과 같다 (대조)
+    first = shared(phone, 1)
+    assert first['files'] >= 1
+    assert first['text'] == '푸드벨 일일 일정표 (2026년 10월 22일 (목))\nhttps://foodbell.kr/daily-schedule.html'
+    phone.click('#btn-edit')
+    phone.click('tr.addrow button')
+    phone.click('tr.addrow button')
+    edit_cell(phone, 'tr.item:nth-child(1) [data-f="tel"]', '01000001234')     # 작대기 없이 친 번호도
+    edit_cell(phone, 'tr.item:nth-child(1) [data-f="lead-tel"]', '010-0000-2000')
+    edit_cell(phone, 'tr.item:nth-child(3) [data-f="tel"]', '010-0000-3000, 010-0000-3001')
+    edit_cell(phone, 'tr.item:nth-child(3) [data-f="guide-tel"]', '02-000-4000')
+    phone.click('#btn-send')
+    sent = shared(phone, 2)
+    lines = sent['text'].split('\n')
+    assert sent['files'] >= 1
+    assert lines[0] == '푸드벨 일일 일정표 (2026년 10월 22일 (목))', lines
+    assert lines[-1].startswith('https://foodbell.kr/call.html#') and ' ' not in lines[-1], lines   # 링크는 줄에 혼자
+    assert 'daily-schedule.html' not in sent['text']
+    phone.goto(lines[-1].replace('https://foodbell.kr/', repo_url))
+    assert text_of(phone, 'h1') == '2026년 10월 22일 전화 걸기'
+    rows = phone.evaluate("""() => [...document.querySelectorAll('a.call')].map((a) =>
+        [...a.querySelectorAll('span')].slice(0, 3).map((s) => s.textContent.trim()).concat(a.getAttribute('href')))""")
+    assert rows == [
+        ['1번', '연락처', '010-0000-1234', 'tel:01000001234'],
+        ['1번', '팀장', '010-0000-2000', 'tel:01000002000'],
+        ['3번', '연락처', '010-0000-3000', 'tel:01000003000'],
+        ['3번', '연락처', '010-0000-3001', 'tel:01000003001'],
+        ['3번', '안내', '02-000-4000', 'tel:020004000'],
+    ]
+
+
+def test_call_page_shows_nothing_for_a_bad_link(phone, repo_url):
+    """'전화 걸기' 화면 — 링크가 잘렸거나 이상하면 전화 버튼을 만들지 않는다 (엉뚱한 번호로 걸지 않게)."""
+    for tail in ('', '#', '#abc', '#20261022-9x01000001234-1c123-1c010000012345'):
+        phone.goto('about:blank')
+        phone.goto(f'{repo_url}call.html{tail}')
+        assert phone.locator('a.call').count() == 0, tail
+        assert text_of(phone, '#hint') == '번호가 없습니다. 일정표 사진을 확인해 주세요.', tail
+    phone.goto('about:blank')
+    phone.goto(f'{repo_url}call.html#1c01000001234')               # 날짜가 없어도 번호는 보인다 (대조)
+    assert phone.locator('a.call').count() == 1
+    assert text_of(phone, 'h1') == '전화 걸기'
+
+
 def test_daily_table_headers_fit_their_columns(pc, repo_url, custom_token, made):
     """표 머리줄이 칸을 넘치면 사진에서는 잘린다('상조팀장 · 현지 안'). 최종 검토 I1 을 고친 뒤 사진을 보다 찾음."""
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
