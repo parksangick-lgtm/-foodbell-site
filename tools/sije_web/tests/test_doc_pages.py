@@ -781,6 +781,22 @@ def test_daily_pc_send_then_copy_call_link(pc, repo_url, custom_token, made):
     assert pc.locator('#call-dlg').is_hidden()
 
 
+def test_daily_files_are_named_by_date(pc, repo_url, custom_token, made):
+    """파일 이름은 일정표 날짜만 — 2026-10-22.png, 인쇄 · PDF 저장 창도 2026-10-22 (사장님 2026-10-21 '일일 일정표는 없어도 돼')."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', '2026년 10월 22일')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    pc.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    with pc.expect_download(timeout=60_000) as d:
+        pc.click('#btn-save-file')
+    assert d.value.suggested_filename == '2026-10-22.png'
+    pc.evaluate("() => { window.__titles = []; window.print = () => window.__titles.push(document.title); }")
+    pc.click('#btn-print')
+    assert pc.evaluate('window.__titles') == ['2026-10-22']
+
+
 def test_call_page_shows_nothing_for_a_bad_link(phone, repo_url):
     """'전화 걸기' 화면 — 링크가 잘렸거나 이상하면 전화 버튼을 만들지 않는다 (엉뚱한 번호로 걸지 않게)."""
     for tail in ('', '#', '#abc', '#20261022-9x01000001234-1c123-1c010000012345'):
