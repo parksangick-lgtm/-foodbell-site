@@ -125,6 +125,28 @@ def test_today_day_buttons(phone, repo_url, test_db, key):
     phone.locator('#cards', has_text='가짜내일').wait_for(timeout=20_000)
 
 
+def test_today_hides_empty_and_prefers_latest(phone, repo_url, test_db, key):
+    """일이 없는 일정표는 버튼도 안 나오고, 같은 날 일정표가 여럿이면 가장 최근에 고친 것을 먼저 보여 준다
+    (10-21 저녁 실제: 같은 날 빈 일정표가 먼저 골라져 [전화] · [지도]가 안 보였다)."""
+    t1 = datetime.datetime(2026, 10, 21, 10, 0, tzinfo=datetime.timezone.utc)
+    t2 = t1 + datetime.timedelta(minutes=30)
+    # 이름 차례(a → b → c)로는 빈 것 · 예전 것이 앞 — 고치기 전 화면은 이 차례로 골랐다
+    put(test_db, key, aEmpty=entry(day(1), [], at=t2),
+        bOld=entry(day(1), [row(1, work='가짜예전것', tel='010-0000-1111')], at=t1),
+        cNew=entry(day(1), [row(1, work='가짜최근것', tel='010-0000-2222')], at=t2))
+    open_today(phone, repo_url, f'#{key}')
+    cards_or_status = phone.locator('#cards')
+    phone.locator('button.day-btn').first.wait_for(timeout=20_000)
+    phone.wait_for_timeout(500)
+    assert '가짜예전것' not in cards_or_status.inner_text()                # 처음부터 최근 것 (예전 것이 먼저 나오면 안 된다)
+    open_today(phone, repo_url, f'#{key}')
+    phone.locator('#cards', has_text='가짜최근것').wait_for(timeout=20_000)
+    assert phone.locator('button.day-btn').count() == 2                  # 빈 일정표는 버튼이 없다
+    assert hrefs(phone, 'a.btn-call') == ['tel:01000002222']
+    phone.locator('button.day-btn').nth(1).click()
+    phone.locator('#cards', has_text='가짜예전것').wait_for(timeout=5_000)
+
+
 def test_today_bad_or_old_link(phone, repo_url, test_db, key):
     for tail in ('', '#', '#' + 'x' * 32):
         open_today(phone, repo_url, tail)

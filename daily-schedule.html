@@ -189,14 +189,6 @@ body:not(.editing) tr.addrow{display:none !important}
 .paste-btns{display:flex; justify-content:flex-end; gap:8px; margin-top:10px}
 .paste-btns button{min-height:44px; min-width:88px; font:inherit; font-size:15px; font-weight:var(--w-medium); border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft); cursor:pointer}
 .paste-btns button.primary{background:var(--seal); border-color:var(--seal); color:var(--paper)}
-.hint{
-  max-width:880px; margin:0 auto 14px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-soft);
-  line-height:1.6; padding-right:200px;
-}
-.hint b{font-family:var(--serif); color:var(--seal); font-weight:var(--w-bold); letter-spacing:.04em; margin-right:5px}
-@media (max-width:700px){ .hint{padding-right:0} }
-/* PC: 오른쪽 위 도구막대(약 470px)가 안내문 첫 줄 끝을 덮었다 → 안내문을 막대 아래에서 시작한다 */
-@media (min-width:701px){ .hint{padding-right:0; padding-top:30px} }
 
 /* ---------- 휴대폰: 도구 버튼은 화면 아래 고정, 편집 칸은 손가락 크기 ----------
    사장님이 쓰는 화면이라 아래 전화·문자 막대 대신 도구 버튼을 둔다 (2026-10-01 사용자 결정).
@@ -246,7 +238,7 @@ body:not(.editing) tr.addrow{display:none !important}
   @page{ size:A4; margin:13mm; }
   body{padding:0; background:var(--paper); font-size:11.5pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   .sheet{max-width:none; border:0; border-top:2.5pt solid var(--seal); box-shadow:none; padding:0; padding-top:5mm}
-  .toolbar,.hint,.toast,.rowctl,tr.addrow{display:none !important}
+  .toolbar,.toast,.rowctl,tr.addrow{display:none !important}
   body.editing [data-edit]{background:transparent; box-shadow:none}
   body.editing td[data-edit]:empty::after, body.editing span[data-edit]:empty::after{content:none}
   .rule-double{margin:12px 0 16px}
@@ -351,8 +343,6 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 <link rel="stylesheet" href="css/docs.css?v=3">
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 담당 직원 · 차량, 시간 · 장소 · 연락처, 행사 내용 · 인원 · 단가를 채우면 금액이 저절로 계산됩니다. 줄마다 <strong>문자 붙여넣기</strong>로 카톡 주문 글을 넣으면 시간 · 발인 · 화장 · 연락처 · 단가가 빈 칸에 들어가고 글 전체는 메모에 남습니다. 맨 위 날짜만 고치면 요일 · 음력은 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 단톡방에 보낼 수 있습니다(일이 많으면 여러 장). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요 — 순번과 전달 메모는 지난 일정표에서 이어받습니다.</p>
-
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
   <button type="button" id="btn-save-file">파일로 저장</button>
@@ -838,7 +828,8 @@ window.FoodbellDoc = {
     return { label: label(), issue: label(), total: '', count: `${count}건`, text: buildText() };
   },
   // 직원 게시판 한 장 (today.html — 단톡방 공지의 고정 링크, 사장님 2026-10-21). 사진에 있는 글자만, 채운 줄만 —
-  // 번호는 일정표 그대로(사진과 같게). 금액에 '단위를 적어 주세요' 는 안 넣는다. 날짜를 못 읽으면 올리지 않는다(null → 칸을 뺌)
+  // 번호는 일정표 그대로(사진과 같게). 금액에 '단위를 적어 주세요' 는 안 넣는다. 날짜를 못 읽거나 일이 하나도 없으면 올리지 않는다
+  // (null → 칸을 뺌 — 같은 날 빈 일정표가 먼저 골라져 직원 화면에 [전화] · [지도]가 안 보였다, 10-21 저녁)
   share() {
     if (!parseDay(getText('date'))) return null;
     recalc();
@@ -853,6 +844,7 @@ window.FoodbellDoc = {
         depart: field(tr, 'depart'), cremate: field(tr, 'cremate'), memo,
       });
     });
+    if (!rows.length) return null;
     return { date: ymd(), label: label(), lunar: getText('lunar'), order: getText('order'), memo: getText('memo'), rows };
   },
   editing() { return body.classList.contains('editing'); },

@@ -1033,19 +1033,43 @@ def test_daily_board_gets_filled_rows(pc, repo_url, custom_token, test_db, made,
     assert (r3['work'], r3['amt']) == ('가짜동 제사상', '')
 
 
-def test_daily_open_publishes_and_delete_removes(pc, repo_url, custom_token, test_db, made, share_key):
-    """새 일정표는 열기만 해도 올라가고(날짜 = 내일), 지우면 게시판에서도 빠진다."""
+def fill_work(page, text='가짜동 상차림'):
+    """일 하나를 적고 편집을 끝낸다 — 일이 적힌 일정표만 직원 게시판에 올라간다."""
+    page.click('#btn-edit')
+    edit_cell(page, 'tr.item [data-f="work"]', text)
+    page.click('#btn-edit')
+
+
+def test_daily_filled_schedule_publishes_and_delete_removes(pc, repo_url, custom_token, test_db, made, share_key):
+    """일을 적으면 올라가고(날짜 = 내일), 지우면 게시판에서도 빠진다."""
     tomorrow = datetime.date.today() + datetime.timedelta(days=1)
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
     entries = wait_board(test_db, share_key, lambda e: doc_id in e)
-    assert entries[doc_id]['date'] == tomorrow.isoformat() and entries[doc_id]['rows'] == []
+    assert entries[doc_id]['date'] == tomorrow.isoformat() and len(entries[doc_id]['rows']) == 1
     pc.once('dialog', lambda d: d.accept())
     pc.click('#doc-del')
     wait_board(test_db, share_key, lambda e: doc_id not in e)
 
 
+def test_daily_empty_schedule_not_on_board(pc, repo_url, custom_token, test_db, made, share_key):
+    """일이 하나도 없는 일정표는 올리지 않는다 — 빈 일정표가 먼저 골라져 직원 화면에 [전화] · [지도]가 안 보였다(사장님 10-21 저녁)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
+    wait_board(test_db, share_key, lambda e: doc_id in e)                         # 일을 적으면 올라간다 (대조)
+    fill_work(pc, '')                                                             # 다 지우면
+    wait_board(test_db, share_key, lambda e: doc_id not in e)                     # 빠진다
+
+
+def test_daily_has_no_hint(pc, repo_url, custom_token, made):
+    """일정표 맨 위 안내문은 없앴다 (사장님 10-21 저녁)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    assert pc.locator('.hint').count() == 0
+
+
 def test_daily_unreadable_date_not_on_board(pc, repo_url, custom_token, test_db, made, share_key):
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
     wait_board(test_db, share_key, lambda e: doc_id in e)                         # 날짜를 읽으면 올라간다 (대조)
     pc.click('#btn-edit')
     edit_cell(pc, '[data-k="date"]', '10월 21일')                                  # 연도 없음 — 못 읽는 날짜
@@ -1061,6 +1085,7 @@ def test_daily_board_prunes_old_days(pc, repo_url, custom_token, test_db, made, 
         'entries.yday': {'date': (today - datetime.timedelta(days=1)).isoformat(), 'rows': []},
     })
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
     entries = wait_board(test_db, share_key, lambda e: doc_id in e and 'old3' not in e)
     assert 'yday' in entries
 
@@ -1081,6 +1106,7 @@ def test_daily_board_follows_date_change(pc, repo_url, custom_token, test_db, ma
     """날짜를 내일 → 모레로 고치면 같은 칸의 날짜만 바뀐다 — 내일 카드가 따로 남지 않는다."""
     after = datetime.date.today() + datetime.timedelta(days=2)
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
     wait_board(test_db, share_key, lambda e: doc_id in e)
     pc.click('#btn-edit')
     edit_cell(pc, '[data-k="date"]', kr_date(after))

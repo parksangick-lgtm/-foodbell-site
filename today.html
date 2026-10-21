@@ -148,14 +148,16 @@ function dayName(date, today, tomorrow) {
 
 let entries = {};
 let picked = null;   // 고른 일정표 id — 사장님이 고쳐 다시 그려도 그대로
+const edited = (e) => (typeof e.at?.toMillis === 'function' ? e.at.toMillis() : 0);
 function render() {
   const now = new Date();
   const today = iso(now);
   now.setDate(now.getDate() + 1);
   const tomorrow = iso(now);
+  // 오늘 이후 · 일이 적힌 일정표만, 날짜 순 — 같은 날이면 가장 최근에 고친 것이 앞 (빈 일정표가 먼저 골라졌다, 10-21 저녁)
   const list = Object.entries(entries)
-    .filter(([, e]) => typeof e?.date === 'string' && e.date >= today)
-    .sort(([, a], [, b]) => a.date.localeCompare(b.date) || String(a.label).localeCompare(String(b.label)));
+    .filter(([, e]) => typeof e?.date === 'string' && e.date >= today && e.rows?.length)
+    .sort(([, a], [, b]) => a.date.localeCompare(b.date) || edited(b) - edited(a));
   $('sheet').hidden = !list.length;
   if (!list.length) {
     $('days').replaceChildren();
