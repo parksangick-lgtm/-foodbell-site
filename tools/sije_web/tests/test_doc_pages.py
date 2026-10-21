@@ -675,16 +675,16 @@ def test_daily_phone_numbers_get_dashes(pc, repo_url, custom_token, made):
     assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999'
 
 
-def stub_share(page):
-    """휴대폰 공유창 대신 넘긴 것(사진 수 · 글)을 모은다 — 시험 브라우저에는 카톡 공유창이 없다."""
-    page.evaluate("""() => {
+def stub_share(page, cancel=False):
+    """휴대폰 공유창 대신 넘긴 것(사진 수 · 글)을 모은다 — 시험 브라우저에는 카톡 공유창이 없다. cancel 이면 사장님이 공유창을 닫은 것."""
+    page.evaluate("""(cancel) => {
         window.__shared = [];
         Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
         Object.defineProperty(navigator, 'share', { configurable: true, value: (d) => {
             window.__shared.push({ files: (d.files || []).length, text: d.text });
-            return Promise.resolve();
+            return cancel ? Promise.reject(new DOMException('닫음', 'AbortError')) : Promise.resolve();
         } });
-    }""")
+    }""", cancel)
 
 
 def shared(page, n):
@@ -692,34 +692,49 @@ def shared(page, n):
     return page.evaluate(f'window.__shared[{n - 1}]')
 
 
-def test_daily_phone_send_adds_call_link(phone, repo_url, custom_token, made):
+PHOTO_TEXT = '푸드벨 일일 일정표 (2026년 10월 22일 (목))\nhttps://foodbell.kr/daily-schedule.html'
+CALL_HEAD = '푸드벨 일일 일정표 (2026년 10월 22일 (목)) 전화 걸기'
+
+
+def fill_phone_numbers(page):
+    """세 줄 일정 — 1번 줄은 연락처 · 팀장, 2번 줄은 번호 없음, 3번 줄은 연락처 둘 · 안내 (편집 중에 부른다)."""
+    page.click('tr.addrow button')
+    page.click('tr.addrow button')
+    edit_cell(page, 'tr.item:nth-child(1) [data-f="tel"]', '01000001234')     # 작대기 없이 친 번호도
+    edit_cell(page, 'tr.item:nth-child(1) [data-f="lead-tel"]', '010-0000-2000')
+    edit_cell(page, 'tr.item:nth-child(3) [data-f="tel"]', '010-0000-3000, 010-0000-3001')
+    edit_cell(page, 'tr.item:nth-child(3) [data-f="guide-tel"]', '02-000-4000')
+
+
+def test_daily_phone_send_then_call_link(phone, repo_url, custom_token, made):
     """직원은 카톡 사진만 받는다 — 사진 속 번호는 못 누르고, 직원 폰 카톡은 글 속 번호도 안 눌린다(2026-10-21 사장님 시험).
-    그래서 휴대폰으로 보낼 때 사진과 같이 가는 글의 일정표 주소(직원은 로그인이 없어 못 연다)를 '전화 걸기' 링크로 바꾼다.
-    링크는 줄에 혼자(카톡이 링크로 알아보게), 번호는 # 뒤(서버로 안 감). 번호가 없으면 글은 전과 같다."""
+    카톡은 사진과 같이 넘긴 글을 통째로 버린다(시험 화면으로 확인, 기록장 #36) — 그래서 사진을 보낸 뒤 창의 '전화 링크 보내기'로
+    링크 글만 따로 공유한다. 링크는 줄에 혼자(카톡이 링크로 알아보게), 번호는 # 뒤(서버로 안 감). 번호가 없으면 창이 안 뜬다."""
     daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
     stub_share(phone)
     phone.click('#btn-edit')
     edit_cell(phone, '[data-k="date"]', '2026년 10월 22일')
     edit_cell(phone, 'tr.item [data-f="work"]', '가짜동 상차림')
-    phone.click('#btn-send')                                      # 번호가 없으면 전과 같다 (대조)
+    phone.click('#btn-send')                                      # 번호가 없으면 창이 안 뜬다 (대조)
     first = shared(phone, 1)
-    assert first['files'] >= 1
-    assert first['text'] == '푸드벨 일일 일정표 (2026년 10월 22일 (목))\nhttps://foodbell.kr/daily-schedule.html'
+    assert first['files'] >= 1 and first['text'] == PHOTO_TEXT
+    phone.wait_for_timeout(800)
+    assert phone.locator('#call-dlg').is_hidden()
     phone.click('#btn-edit')
-    phone.click('tr.addrow button')
-    phone.click('tr.addrow button')
-    edit_cell(phone, 'tr.item:nth-child(1) [data-f="tel"]', '01000001234')     # 작대기 없이 친 번호도
-    edit_cell(phone, 'tr.item:nth-child(1) [data-f="lead-tel"]', '010-0000-2000')
-    edit_cell(phone, 'tr.item:nth-child(3) [data-f="tel"]', '010-0000-3000, 010-0000-3001')
-    edit_cell(phone, 'tr.item:nth-child(3) [data-f="guide-tel"]', '02-000-4000')
+    fill_phone_numbers(phone)
     phone.click('#btn-send')
-    sent = shared(phone, 2)
+    photos = shared(phone, 2)
+    assert photos['files'] >= 1 and photos['text'] == PHOTO_TEXT  # 사진과 같이 넘기는 글은 전과 같다 (카톡이 버린다)
+    phone.locator('#call-dlg').wait_for(state='visible', timeout=10_000)
+    assert text_of(phone, '#call-ok') == '전화 링크 보내기'
+    phone.click('#call-ok')
+    sent = shared(phone, 3)
     lines = sent['text'].split('\n')
-    assert sent['files'] >= 1
-    assert lines[0] == '푸드벨 일일 일정표 (2026년 10월 22일 (목))', lines
-    assert lines[-1].startswith('https://foodbell.kr/call.html#') and ' ' not in lines[-1], lines   # 링크는 줄에 혼자
-    assert 'daily-schedule.html' not in sent['text']
-    phone.goto(lines[-1].replace('https://foodbell.kr/', repo_url))
+    assert sent['files'] == 0, sent                               # 링크는 사진 없이 글만
+    assert len(lines) == 2 and lines[0] == CALL_HEAD, lines
+    assert lines[1].startswith('https://foodbell.kr/call.html#') and ' ' not in lines[1], lines   # 링크는 줄에 혼자
+    assert phone.locator('#call-dlg').is_hidden()
+    phone.goto(lines[1].replace('https://foodbell.kr/', repo_url))
     assert text_of(phone, 'h1') == '2026년 10월 22일 전화 걸기'
     rows = phone.evaluate("""() => [...document.querySelectorAll('a.call')].map((a) =>
         [...a.querySelectorAll('span')].slice(0, 3).map((s) => s.textContent.trim()).concat(a.getAttribute('href')))""")
@@ -730,6 +745,40 @@ def test_daily_phone_send_adds_call_link(phone, repo_url, custom_token, made):
         ['3번', '연락처', '010-0000-3001', 'tel:01000003001'],
         ['3번', '안내', '02-000-4000', 'tel:020004000'],
     ]
+
+
+def test_daily_cancelled_send_shows_no_call_window(phone, repo_url, custom_token, made):
+    """사장님이 사진 공유창을 닫으면(안 보냄) 전화 링크 창도 안 뜬다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    stub_share(phone, cancel=True)
+    phone.click('#btn-edit')
+    fill_phone_numbers(phone)
+    phone.click('#btn-send')
+    shared(phone, 1)
+    phone.wait_for_timeout(800)
+    assert phone.locator('#call-dlg').is_hidden()
+    assert text_of(phone, '#btn-send') == '직원에게 보내기'
+
+
+def test_daily_pc_send_then_copy_call_link(pc, repo_url, custom_token, made):
+    """PC: 사진을 클립보드에 넣은 뒤 같은 창이 뜨고, 버튼은 '전화 링크 복사' — 사진을 먼저 붙여넣고 누르라고 알린다."""
+    pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', '2026년 10월 22일')
+    fill_phone_numbers(pc)
+    # 시험 브라우저의 사진 복사는 될 때도 안 될 때도 있다 — '사진 복사됨' 으로 정해 둔다
+    pc.evaluate("() => Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: () => Promise.resolve() })")
+    pc.click('#btn-send')
+    pc.locator('#call-dlg').wait_for(state='visible', timeout=60_000)
+    assert text_of(pc, '#call-ok') == '전화 링크 복사'
+    assert '먼저 붙여넣은 다음' in text_of(pc, '#call-dlg')
+    pc.click('#call-ok')
+    pc.wait_for_function("navigator.clipboard.readText().then((t) => t.includes('call.html#'))", timeout=5_000)
+    lines = pc.evaluate('navigator.clipboard.readText()').splitlines()   # 윈도우 클립보드는 줄바꿈을 \r\n 으로 바꾼다
+    assert len(lines) == 2 and lines[0] == CALL_HEAD, lines
+    assert lines[1].startswith('https://foodbell.kr/call.html#2026102'), lines
+    assert pc.locator('#call-dlg').is_hidden()
 
 
 def test_call_page_shows_nothing_for_a_bad_link(phone, repo_url):

@@ -365,6 +365,12 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
   <div class="paste-btns"><button type="button" id="paste-cancel">닫기</button><button type="button" id="paste-ok" class="primary">넣기</button></div>
 </dialog>
 
+<dialog class="paste-dlg" id="call-dlg" aria-labelledby="call-title">
+  <p id="call-title"><strong>전화 링크도 보내 주세요</strong> — 직원이 단톡방에서 이 링크를 누르면 일정표의 번호로 바로 전화를 걸 수 있습니다. 카톡은 사진과 같이 보낸 글을 빼고 올려서, 링크는 따로 보내야 합니다.</p>
+  <p id="call-pc">단톡방에 사진을 먼저 붙여넣은 다음 누르세요 — 링크를 복사하면 복사해 둔 사진이 지워집니다.</p>
+  <div class="paste-btns"><button type="button" id="call-cancel">닫기</button><button type="button" id="call-ok" class="primary">전화 링크 보내기</button></div>
+</dialog>
+
 <article class="sheet">
 
   <!-- ================= 표제 ================= -->
@@ -576,7 +582,7 @@ function telShape(d) {
    날짜 같은 숫자 · 이미 작대기가 있는 번호 · 번호 앞뒤 글자는 그대로 */
 const dashTels = (s) => s.replace(/(^|[^\d-])(\d{8,11})(?![\d-])/g, (all, pre, d) => (telShape(d) ? pre + telShape(d) : all));
 
-/* 휴대폰으로 보낼 때 사진과 같이 가는 '전화 걸기' 링크(call.html) — 직원 폰 카톡은 사진 속 번호도, 글 속 번호도 눌리지 않았다
+/* 사진을 보낸 뒤 따로 보내는 '전화 걸기' 링크(call.html) — 직원 폰 카톡은 사진 속 번호도, 글 속 번호도 눌리지 않았다
    (사장님 시험 2026-10-21). 번호는 # 뒤에만(서버로 안 감): 날짜 - 줄 번호 + 칸(c 연락처 · t 팀장 · g 안내) + 숫자만 쓴 번호.
    번호가 하나도 없으면 '' */
 const CALL_KIND = { tel: 'c', 'lead-tel': 't', 'guide-tel': 'g' };
@@ -769,8 +775,7 @@ document.getElementById('btn-send').addEventListener('click', function () {
   btn.disabled = true; btn.textContent = '준비 중…';
   setEditing(false);
   const title = `푸드벨 일일 일정표 (${label()})`;
-  const call = callLink();   // 번호가 있으면 일정표 주소(직원은 로그인이 없어 못 연다) 대신 '전화 걸기' 링크 — 링크는 줄에 혼자
-  const text = call ? `${title}\n번호를 눌러 전화하려면 아래 링크를 누르세요\n${call}` : `${title}\n${PAGE_URL}`;
+  const text = `${title}\n${PAGE_URL}`;
   const done = () => { btn.disabled = false; btn.textContent = old; };
   renderPages().then((pages) => {
     const files = pages.map((p) => new File([p.blob], p.name, { type: 'image/png' }));
@@ -779,14 +784,14 @@ document.getElementById('btn-send').addEventListener('click', function () {
       pages.forEach((p) => downloadBlob(p.blob, p.name));
       copyImage(pages[0].blob).then((ok) => {
         const many = pages.length > 1 ? ` (사진 ${pages.length}장 — 첫 장만 복사됨, 모두 다운로드 폴더에)` : ` (다운로드 폴더에도 ${pages[0].name} 저장됨)`;
-        if (ok) toast('일정표 사진을 복사했습니다. 직원 단톡방 대화창에서 Ctrl+V 로 붙여넣으세요.' + many, 8000);
+        if (ok) { toast('일정표 사진을 복사했습니다. 직원 단톡방 대화창에서 Ctrl+V 로 붙여넣으세요.' + many, 8000); offerCallLink(title, false); }
         else { copyText(buildText()); toast(`사진 ${pages.length}장을 저장하고 요약 문구를 복사했습니다. 카톡으로 단톡방에 보내세요.`); }
         done();
       });
     }
     // 휴대폰: 공유창(카톡 단톡방 고르기)으로 사진(장마다)을 넘긴다. PC 공유 창에는 카카오톡 PC 가 안 나와서 쓰지 않는다
     if (files.length && matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files })) {
-      navigator.share({ files, title, text }).then(done, (e) => {
+      navigator.share({ files, title, text }).then(() => { done(); offerCallLink(title, true); }, (e) => {
         if (e && e.name === 'AbortError') return done();
         fallback();
       });
@@ -795,6 +800,33 @@ document.getElementById('btn-send').addEventListener('click', function () {
     fallback();
   });
 });
+
+/* 사진을 보낸 뒤 '전화 링크' 창 — 카톡은 사진과 같이 넘긴 글을 통째로 버려서(2026-10-21 시험) 링크는 글만 따로 보낸다.
+   휴대폰은 공유창으로, PC 는 클립보드로(사진을 먼저 붙여넣은 다음). 번호가 하나도 없으면 띄우지 않는다 */
+const callDlg = document.getElementById('call-dlg');
+const callOk = document.getElementById('call-ok');
+let callText = '', callShare = false;
+function offerCallLink(title, viaShare) {
+  const link = callLink();
+  if (!link) return;
+  callText = `${title} 전화 걸기\n${link}`;
+  callShare = viaShare;
+  callOk.textContent = viaShare ? '전화 링크 보내기' : '전화 링크 복사';
+  document.getElementById('call-pc').hidden = viaShare;
+  callDlg.showModal();
+}
+callOk.addEventListener('click', () => {
+  callDlg.close();
+  if (callShare && navigator.share) {
+    navigator.share({ text: callText }).catch((e) => {
+      if (e && e.name === 'AbortError') return;
+      copyText(callText); toast('전화 링크를 복사했습니다. 단톡방 대화창에 붙여넣으세요.');
+    });
+    return;
+  }
+  copyText(callText).then(() => toast('전화 링크를 복사했습니다. 직원 단톡방 대화창에서 Ctrl+V 로 붙여넣으세요.', 6000));
+});
+document.getElementById('call-cancel').addEventListener('click', () => callDlg.close());
 
 document.getElementById('btn-save-file').addEventListener('click', function () {
   if (!recalc() && !window.confirm('일정을 아직 안 넣으셨습니다. 그래도 저장할까요?')) return;
