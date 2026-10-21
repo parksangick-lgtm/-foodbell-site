@@ -128,7 +128,8 @@ function card(r) {
   const crew = [r.staff, r.car].filter(Boolean).join(' · ');
   if (crew) head.append(el('span', 'crew', crew));
   c.append(head);
-  if (r.place) line(c, '장소', r.place, link('btn-map', 'https://map.naver.com/p/search/' + encodeURIComponent(r.place), '지도'));
+  // 휴대폰용 네이버 지도 검색 — map.naver.com/p/search 는 휴대폰 카톡 안에서 '앱 설치' 화면만 나오고 장소가 사라졌다 (10-21 저녁)
+  if (r.place) line(c, '장소', r.place, link('btn-map', 'https://m.map.naver.com/search2/search.naver?query=' + encodeURIComponent(r.place), '지도'));
   phoneLines(c, '연락처', '', r.tel || '');
   if (r.work) line(c, '행사', r.work);
   if (r.amt) line(c, '금액', r.amt);

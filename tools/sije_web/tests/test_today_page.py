@@ -25,7 +25,8 @@ def md(d):
 
 
 def naver(place):
-    return 'https://map.naver.com/p/search/' + urllib.parse.quote(place, safe='')
+    """휴대폰용 네이버 지도 검색 — map.naver.com/p/search 는 휴대폰 카톡 안에서 '앱 설치' 화면만 나와 장소가 사라졌다 (10-21 저녁)."""
+    return 'https://m.map.naver.com/search2/search.naver?query=' + urllib.parse.quote(place, safe='')
 
 
 def row(no=1, **kw):
