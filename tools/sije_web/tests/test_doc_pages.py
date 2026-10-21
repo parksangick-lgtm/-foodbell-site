@@ -1134,3 +1134,34 @@ def test_today_updates_live(pc, browser, repo_url, custom_token, test_db, made, 
         assert staff.errors == []
     finally:
         ctx.close()
+
+
+def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_token, made):
+    """사장님 일정표 화면(편집 완료 상태)에서도 장소를 누르면 지도(새 창), 번호를 누르면 전화 — 사장님 10-21 저녁
+    ('지도는 안되고있어' 캡처가 일정표 화면이었다). 편집 중 · 저장 · 직원 사진에는 링크가 없다."""
+    place = '가짜추모공원 #3 & 제례실'
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    phone.click('#btn-edit')
+    edit_cell(phone, 'tr.item [data-f="place"]', place)
+    edit_cell(phone, 'tr.item [data-f="tel"]', '010-0000-1234, 010-0000-1235')
+    edit_cell(phone, 'tr.item [data-f="lead-tel"]', '010-0000-2000')
+    edit_cell(phone, 'tr.item [data-f="guide-tel"]', '02-000-4000')
+    phone.click('#btn-edit')
+    maps = phone.eval_on_selector_all('tr.item a.map1', 'as => as.map((a) => [a.getAttribute("href"), a.target, a.textContent])')
+    assert maps == [['https://m.map.naver.com/search2/search.naver?query=' + urllib.parse.quote(place, safe=''), '_blank', place]]
+    calls = phone.eval_on_selector_all('tr.item a.tel1', 'as => as.map((a) => a.getAttribute("href"))')
+    assert calls == ['tel:01000001234', 'tel:01000001235', 'tel:01000002000', 'tel:020004000']
+    saved = phone.evaluate('window.FoodbellDoc.serialize()')
+    assert 'map1' not in saved and 'tel1' not in saved and place.replace('&', '&amp;') in saved   # 저장은 글자만
+    # 직원에게 보내는 사진(html.shot)에서는 밑줄 · 색이 바뀌지 않는다
+    look = phone.evaluate("""() => {
+        document.documentElement.classList.add('shot');
+        const a = document.querySelector('tr.item a.map1'), td = a.parentElement;
+        const r = [getComputedStyle(a).textDecorationLine, getComputedStyle(a).color === getComputedStyle(td).color];
+        document.documentElement.classList.remove('shot');
+        return r.concat(getComputedStyle(a).textDecorationLine);
+    }""")
+    assert look == ['none', True, 'underline']                                            # 화면에서만 밑줄 (대조)
+    phone.click('#btn-edit')                                                              # 편집 중에는 글자만
+    assert phone.locator('tr.item a.map1, tr.item a.tel1').count() == 0
+    assert text_of(phone, 'tr.item [data-f="place"]') == place

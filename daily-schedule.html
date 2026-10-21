@@ -284,6 +284,10 @@ table.stmt.day-table thead th{white-space:normal; word-break:keep-all}   /* 좁�
 table.stmt.day-table td{vertical-align:top; overflow-wrap:anywhere}
 table.stmt.day-table .sub{display:block; font-size:.86em; color:var(--ink); font-weight:var(--w-medium)}   /* 장소 · 연락처 · 팀장 전화 — 큰 글씨와 같은 톤 (사장님 2026-10-21) */
 table.stmt.day-table .tel1{white-space:nowrap}   /* 전화번호 하나는 한 줄로 — 번호 둘이면 사이에서 줄바꿈 (telsWrapped) */
+/* 보기에서만 번호 → 전화 · 장소 → 지도 (사장님 2026-10-21 저녁). 화면에서만 옅은 밑줄 — 직원 사진(html.shot) · 인쇄는 전과 같은 글자 */
+table.stmt.day-table a.tel1, table.stmt.day-table a.map1{color:inherit; text-decoration:underline; text-decoration-color:var(--gold); text-underline-offset:3px}
+html.shot table.stmt.day-table a.tel1, html.shot table.stmt.day-table a.map1{text-decoration:none}
+@media print{ table.stmt.day-table a.tel1, table.stmt.day-table a.map1{text-decoration:none} }
 table.stmt.day-table [data-f="memo"]{white-space:pre-line}   /* 붙여넣은 주문 글은 줄을 바꿔 그대로 (문자 붙여넣기) */
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
@@ -526,6 +530,7 @@ function serialize() {
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
   telsPlain(c);
+  placesPlain(c);
   return c.innerHTML;
 }
 /* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
@@ -553,13 +558,32 @@ function addControls() {
 function removeControls() { each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove()); }
 function setCE(on) { each(sheet.querySelectorAll('[data-edit]'), (e) => { e.contentEditable = on ? 'true' : 'false'; }); }
 /* 전화번호 칸: 보기에서만 번호마다 한 덩어리(.tel1)로 묶어 번호 사이에서만 줄이 바뀌게 — 크롬은 하이픈 뒤에서도 끊는다.
-   편집 · 저장은 글자 그대로 (최종 검토 I4) */
+   그 덩어리는 누르면 전화가 걸리는 링크(사장님 2026-10-21 저녁). 편집 · 저장은 글자 그대로 (최종 검토 I4) */
 const TEL = /(\d{2,4}-\d{3,4}-\d{4})/;
 function telsPlain(root) { each(root.querySelectorAll('[data-f$="tel"]'), (n) => { if (n.children.length) n.textContent = n.textContent; }); }
+function telLink(p) {
+  const a = el('a', 'tel1', p);
+  a.href = 'tel:' + p.replace(/-/g, '');
+  return a;
+}
 function telsWrapped() {
   each(sheet.querySelectorAll('[data-f$="tel"]'), (n) => {
     if (n.children.length || !TEL.test(n.textContent)) return;
-    n.replaceChildren(...n.textContent.split(TEL).map((p, i) => (i % 2 ? el('span', 'tel1', p) : document.createTextNode(p))));
+    n.replaceChildren(...n.textContent.split(TEL).map((p, i) => (i % 2 ? telLink(p) : document.createTextNode(p))));
+  });
+}
+/* 장소 칸: 보기에서만 누르면 네이버 지도(휴대폰용 주소, 새 창) — today.html 의 [지도]와 같은 주소. 편집 · 저장은 글자 그대로
+   (사장님 2026-10-21 저녁 — 일정표 화면에서 장소를 눌러도 지도가 안 나왔다) */
+const MAP = 'https://m.map.naver.com/search2/search.naver?query=';
+function placesPlain(root) { each(root.querySelectorAll('[data-f="place"]'), (n) => { if (n.children.length) n.textContent = n.textContent; }); }
+function placesLinked() {
+  each(sheet.querySelectorAll('[data-f="place"]'), (n) => {
+    if (n.children.length || !clean(n.textContent)) return;
+    const a = el('a', 'map1', n.textContent);
+    a.href = MAP + encodeURIComponent(clean(n.textContent));
+    a.target = '_blank';
+    a.rel = 'noopener';
+    n.replaceChildren(a);
   });
 }
 /* 숫자만 쓴 번호 → 작대기 넣은 꼴, 전화번호 모양이 아니면 null — 휴대폰 · 지역번호(02 · 031 …) · 070 · 대표번호(1588 …).
@@ -577,8 +601,8 @@ function setEditing(on) {
   body.classList.toggle('editing', on);
   btnEdit.setAttribute('aria-pressed', String(on));
   btnEdit.textContent = on ? '편집 완료' : '편집';
-  if (on) { telsPlain(sheet); addControls(); setCE(true); }
-  else { removeControls(); setCE(false); telsWrapped(); save(); }
+  if (on) { telsPlain(sheet); placesPlain(sheet); addControls(); setCE(true); }
+  else { removeControls(); setCE(false); telsWrapped(); placesLinked(); save(); }
 }
 
 /* ---------- 입력 처리 (새로 추가한 줄까지) ---------- */
@@ -811,7 +835,7 @@ window.FoodbellDoc = {
   load(html) {
     sheet.innerHTML = html; recalc();
     if (body.classList.contains('editing')) { addControls(); setCE(true); }   /* 편집 중에 다른 기기 고침이 와도 고칠 수 있게 */
-    else telsWrapped();
+    else { telsWrapped(); placesLinked(); }
   },
   fresh() { sheet.innerHTML = FRESH; fillFresh(); },
   // 가장 최근에 고친 일정표(저장된 화면)에서 순번 · 전달 메모만 이어받는다 — 없으면 맨 처음 글 그대로
