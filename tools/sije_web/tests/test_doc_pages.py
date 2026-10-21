@@ -4,6 +4,7 @@ import datetime
 import re
 import threading
 import time
+import urllib.parse
 import uuid
 
 import pytest
@@ -693,7 +694,7 @@ def shared(page, n):
 
 
 PHOTO_TEXT = '푸드벨 일일 일정표 (2026년 10월 22일 (목))\nhttps://foodbell.kr/daily-schedule.html'
-CALL_HEAD = '푸드벨 일일 일정표 (2026년 10월 22일 (목)) 전화 걸기'
+CALL_HEAD = '푸드벨 일일 일정표 (2026년 10월 22일 (목)) 전화 · 지도'
 
 
 def fill_phone_numbers(page):
@@ -726,7 +727,7 @@ def test_daily_phone_send_then_call_link(phone, repo_url, custom_token, made):
     photos = shared(phone, 2)
     assert photos['files'] >= 1 and photos['text'] == PHOTO_TEXT  # 사진과 같이 넘기는 글은 전과 같다 (카톡이 버린다)
     phone.locator('#call-dlg').wait_for(state='visible', timeout=10_000)
-    assert text_of(phone, '#call-ok') == '전화 링크 보내기'
+    assert text_of(phone, '#call-ok') == '전화 · 지도 링크 보내기'
     phone.click('#call-ok')
     sent = shared(phone, 3)
     lines = sent['text'].split('\n')
@@ -735,7 +736,7 @@ def test_daily_phone_send_then_call_link(phone, repo_url, custom_token, made):
     assert lines[1].startswith('https://foodbell.kr/call.html#') and ' ' not in lines[1], lines   # 링크는 줄에 혼자
     assert phone.locator('#call-dlg').is_hidden()
     phone.goto(lines[1].replace('https://foodbell.kr/', repo_url))
-    assert text_of(phone, 'h1') == '2026년 10월 22일 전화 걸기'
+    assert text_of(phone, 'h1') == '2026년 10월 22일 전화 · 지도'
     rows = phone.evaluate("""() => [...document.querySelectorAll('a.call')].map((a) =>
         [...a.querySelectorAll('span')].slice(0, 3).map((s) => s.textContent.trim()).concat(a.getAttribute('href')))""")
     assert rows == [
@@ -771,7 +772,7 @@ def test_daily_pc_send_then_copy_call_link(pc, repo_url, custom_token, made):
     pc.evaluate("() => Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: () => Promise.resolve() })")
     pc.click('#btn-send')
     pc.locator('#call-dlg').wait_for(state='visible', timeout=60_000)
-    assert text_of(pc, '#call-ok') == '전화 링크 복사'
+    assert text_of(pc, '#call-ok') == '전화 · 지도 링크 복사'
     assert '먼저 붙여넣은 다음' in text_of(pc, '#call-dlg')
     pc.click('#call-ok')
     pc.wait_for_function("navigator.clipboard.readText().then((t) => t.includes('call.html#'))", timeout=5_000)
@@ -838,17 +839,48 @@ def test_daily_paste_fills_funeral_times(pc, repo_url, custom_token, made):
     assert text_of(pc, 'tr.item [data-f="hall"]') == ''            # 장례식장 이름은 읽지 않는다 (손으로)
 
 
+def test_daily_call_link_shows_map_for_places(phone, repo_url, custom_token, made):
+    """'전화 · 지도' 화면 — 줄마다 장소와 [지도](네이버 지도 검색, 사장님 2026-10-21). 장소만 있고 번호가 없는 줄도 나오고,
+    장소가 빈 줄은 [지도]가 없다. 장소 글자의 '-'(번지 '산00-00')가 링크를 끊지 않는다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    stub_share(phone)
+    phone.click('#btn-edit')
+    edit_cell(phone, '[data-k="date"]', '2026년 10월 22일')
+    phone.click('tr.addrow button')
+    phone.click('tr.addrow button')
+    edit_cell(phone, 'tr.item:nth-child(1) [data-f="place"]', '가짜추모공원 제례실')
+    edit_cell(phone, 'tr.item:nth-child(1) [data-f="tel"]', '010-0000-1234')
+    edit_cell(phone, 'tr.item:nth-child(2) [data-f="place"]', '가짜군 가짜면 산00-00')     # 번호 없는 줄
+    edit_cell(phone, 'tr.item:nth-child(3) [data-f="work"]', '가짜동 제사상')              # 장소 없는 줄
+    phone.click('#btn-send')
+    shared(phone, 1)
+    phone.locator('#call-dlg').wait_for(state='visible', timeout=10_000)
+    phone.click('#call-ok')
+    link = shared(phone, 2)['text'].split('\n')[1]
+    assert ' ' not in link, link
+    phone.goto(link.replace('https://foodbell.kr/', repo_url))
+    rows = phone.evaluate("""() => [...document.querySelectorAll('a.call')].map((a) =>
+        [...a.querySelectorAll('span')].slice(0, 3).map((s) => s.textContent.trim()).concat(a.getAttribute('href')))""")
+    naver = lambda place: 'https://map.naver.com/p/search/' + urllib.parse.quote(place, safe='')   # noqa: E731
+    assert rows == [
+        ['1번', '장소', '가짜추모공원 제례실', naver('가짜추모공원 제례실')],
+        ['1번', '연락처', '010-0000-1234', 'tel:01000001234'],
+        ['2번', '장소', '가짜군 가짜면 산00-00', naver('가짜군 가짜면 산00-00')],
+    ], rows
+    assert [t.strip() for t in phone.locator('a.call .go').all_inner_texts()] == ['지도', '전화', '지도']
+
+
 def test_call_page_shows_nothing_for_a_bad_link(phone, repo_url):
-    """'전화 걸기' 화면 — 링크가 잘렸거나 이상하면 전화 버튼을 만들지 않는다 (엉뚱한 번호로 걸지 않게)."""
-    for tail in ('', '#', '#abc', '#20261022-9x01000001234-1c123-1c010000012345'):
+    """'전화 · 지도' 화면 — 링크가 잘렸거나 이상하면 버튼을 만들지 않는다 (엉뚱한 번호로 걸지 않게)."""
+    for tail in ('', '#', '#abc', '#20261022-9x01000001234-1c123-1c010000012345', '#1p', '#1p%E0%A4%A'):
         phone.goto('about:blank')
         phone.goto(f'{repo_url}call.html{tail}')
         assert phone.locator('a.call').count() == 0, tail
-        assert text_of(phone, '#hint') == '번호가 없습니다. 일정표 사진을 확인해 주세요.', tail
+        assert text_of(phone, '#hint') == '번호 · 장소가 없습니다. 일정표 사진을 확인해 주세요.', tail
     phone.goto('about:blank')
     phone.goto(f'{repo_url}call.html#1c01000001234')               # 날짜가 없어도 번호는 보인다 (대조)
     assert phone.locator('a.call').count() == 1
-    assert text_of(phone, 'h1') == '전화 걸기'
+    assert text_of(phone, 'h1') == '전화 · 지도'
 
 
 def test_daily_table_headers_fit_their_columns(pc, repo_url, custom_token, made):

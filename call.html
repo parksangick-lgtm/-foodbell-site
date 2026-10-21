@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>푸드벨 전화 걸기</title>
+<title>푸드벨 전화 · 지도</title>
 <!-- 직원이 카톡 일정표 사진과 같이 온 링크를 눌러 여는 화면 (사장님 2026-10-21).
      번호는 주소의 # 뒤에만 있다 — 서버 · 카톡 미리보기로는 가지 않는다. 만드는 쪽은 daily-schedule.html 의 callLink.
-     #20261022-1c01012345678-1t…  = 날짜(없어도 됨) - 줄 번호 + 칸(c 연락처 · t 팀장 · g 안내) + 숫자만 쓴 번호
+     #20261022-1p…-1c01012345678-1t…  = 날짜(없어도 됨) - 줄 번호 + 칸(c 연락처 · t 팀장 · g 안내) + 숫자만 쓴 번호
+     p = 장소(주소용 글자, '-' 는 %2D) → [지도] 는 네이버 지도 검색 (같은 날 사장님)
      산속 약한 신호에서도 바로 뜨게 글꼴은 기다리지 않는다(곱은바탕은 받아지면 바뀐다) -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" media="print" onload="this.media='all'">
 <style>
@@ -22,13 +23,14 @@ a.call{display:flex; align-items:center; gap:10px; padding:14px; background:var(
 a.call .no{font-weight:700; white-space:nowrap}
 a.call .who{color:var(--ink-mute); white-space:nowrap}
 a.call .num{font-weight:700; white-space:nowrap}
+a.call .num.place{white-space:normal; word-break:keep-all; overflow-wrap:anywhere; min-width:0; font-weight:600}   /* 장소는 길다 — 줄을 바꿔 칸 안에 */
 a.call .go{margin-left:auto; background:var(--primary); color:#fff; padding:6px 14px; border-radius:8px; font-weight:600; white-space:nowrap}
 </style>
 </head>
 <body>
 <main>
-  <h1 id="title">전화 걸기</h1>
-  <p id="hint">일정표 사진의 줄 번호를 보고 누르세요. 누르면 전화 앱에 번호가 뜹니다.</p>
+  <h1 id="title">전화 · 지도</h1>
+  <p id="hint">일정표 사진의 줄 번호를 보고 누르세요. [전화]는 전화 앱에 번호가 뜨고, [지도]는 네이버 지도에서 장소를 찾습니다.</p>
   <ul id="list"></ul>
 </main>
 <script>
@@ -44,22 +46,29 @@ a.call .go{margin-left:auto; background:var(--primary); color:#fff; padding:6px 
   var day = /^(\d{4})(\d{2})(\d{2})$/.exec(parts[0]);
   if (day) {
     parts.shift();
-    document.getElementById('title').textContent = +day[1] + '년 ' + +day[2] + '월 ' + +day[3] + '일 전화 걸기';
+    document.getElementById('title').textContent = +day[1] + '년 ' + +day[2] + '월 ' + +day[3] + '일 전화 · 지도';
   }
   var list = document.getElementById('list');
-  parts.forEach(function (p) {
-    var e = /^(\d{1,3})([ctg])(\d+)$/.exec(p);
-    var shown = e && telShape(e[3]);
-    if (!shown) return;
+  function add(href, no, who, what, cls, go) {
     var a = document.createElement('a');
     a.className = 'call';
-    a.href = 'tel:' + e[3];
-    a.append(span('no', e[1] + '번'), span('who', WHO[e[2]]), span('num', shown), span('go', '전화'));
+    a.href = href;
+    a.append(span('no', no + '번'), span('who', who), span(cls, what), span('go', go));
     var li = document.createElement('li');
     li.appendChild(a);
     list.appendChild(li);
+  }
+  // 장소 글자 — 주소용 글자가 깨졌으면(잘린 링크) 버린다
+  function placeOf(s) { try { return decodeURIComponent(s).trim(); } catch (err) { return ''; } }
+  parts.forEach(function (p) {
+    var m = /^(\d{1,3})p(.+)$/.exec(p);
+    var place = m && placeOf(m[2]);
+    if (place) return add('https://map.naver.com/p/search/' + encodeURIComponent(place), m[1], '장소', place, 'num place', '지도');
+    var e = /^(\d{1,3})([ctg])(\d+)$/.exec(p);
+    var shown = e && telShape(e[3]);
+    if (shown) add('tel:' + e[3], e[1], WHO[e[2]], shown, 'num', '전화');
   });
-  if (!list.children.length) document.getElementById('hint').textContent = '번호가 없습니다. 일정표 사진을 확인해 주세요.';
+  if (!list.children.length) document.getElementById('hint').textContent = '번호 · 장소가 없습니다. 일정표 사진을 확인해 주세요.';
 })();
 </script>
 </body>
