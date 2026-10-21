@@ -591,6 +591,25 @@ def test_daily_bare_number_price_asks_for_unit(pc, repo_url, custom_token, test_
     assert 'warn' not in (amt.get_attribute('class') or '')
 
 
+def test_daily_comma_number_price_is_won(pc, repo_url, custom_token, made):
+    """천 단위 쉼표를 찍은 숫자('350,000')는 원이 분명하다 — 사장님이 단가에 '350,000' 을 쳤는데 '단위를 적어 주세요' 가 되어
+    사진 · 인쇄에 금액이 빠졌다(2026-10-21 실제 일정표). 쉼표 없는 숫자('250' · '15000')는 전처럼 단위를 묻는다 (대조)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '49재')
+    amt = pc.locator('tr.item [data-k="amt"]').first
+    for typed, want in (('350,000', '350,000원'), ('1,200,000', '1,200,000원')):
+        edit_cell(pc, 'tr.item [data-f="price"]', typed)
+        assert amt.inner_text().strip() == want, typed
+        assert 'warn' not in (amt.get_attribute('class') or ''), typed
+    for typed in ('250', '15000', '35,0000'):                     # 쉼표 없거나 쉼표 자리가 틀리면 단위를 묻는다
+        edit_cell(pc, 'tr.item [data-f="price"]', typed)
+        assert amt.inner_text().strip() == '단위를 적어 주세요(예: 25만)', typed
+    edit_cell(pc, 'tr.item [data-f="people"]', '60명')
+    edit_cell(pc, 'tr.item [data-f="price"]', '15,000')
+    assert amt.inner_text().strip() == '60명 × 15,000원 = 900,000원'
+
+
 def test_daily_paste_order_fills_empty_cells_only(pc, repo_url, custom_token, made):
     """'문자 붙여넣기' — 비어 있는 시간 · 단가만 채우고 이미 적힌 연락처는 그대로, 인원은 안 뽑고, 원문은 메모 끝에.
     단가만 있으면 사진의 금액 자리에 단가가 보인다 (사장님 결정 2026-10-20 · 표본 tools/sije_web/js-tests/fixtures/order-samples.json)."""
