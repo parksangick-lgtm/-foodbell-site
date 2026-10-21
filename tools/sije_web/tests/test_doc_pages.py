@@ -713,7 +713,6 @@ def shared(page, n):
 
 
 PHOTO_TEXT = '푸드벨 일일 일정표 (2026년 10월 22일 (목))\nhttps://foodbell.kr/daily-schedule.html'
-CALL_HEAD = '푸드벨 일일 일정표 (2026년 10월 22일 (목)) 전화 · 지도'
 
 
 def fill_phone_numbers(page):
@@ -726,62 +725,25 @@ def fill_phone_numbers(page):
     edit_cell(page, 'tr.item:nth-child(3) [data-f="guide-tel"]', '02-000-4000')
 
 
-def test_daily_phone_send_then_call_link(phone, repo_url, custom_token, made):
-    """직원은 카톡 사진만 받는다 — 사진 속 번호는 못 누르고, 직원 폰 카톡은 글 속 번호도 안 눌린다(2026-10-21 사장님 시험).
-    카톡은 사진과 같이 넘긴 글을 통째로 버린다(시험 화면으로 확인, 기록장 #36) — 그래서 사진을 보낸 뒤 창의 '전화 링크 보내기'로
-    링크 글만 따로 공유한다. 링크는 줄에 혼자(카톡이 링크로 알아보게), 번호는 # 뒤(서버로 안 감). 번호가 없으면 창이 안 뜬다."""
+def test_daily_send_has_no_second_window(phone, repo_url, custom_token, made):
+    """사진만 보낸다 — 전화 · 지도는 단톡방 공지의 고정 링크(today.html)가 맡아서 사진 뒤 두 번째 창은 없다
+    (사장님 2026-10-21: 매일 두 번 보내기가 불편). 번호가 있는 일정이어도 공유는 한 번."""
     daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
     stub_share(phone)
     phone.click('#btn-edit')
     edit_cell(phone, '[data-k="date"]', '2026년 10월 22일')
-    edit_cell(phone, 'tr.item [data-f="work"]', '가짜동 상차림')
-    phone.click('#btn-send')                                      # 번호가 없으면 창이 안 뜬다 (대조)
-    first = shared(phone, 1)
-    assert first['files'] >= 1 and first['text'] == PHOTO_TEXT
-    phone.wait_for_timeout(800)
-    assert phone.locator('#call-dlg').is_hidden()
-    phone.click('#btn-edit')
     fill_phone_numbers(phone)
     phone.click('#btn-send')
-    photos = shared(phone, 2)
-    assert photos['files'] >= 1 and photos['text'] == PHOTO_TEXT  # 사진과 같이 넘기는 글은 전과 같다 (카톡이 버린다)
-    phone.locator('#call-dlg').wait_for(state='visible', timeout=10_000)
-    assert text_of(phone, '#call-ok') == '전화 · 지도 링크 보내기'
-    phone.click('#call-ok')
-    sent = shared(phone, 3)
-    lines = sent['text'].split('\n')
-    assert sent['files'] == 0, sent                               # 링크는 사진 없이 글만
-    assert len(lines) == 2 and lines[0] == CALL_HEAD, lines
-    assert lines[1].startswith('https://foodbell.kr/call.html#') and ' ' not in lines[1], lines   # 링크는 줄에 혼자
-    assert phone.locator('#call-dlg').is_hidden()
-    phone.goto(lines[1].replace('https://foodbell.kr/', repo_url))
-    assert text_of(phone, 'h1') == '2026년 10월 22일 전화 · 지도'
-    rows = phone.evaluate("""() => [...document.querySelectorAll('a.call')].map((a) =>
-        [...a.querySelectorAll('span')].slice(0, 3).map((s) => s.textContent.trim()).concat(a.getAttribute('href')))""")
-    assert rows == [
-        ['1번', '연락처', '010-0000-1234', 'tel:01000001234'],
-        ['1번', '팀장', '010-0000-2000', 'tel:01000002000'],
-        ['3번', '연락처', '010-0000-3000', 'tel:01000003000'],
-        ['3번', '연락처', '010-0000-3001', 'tel:01000003001'],
-        ['3번', '안내', '02-000-4000', 'tel:020004000'],
-    ]
-
-
-def test_daily_cancelled_send_shows_no_call_window(phone, repo_url, custom_token, made):
-    """사장님이 사진 공유창을 닫으면(안 보냄) 전화 링크 창도 안 뜬다."""
-    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
-    stub_share(phone, cancel=True)
-    phone.click('#btn-edit')
-    fill_phone_numbers(phone)
-    phone.click('#btn-send')
-    shared(phone, 1)
+    photos = shared(phone, 1)
+    assert photos['files'] >= 1 and photos['text'] == PHOTO_TEXT
+    phone.locator('#btn-send', has_text='직원에게 보내기').wait_for(timeout=10_000)
     phone.wait_for_timeout(800)
-    assert phone.locator('#call-dlg').is_hidden()
-    assert text_of(phone, '#btn-send') == '직원에게 보내기'
+    assert phone.evaluate('window.__shared.length') == 1
+    assert phone.locator('#call-dlg').count() == 0
 
 
-def test_daily_pc_send_then_copy_call_link(pc, repo_url, custom_token, made):
-    """PC: 사진을 클립보드에 넣은 뒤 같은 창이 뜨고, 버튼은 '전화 링크 복사' — 사진을 먼저 붙여넣고 누르라고 알린다."""
+def test_daily_pc_send_has_no_second_window(pc, repo_url, custom_token, made):
+    """PC: 사진을 클립보드에 넣고 끝 — 링크를 복사하라는 두 번째 창은 없다."""
     pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
@@ -790,15 +752,19 @@ def test_daily_pc_send_then_copy_call_link(pc, repo_url, custom_token, made):
     # 시험 브라우저의 사진 복사는 될 때도 안 될 때도 있다 — '사진 복사됨' 으로 정해 둔다
     pc.evaluate("() => Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: () => Promise.resolve() })")
     pc.click('#btn-send')
-    pc.locator('#call-dlg').wait_for(state='visible', timeout=60_000)
-    assert text_of(pc, '#call-ok') == '전화 · 지도 링크 복사'
-    assert '먼저 붙여넣은 다음' in text_of(pc, '#call-dlg')
-    pc.click('#call-ok')
-    pc.wait_for_function("navigator.clipboard.readText().then((t) => t.includes('call.html#'))", timeout=5_000)
-    lines = pc.evaluate('navigator.clipboard.readText()').splitlines()   # 윈도우 클립보드는 줄바꿈을 \r\n 으로 바꾼다
-    assert len(lines) == 2 and lines[0] == CALL_HEAD, lines
-    assert lines[1].startswith('https://foodbell.kr/call.html#2026102'), lines
-    assert pc.locator('#call-dlg').is_hidden()
+    pc.get_by_text('일정표 사진을 복사했습니다').wait_for(timeout=60_000)
+    assert pc.locator('#call-dlg').count() == 0
+
+
+def test_daily_cancelled_send_resets_button(phone, repo_url, custom_token, made):
+    """사장님이 사진 공유창을 닫으면(안 보냄) 버튼이 원래대로 돌아온다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    stub_share(phone, cancel=True)
+    phone.click('#btn-edit')
+    fill_phone_numbers(phone)
+    phone.click('#btn-send')
+    shared(phone, 1)
+    phone.locator('#btn-send', has_text='직원에게 보내기').wait_for(timeout=10_000)
 
 
 def test_daily_files_are_named_by_date(pc, repo_url, custom_token, made):
@@ -856,37 +822,6 @@ def test_daily_paste_fills_funeral_times(pc, repo_url, custom_token, made):
     assert text_of(pc, 'tr.item [data-f="cremate"]') == '07시20분'
     assert text_of(pc, 'tr.item [data-f="time"]') == ''            # 발인 · 화장은 상차림 시간이 아니다
     assert text_of(pc, 'tr.item [data-f="hall"]') == ''            # 장례식장 이름은 읽지 않는다 (손으로)
-
-
-def test_daily_call_link_shows_map_for_places(phone, repo_url, custom_token, made):
-    """'전화 · 지도' 화면 — 줄마다 장소와 [지도](네이버 지도 검색, 사장님 2026-10-21). 장소만 있고 번호가 없는 줄도 나오고,
-    장소가 빈 줄은 [지도]가 없다. 장소 글자의 '-'(번지 '산00-00')가 링크를 끊지 않는다."""
-    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
-    stub_share(phone)
-    phone.click('#btn-edit')
-    edit_cell(phone, '[data-k="date"]', '2026년 10월 22일')
-    phone.click('tr.addrow button')
-    phone.click('tr.addrow button')
-    edit_cell(phone, 'tr.item:nth-child(1) [data-f="place"]', '가짜추모공원 제례실')
-    edit_cell(phone, 'tr.item:nth-child(1) [data-f="tel"]', '010-0000-1234')
-    edit_cell(phone, 'tr.item:nth-child(2) [data-f="place"]', '가짜군 가짜면 산00-00')     # 번호 없는 줄
-    edit_cell(phone, 'tr.item:nth-child(3) [data-f="work"]', '가짜동 제사상')              # 장소 없는 줄
-    phone.click('#btn-send')
-    shared(phone, 1)
-    phone.locator('#call-dlg').wait_for(state='visible', timeout=10_000)
-    phone.click('#call-ok')
-    link = shared(phone, 2)['text'].split('\n')[1]
-    assert ' ' not in link, link
-    phone.goto(link.replace('https://foodbell.kr/', repo_url))
-    rows = phone.evaluate("""() => [...document.querySelectorAll('a.call')].map((a) =>
-        [...a.querySelectorAll('span')].slice(0, 3).map((s) => s.textContent.trim()).concat(a.getAttribute('href')))""")
-    naver = lambda place: 'https://map.naver.com/p/search/' + urllib.parse.quote(place, safe='')   # noqa: E731
-    assert rows == [
-        ['1번', '장소', '가짜추모공원 제례실', naver('가짜추모공원 제례실')],
-        ['1번', '연락처', '010-0000-1234', 'tel:01000001234'],
-        ['2번', '장소', '가짜군 가짜면 산00-00', naver('가짜군 가짜면 산00-00')],
-    ], rows
-    assert [t.strip() for t in phone.locator('a.call .go').all_inner_texts()] == ['지도', '전화', '지도']
 
 
 def test_call_page_shows_nothing_for_a_bad_link(phone, repo_url):
@@ -1038,3 +973,138 @@ def test_daily_copy_text_ends_with_site_url(pc, repo_url, custom_token, made):
     lines = text.strip().splitlines()                         # 윈도우 클립보드는 줄바꿈을 \r\n 으로 바꾼다
     assert lines[0] == '[푸드벨 일일 일정표]' and '가짜동 상차림' in text
     assert lines[-1] == 'https://foodbell.kr/'
+
+
+# ---------- 직원 게시판 — 일정표가 저장될 때 today.html 로 가는 칸 (계획 2026-10-21-staff-today-link Task 3) ----------
+
+def kr_date(d):
+    """'2026년 10월 21일' — 일정표 날짜 칸에 치는 글자."""
+    return f'{d.year}년 {d.month}월 {d.day}일'
+
+
+@pytest.fixture
+def share_key(test_db):
+    """시험 프로젝트의 직원 게시판 암호 — 없으면 만들고, 시험마다 칸을 비우고 시작한다."""
+    from tools.sije_web import share_link
+    key = share_link.current_key(test_db)
+    if not key or not test_db.collection('share').document(key).get().exists:
+        key = share_link.new_key(test_db)
+    test_db.collection('share').document(key).set({'entries': {}})
+    return key
+
+
+def board(test_db, key):
+    return (test_db.collection('share').document(key).get().to_dict() or {}).get('entries', {})
+
+
+def wait_board(test_db, key, check, timeout=20):
+    """게시판의 entries 가 check 를 만족할 때까지 — 만족한 entries 를 돌려준다."""
+    ref = test_db.collection('share').document(key)
+    snap = wait_db(ref, lambda s: check((s.to_dict() or {}).get('entries', {})), timeout)
+    return snap.to_dict()['entries']
+
+
+def test_daily_board_gets_filled_rows(pc, repo_url, custom_token, test_db, made, share_key):
+    """채운 줄만, 줄 번호는 일정표 그대로(빈 2번을 건너도 3번), 금액은 화면 글자 — '단위를 적어 주세요' 는 안 간다."""
+    today = datetime.date.today()
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(today))
+    edit_cell(pc, '[data-k="order"]', '가짜1 · 가짜2')
+    edit_cell(pc, '[data-k="memo"]', '가짜 전달 메모')
+    pc.click('tr.addrow button')
+    pc.click('tr.addrow button')
+    one = 'tr.item:nth-child(1)'
+    for f, v in [('staff', '가짜직원'), ('car', '1톤'), ('time', '06:30'), ('place', '가짜추모공원'), ('tel', '01000001234'),
+                 ('work', '가짜동 상차림'), ('people', '60'), ('price', '15,000원'), ('lead', '가짜팀장'),
+                 ('lead-tel', '010-0000-2000'), ('memo', '가짜 메모')]:
+        edit_cell(pc, f'{one} [data-f="{f}"]', v)
+    edit_cell(pc, 'tr.item:nth-child(3) [data-f="work"]', '가짜동 제사상')
+    edit_cell(pc, 'tr.item:nth-child(3) [data-f="price"]', '250')                 # 단위 없음 → 화면에만 알림
+    pc.click('#btn-edit')
+    entries = wait_board(test_db, share_key, lambda e: [r['no'] for r in e.get(doc_id, {}).get('rows', [])] == [1, 3])
+    e = entries[doc_id]
+    assert (e['date'], e['label']) == (today.isoformat(), day_label(today))
+    assert e['lunar'].startswith('음력 ') and (e['order'], e['memo']) == ('가짜1 · 가짜2', '가짜 전달 메모')
+    r1, r3 = e['rows']
+    assert r1 == {'no': 1, 'staff': '가짜직원', 'car': '1톤', 'time': '06:30', 'place': '가짜추모공원', 'tel': '010-0000-1234',
+                  'work': '가짜동 상차림', 'amt': '60명 × 15,000원 = 900,000원', 'lead': '가짜팀장', 'leadTel': '010-0000-2000',
+                  'guideTel': '', 'hall': '', 'depart': '', 'cremate': '', 'memo': '가짜 메모'}
+    assert (r3['work'], r3['amt']) == ('가짜동 제사상', '')
+
+
+def test_daily_open_publishes_and_delete_removes(pc, repo_url, custom_token, test_db, made, share_key):
+    """새 일정표는 열기만 해도 올라가고(날짜 = 내일), 지우면 게시판에서도 빠진다."""
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    entries = wait_board(test_db, share_key, lambda e: doc_id in e)
+    assert entries[doc_id]['date'] == tomorrow.isoformat() and entries[doc_id]['rows'] == []
+    pc.once('dialog', lambda d: d.accept())
+    pc.click('#doc-del')
+    wait_board(test_db, share_key, lambda e: doc_id not in e)
+
+
+def test_daily_unreadable_date_not_on_board(pc, repo_url, custom_token, test_db, made, share_key):
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    wait_board(test_db, share_key, lambda e: doc_id in e)                         # 날짜를 읽으면 올라간다 (대조)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', '10월 21일')                                  # 연도 없음 — 못 읽는 날짜
+    pc.click('#btn-edit')
+    wait_board(test_db, share_key, lambda e: doc_id not in e)
+
+
+def test_daily_board_prunes_old_days(pc, repo_url, custom_token, test_db, made, share_key):
+    """어제보다 지난 날짜의 칸은 올릴 때 지운다 — 어제 것은 남긴다(자정 무렵 폰 시계 차이)."""
+    today = datetime.date.today()
+    test_db.collection('share').document(share_key).update({
+        'entries.old3': {'date': (today - datetime.timedelta(days=3)).isoformat(), 'rows': []},
+        'entries.yday': {'date': (today - datetime.timedelta(days=1)).isoformat(), 'rows': []},
+    })
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    entries = wait_board(test_db, share_key, lambda e: doc_id in e and 'old3' not in e)
+    assert 'yday' in entries
+
+
+def test_daily_board_keeps_other_entries(pc, repo_url, custom_token, test_db, made, share_key):
+    """다른 기기가 올린 다른 일정표 칸은 그대로 — 게시판을 통째로 덮지 않고 칸 하나씩 고친다."""
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    test_db.collection('share').document(share_key).update({'entries.otherdoc': {'date': tomorrow, 'rows': []}})
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    entries = wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('rows'))
+    assert entries['otherdoc'] == {'date': tomorrow, 'rows': []}
+
+
+def test_daily_board_follows_date_change(pc, repo_url, custom_token, test_db, made, share_key):
+    """날짜를 내일 → 모레로 고치면 같은 칸의 날짜만 바뀐다 — 내일 카드가 따로 남지 않는다."""
+    after = datetime.date.today() + datetime.timedelta(days=2)
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    wait_board(test_db, share_key, lambda e: doc_id in e)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(after))
+    pc.click('#btn-edit')
+    entries = wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('date') == after.isoformat())
+    assert list(entries) == [doc_id]
+
+
+def test_today_updates_live(pc, browser, repo_url, custom_token, test_db, made, share_key):
+    """직원 화면(today.html, 로그인 없음)을 열어 둔 채 사장님이 일정표를 고치면 새로고침 없이 바뀐다 (계획 Task 4 —
+    사장님 화면 도구가 이 파일에 있어서 여기 둔다)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(datetime.date.today()))
+    edit_cell(pc, 'tr.item [data-f="place"]', '가짜동 처음 장소')
+    pc.click('#btn-edit')
+    ctx, staff = new_ctx(browser, phone=True)
+    try:
+        staff.goto(f'{repo_url}today.html#{share_key}')
+        staff.locator('#cards', has_text='가짜동 처음 장소').wait_for(timeout=20_000)
+        pc.click('#btn-edit')
+        edit_cell(pc, 'tr.item [data-f="place"]', '가짜동 바뀐 장소')
+        pc.click('#btn-edit')
+        staff.locator('#cards', has_text='가짜동 바뀐 장소').wait_for(timeout=20_000)
+        assert staff.errors == []
+    finally:
+        ctx.close()

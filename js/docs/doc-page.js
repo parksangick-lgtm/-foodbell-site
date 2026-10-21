@@ -4,7 +4,7 @@
 import { KINDS, sortDocs, editedText, rowCells } from './doc-model.js';
 import { putBundle, takeBundle, quoteToEvent, quoteToStatement, NOTES_KEY as NOTES } from './handoff.js';
 import {
-  initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole,
+  initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
 } from '../sije/store.js';
 
 const D = window.FoodbellDoc;
@@ -185,10 +185,24 @@ function flush() {
   failed = false;
   pending = true;
   showState();
-  return saveDoc(docId, html, D.summary()).catch((e) => {
+  const saving = saveDoc(docId, html, D.summary()).catch((e) => {
     failed = true;
     showState();
     toast(`저장하지 못했습니다 (${why(e)})`);
+  });
+  publish(false);
+  return saving;
+}
+
+// 직원 게시판(today.html) — 화면이 share() 를 내줄 때만(일일 일정표), 주인만. 서류 저장과 따로 돌아 실패해도 저장은 그대로.
+// 끊김은 알리지 않는다(연결되면 다음 저장 때 올라간다). 그 밖의 실패는 화면당 한 번만 알린다.
+let shareWarned = false;
+function publish(removed) {
+  if (!D.share || role !== 'owner' || !docId) return;
+  publishShare(docId, removed ? null : D.share()).catch((e) => {
+    if (e.code === 'unavailable' || shareWarned) return;
+    shareWarned = true;
+    toast(`직원 링크 화면에 올리지 못했습니다 (${why(e)})`);
   });
 }
 // 화면을 끄거나 앱을 바꾸면 모으던 것을 바로 올린다
@@ -210,6 +224,7 @@ function onDoc(doc, meta) {
   if (shownFrom === null) {                       // 처음 (방금 이 기기에서 만들어 아직 안 올라간 것도)
     apply(doc.html);
     view('doc');
+    publish(false);                               // 열기만 해도 직원 게시판에 올라간다
     const notes = sessionStorage.getItem(NOTES);  // 다른 서류에서 옮겨 만들며 못 읽은 칸이 있었다
     if (notes) {
       sessionStorage.removeItem(NOTES);
@@ -296,6 +311,7 @@ $('doc-del').addEventListener('click', async () => {
   deleting = true;
   clearTimeout(timer);
   timer = null;
+  publish(true);
   const removing = removeDoc(docId);
   try {
     if (navigator.onLine) await atMost(removing);   // 끊긴 곳에서는 3초까지만 — 연결되면 지워진다

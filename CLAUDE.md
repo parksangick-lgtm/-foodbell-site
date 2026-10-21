@@ -226,6 +226,12 @@ daily-schedule.html   직원용 일일 일정표 (2026-10-20, 설계 docs/superp
                       직원들 구글 계정이 없음, 직원은 카톡 단톡방 사진만). 켜려면 직원 메일을 viewer-add. 편집 · 새로 만들기 · 지우기 버튼이 없고 다른 서류는 못 읽는다.
                       python -m tools.sije_web.allow viewer-add|viewer-remove 메일주소 --key C:\foodbell-keys\sije-admin.json (viewer-list 는 메일 없이).
                       직원이 그만두면 viewer-remove. 사무실 PC 프로그램이 바뀐 일정표를 옵시디언 푸드벨-업무/일일 일정표/ 에 복사(tools/sije_web/obsidian_copy.py).
+today.html            직원용 고정 링크 "푸드벨 일정" (2026-10-21, 설계 docs/superpowers/specs/2026-10-21-staff-today-link-design.md). 단톡방 공지에 한 번 올린
+                      today.html#암호 — 로그인 없이 오늘 · 내일 일정을 카드로, 전화번호마다 [전화] · 장소에 [지도](네이버). 일정표가 저장될 때마다
+                      직원 게시판(share/암호, 일정표마다 한 칸)에 올라가고 열린 화면도 바로 바뀐다(js/sije/store.js publishShare · js/sije/share-store.js).
+                      암호는 config/share(사장님만 읽음) — 규칙 · 코드 · 문서에 쓰지 않는다. 보기 · 바꾸기(직원이 그만두면):
+                      python -m tools.sije_web.share_link show|new --key C:\foodbell-keys\sije-admin.json — new 는 일정을 옮기고 옛 링크를 막는다.
+                      call.html(전화 · 지도, 10-21 오전)은 더 만들지 않는다 — 그날 보낸 옛 링크용으로만 남김.
 sije-list.html        시제행사 목록 (2026-10-16 서류 자동화 1단계). 구글 로그인 → 확정·미확정·주문없음·전체, 새 행사(빈 양식에서).
 sije-sheet.html       시제행사 내역서 (?id=…). PC 는 엑셀 모양 칸을 눌러 고침, 휴대폰은 맨 위 날짜·시간·품목 수량. 칸을 떠나면 저장,
                       인터넷이 없어도 한 번 연 화면은 열린다(sw.js 사본 + 파이어베이스 기기 저장).

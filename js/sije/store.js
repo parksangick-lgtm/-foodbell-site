@@ -143,6 +143,39 @@ export function removeDoc(id) {
   return fs.deleteDoc(fs.doc(db, 'docs', id));
 }
 
+// ---------- 직원 게시판 (today.html, 2026-10-21) — 일일 일정표의 사진에 있는 글자를 일정표마다 한 칸씩 ----------
+// 게시판 이름(암호)은 config/share 에 있다(사장님만 읽음, tools/sije_web/share_link.py 가 만든다). 없으면 아직 안 만든 것 — 아무것도 안 한다.
+// 칸 하나씩 고친다 — 다른 기기가 다른 일정표 칸을 동시에 고쳐도 지워지지 않게. 어제보다 지난 날짜 칸은 같은 고침에서 지운다.
+let shareKey = null;    // 약속: 암호 또는 null — 못 읽으면(끊김) 다음에 다시 읽는다
+let shareSeen = null;   // 약속: 처음 읽은 게시판의 칸들 (지난 날짜 칸을 찾을 때 본다)
+const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+export async function publishShare(id, entry) {
+  if (!shareKey) {
+    shareKey = fs.getDoc(fs.doc(db, 'config', 'share')).then((s) => (s.exists() ? s.data().key : null))
+      .catch((e) => { shareKey = null; throw e; });
+  }
+  const key = await shareKey;
+  if (!key) return false;
+  const ref = fs.doc(db, 'share', key);
+  if (!shareSeen) shareSeen = fs.getDoc(ref).then((s) => ({ ...(s.data()?.entries || {}) }), () => ({}));
+  const seen = await shareSeen;
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  const yday = isoDay(y);
+  const args = [new fs.FieldPath('entries', id), entry ? { ...entry, at: fs.serverTimestamp() } : fs.deleteField()];
+  for (const [other, e] of Object.entries(seen)) {
+    if (other !== id && typeof e?.date === 'string' && e.date < yday) {
+      args.push(new fs.FieldPath('entries', other), fs.deleteField());
+      delete seen[other];
+    }
+  }
+  if (entry) seen[id] = entry;
+  else delete seen[id];
+  await fs.updateDoc(ref, ...args);
+  return true;
+}
+
 export function watchImages(id, cb) {
   const q = fs.query(fs.collection(db, 'events', id, 'images'), fs.orderBy('order'));
   return fs.onSnapshot(q, (snap) => cb(snap.docs.map((d) => 'data:image/jpeg;base64,' + d.data().bytes.toBase64())));

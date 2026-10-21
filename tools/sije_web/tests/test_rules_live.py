@@ -184,3 +184,59 @@ def test_own_allow_and_viewer_doc_readable_others_not(base, id_token):
     assert call('GET', f'{base}/allow/{ALLOWED}', owner).status_code == 200
     assert call('GET', f'{base}/allow/{ALLOWED}', viewer).status_code == 403
     assert call('GET', f'{base}/viewers/{VIEWER}', owner).status_code == 403
+
+
+# ---------- 직원 게시판 (today.html — 로그인 없이 암호로 읽는 한 장) ----------
+
+@pytest.fixture
+def board(test_db):
+    """시험용 게시판 한 장 — 이름(암호)은 시험마다 새로, 끝나면 지운다."""
+    key = 'rules-' + uuid.uuid4().hex[:8]
+    ref = test_db.collection('share').document(key)
+    ref.set({'entries': {}})
+    yield key
+    ref.delete()
+
+
+@pytest.fixture
+def share_config(test_db):
+    """config/share 가 있게 — 이미 있으면 그대로 두고(다른 시험이 그 암호를 쓴다), 없을 때만 만들었다 지운다."""
+    ref = test_db.collection('config').document('share')
+    made = not ref.get().exists
+    if made:
+        ref.set({'key': 'rules-config'})
+    yield
+    if made:
+        ref.delete()
+
+
+def patch_entries(base, path, token, day='2026-10-22'):
+    """게시판의 entries 칸을 고친다 — 화면이 일정표 한 장을 올리는 것과 같은 칸."""
+    entry = {'mapValue': {'fields': {'date': {'stringValue': day}}}}
+    return call('PATCH', f'{base}/{path}', token, params={'updateMask.fieldPaths': 'entries'},
+                json={'fields': {'entries': {'mapValue': {'fields': {'docrules': entry}}}}})
+
+
+def test_share_board_readable_without_login_not_writable(base, board, id_token):
+    assert call('GET', f'{base}/share/{board}').status_code == 200            # 로그인 없이 읽기는 되는데
+    assert patch_entries(base, f'share/{board}', None).status_code == 403     # 같은 사람이 쓰기는 막힌다
+    owner = id_token(ALLOWED, allowed=True)
+    assert patch_entries(base, f'share/{board}', owner).status_code == 200    # 사장님은 된다 (대조)
+
+
+def test_share_board_list_denied(base, board, id_token):
+    assert call('GET', f'{base}/share/{board}').status_code == 200            # 이름을 알면 되는 사람이
+    assert call('GET', f'{base}/share').status_code == 403                    # 목록은 못 본다
+    assert call('GET', f'{base}/share', id_token(ALLOWED, allowed=True)).status_code == 403
+
+
+def test_share_config_only_for_owner(base, share_config, id_token):
+    assert call('GET', f'{base}/config/share').status_code == 403
+    assert call('GET', f'{base}/config/share', id_token(DENIED, allowed=False)).status_code == 403
+    assert call('GET', f'{base}/config/share', id_token(ALLOWED, allowed=True)).status_code == 200
+
+
+def test_share_update_only_entries(base, board, id_token):
+    owner = id_token(ALLOWED, allowed=True)
+    assert patch(base, f'share/{board}', owner, 'x', '몰래').status_code == 403   # entries 아닌 칸은 막히고
+    assert patch_entries(base, f'share/{board}', owner).status_code == 200       # entries 는 된다 (대조)
