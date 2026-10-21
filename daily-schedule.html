@@ -305,10 +305,15 @@ table.stmt.day-table .qty{display:none}
 body.editing table.stmt.day-table .qty{display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; font-size:.9em; color:var(--ink-mute)}
 /* 현지 안내인 전화가 비면 '안내' 글자도 숨긴다 */
 body:not(.editing) table.stmt.day-table .guide:has([data-f="guide-tel"]:empty){display:none}
+/* 장례식장 · 발인 · 화장 (사장님 2026-10-21) — 발인 · 화장은 한 줄에, 좁으면 둘째 줄로. 비면 '발인' · '화장' 글자도 숨긴다 */
+table.stmt.day-table .rite{display:inline-block; white-space:nowrap; margin-right:.7em}
+body:not(.editing) table.stmt.day-table .rite:has([data-edit]:empty),
+body:not(.editing) table.stmt.day-table .rites:not(:has([data-edit]:not(:empty))){display:none}
 
 /* 편집할 때: 두세 줄 칸도 한 칸씩 따로 누르게, 빈 칸에는 무엇을 적을지 흐린 글자로 */
 body.editing table.stmt.day-table td > [data-edit],
 body.editing table.stmt.day-table td .guide,
+body.editing table.stmt.day-table td .rite,
 body.editing table.stmt.day-table td .qty [data-edit]{display:flex; align-items:center; margin-bottom:4px; min-width:3em}
 body.editing table.stmt.day-table [data-ph]:empty::after,
 body.editing .memo [data-ph]:empty::after,
@@ -332,7 +337,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
   table.stmt.day-table tr.item td.crew{grid-column:2}
   table.stmt.day-table tr.item td:not(.c):not(.crew)::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
   body:not(.editing) table.stmt.day-table td.memo-cell:has(span:empty),
-  body:not(.editing) table.stmt.day-table td.meet:has(b:empty):has([data-f="lead-tel"]:empty):has([data-f="guide-tel"]:empty){display:none}
+  body:not(.editing) table.stmt.day-table td.meet:has(b:empty):has([data-f="lead-tel"]:empty):has([data-f="guide-tel"]:empty):has([data-f="hall"]:empty):has([data-f="depart"]:empty):has([data-f="cremate"]:empty){display:none}
 }
 @media print{
   table.stmt.day-table thead{display:table-header-group}   /* 넘치면 다음 장에 표 제목 줄이 다시 나온다 */
@@ -346,7 +351,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 <link rel="stylesheet" href="css/docs.css?v=3">
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 담당 직원 · 차량, 시간 · 장소 · 연락처, 행사 내용 · 인원 · 단가를 채우면 금액이 저절로 계산됩니다. 줄마다 <strong>문자 붙여넣기</strong>로 카톡 주문 글을 넣으면 시간 · 연락처 · 단가가 빈 칸에 들어가고 글 전체는 메모에 남습니다. 맨 위 날짜만 고치면 요일 · 음력은 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 단톡방에 보낼 수 있습니다(일이 많으면 여러 장). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요 — 순번과 전달 메모는 지난 일정표에서 이어받습니다.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 담당 직원 · 차량, 시간 · 장소 · 연락처, 행사 내용 · 인원 · 단가를 채우면 금액이 저절로 계산됩니다. 줄마다 <strong>문자 붙여넣기</strong>로 카톡 주문 글을 넣으면 시간 · 발인 · 화장 · 연락처 · 단가가 빈 칸에 들어가고 글 전체는 메모에 남습니다. 맨 위 날짜만 고치면 요일 · 음력은 저절로 바뀝니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 단톡방에 보낼 수 있습니다(일이 많으면 여러 장). 사진은 단톡방 모두가 봅니다. 고치는 대로 저절로 저장되고, 새 일정은 <strong>목록</strong>에서 <strong>새 일정표</strong>를 누르세요 — 순번과 전달 메모는 지난 일정표에서 이어받습니다.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -360,7 +365,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <dialog class="paste-dlg" id="paste-dlg" aria-labelledby="paste-title">
-  <p id="paste-title"><strong>문자 붙여넣기</strong> — 카톡 주문 글을 아래에 붙여넣고 <strong>넣기</strong>를 누르세요. 비어 있는 시간 · 연락처 · 단가만 채우고, 글 전체는 메모에 들어갑니다.</p>
+  <p id="paste-title"><strong>문자 붙여넣기</strong> — 카톡 주문 글을 아래에 붙여넣고 <strong>넣기</strong>를 누르세요. 비어 있는 시간 · 발인 · 화장 · 연락처 · 단가만 채우고, 글 전체는 메모에 들어갑니다.</p>
   <textarea id="paste-text" rows="8" placeholder="여기를 길게 누르고 붙여넣기"></textarea>
   <div class="paste-btns"><button type="button" id="paste-cancel">닫기</button><button type="button" id="paste-ok" class="primary">넣기</button></div>
 </dialog>
@@ -419,7 +424,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
             <td class="crew" data-label="담당 직원 · 차량"><b data-edit data-t="text" data-f="staff" data-ph="담당 직원"></b><span class="sub" data-edit data-t="text" data-f="car" data-ph="차량"></span></td>
             <td class="when" data-label="시간 · 장소 · 연락처"><b data-edit data-t="text" data-f="time" data-ph="시간"></b><span class="sub" data-edit data-t="text" data-f="place" data-ph="장소"></span><span class="sub" data-edit data-t="text" data-f="tel" data-ph="연락처"></span></td>
             <td class="work" data-label="행사 내용 · 인원 · 금액"><span data-edit data-t="text" data-f="work" data-ph="행사 내용"></span><span class="qty"><span data-edit data-t="text" data-f="people" data-ph="인원"></span>×<span data-edit data-t="text" data-f="price" data-ph="단가"></span></span><span class="amt" data-k="amt"></span></td>
-            <td class="meet" data-label="상조팀장 · 현지 안내인"><b data-edit data-t="text" data-f="lead" data-ph="상조팀장"></b><span class="sub" data-edit data-t="text" data-f="lead-tel" data-ph="팀장 전화"></span><span class="sub guide">안내 <span data-edit data-t="text" data-f="guide-tel" data-ph="현지 안내인 전화"></span></span></td>
+            <td class="meet" data-label="상조팀장 · 현지 안내인"><b data-edit data-t="text" data-f="lead" data-ph="상조팀장"></b><span class="sub" data-edit data-t="text" data-f="lead-tel" data-ph="팀장 전화"></span><span class="sub guide">안내 <span data-edit data-t="text" data-f="guide-tel" data-ph="현지 안내인 전화"></span></span><span class="sub" data-edit data-t="text" data-f="hall" data-ph="장례식장 · 화장장"></span><span class="sub rites"><span class="rite">발인 <span data-edit data-t="text" data-f="depart" data-ph="발인 시간"></span></span><span class="rite">화장 <span data-edit data-t="text" data-f="cremate" data-ph="화장 시간"></span></span></span></td>
             <td class="memo-cell" data-label="메모"><span data-edit data-t="text" data-f="memo" data-ph="메모 (예: 연기)"></span></td>
           </tr>
         </tbody>
@@ -437,14 +442,14 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
-import { parseOrder } from './js/docs/order-text.js?v=2';
+import { parseOrder } from './js/docs/order-text.js?v=3';
 
 const SITE = 'https://foodbell.kr/';
 const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
 const WEEK = '일월화수목금토';
 // 이어받을 일정표가 하나도 없을 때(맨 처음)의 전달 메모 — 사장님 결정 2026-10-20
 const FIRST_MEMO = '추모공원(협력업체)은 회사에서 출발 전에 전화 · 화장은 시작 5분 후 전화 · 매장은 발인 5분 전에 팀장에게 전화 · 상주(직접주문)에게는 가게 출발 전에 전화';
-const FIELDS = ['staff', 'car', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'guide-tel', 'memo'];
+const FIELDS = ['staff', 'car', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'guide-tel', 'hall', 'depart', 'cremate', 'memo'];
 
 const sheet = document.querySelector('.sheet');
 const body = document.body;
@@ -520,7 +525,8 @@ function buildText() {
     const what = [field(tr, 'work'), clean(amtEl?.textContent)].filter(Boolean).join(' ');
     const crew = [field(tr, 'staff'), field(tr, 'car')].filter(Boolean).join(' · ');
     const lead = [[field(tr, 'lead'), field(tr, 'lead-tel')].filter(Boolean).join(' '),
-      field(tr, 'guide-tel') ? '안내 ' + field(tr, 'guide-tel') : ''].filter(Boolean).join(' · ');
+      field(tr, 'guide-tel') ? '안내 ' + field(tr, 'guide-tel') : '', field(tr, 'hall'),
+      field(tr, 'depart') ? '발인 ' + field(tr, 'depart') : '', field(tr, 'cremate') ? '화장 ' + field(tr, 'cremate') : ''].filter(Boolean).join(' · ');
     const head = [where, what].filter(Boolean).join(' — ');
     L.push(`${i + 1}. ` + [head, crew, lead, field(tr, 'memo')].filter(Boolean).join(' / '));
   });
@@ -616,8 +622,11 @@ sheet.addEventListener('input', (e) => {
   save();
 });
 sheet.addEventListener('focusout', (e) => {
-  const t = e.target.closest?.('[data-edit][data-f$="tel"]');
+  const t = e.target.closest?.('[data-edit]');
   if (!t) return;
+  // 글자를 다 지운 칸에는 브라우저가 <br> 을 남긴다 — 그러면 :empty 가 안 맞아 '발인' · '안내' 이름표가 빈 채로 보인다
+  if (!t.textContent.trim()) { if (t.innerHTML) { t.textContent = ''; save(); } return; }
+  if (!t.matches('[data-f$="tel"]')) return;
   const v = dashTels(t.textContent);
   if (v !== t.textContent) { t.textContent = v; save(); }
 });
@@ -658,6 +667,8 @@ function pasteOrder(tr, text) {
   const put = (f, v) => { const e = tr.querySelector(`[data-f="${f}"]`); if (e && v && !clean(e.textContent)) e.textContent = v; };
   put('tel', o.tel.join(', '));
   put('time', o.time);
+  put('depart', o.depart);
+  put('cremate', o.cremate);
   put('price', o.price ? `${fmt(o.price)}원` : '');
   const m = tr.querySelector('[data-f="memo"]');
   if (m && o.memo) m.textContent = [m.textContent.trim(), o.memo].filter(Boolean).join('\n');

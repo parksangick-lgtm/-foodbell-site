@@ -797,6 +797,47 @@ def test_daily_files_are_named_by_date(pc, repo_url, custom_token, made):
     assert pc.evaluate('window.__titles') == ['2026-10-22']
 
 
+def test_daily_funeral_hall_and_times(pc, phone, repo_url, custom_token, test_db, made):
+    """팀장 칸에 장례식장(화장장) · 발인 시간 · 화장 시간 (사장님 2026-10-21). 빈 것은 보기 · 사진에서 '발인' 글자까지 숨기고,
+    요약 글(옵시디언 사본)에도 들어간다. 휴대폰 카드는 팀장 · 안내인이 비어도 장례식장 · 화장이 있으면 칸을 보여 준다."""
+    token = custom_token(ALLOWED, allowed=True)
+    doc_id = daily_new(pc, repo_url, token, made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 평토상')
+    edit_cell(pc, 'tr.item [data-f="hall"]', '가짜병원장례식장')
+    edit_cell(pc, 'tr.item [data-f="cremate"]', '08시20분')
+    pc.click('#btn-edit')
+    assert text_of(pc, 'tr.item [data-f="hall"]') == '가짜병원장례식장'
+    assert pc.locator('tr.item .rite:has([data-f="depart"])').first.is_hidden()       # 비면 '발인' 글자도 숨김
+    assert text_of(pc, 'tr.item .rite:has([data-f="cremate"])') == '화장 08시20분'
+    ref = test_db.collection('docs').document(doc_id)
+    wait_db(ref, lambda s: '화장 08시20분' in (s.to_dict() or {}).get('text', ''))
+    assert '가짜병원장례식장 · 화장 08시20분' in ref.get().to_dict()['text']
+    open_doc(phone, repo_url, DAILY, doc_id, token)
+    phone.locator('tr.item [data-f="hall"]', has_text='가짜병원').wait_for(timeout=15_000)
+    assert phone.locator('tr.item td.meet').first.is_visible()
+    pc.click('#btn-edit')                                          # 다 비우면 발인 · 화장 줄도 숨김 (대조)
+    edit_cell(pc, 'tr.item [data-f="hall"]', '')
+    edit_cell(pc, 'tr.item [data-f="cremate"]', '')
+    pc.click('#btn-edit')
+    assert pc.locator('tr.item .rites').first.is_hidden()
+
+
+def test_daily_paste_fills_funeral_times(pc, repo_url, custom_token, made):
+    """문자 붙여넣기 — 주문 글의 발인 · 화장 시간도 빈 칸에 (실제 표본 '장례식장 — 발인 · 화장 시간뿐', 이름은 가짜)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    order = ('■ 장례식장: 가짜병원장례식장\n■고인: 가짜십\n■ 내일발인: 10월 12일 05시30분\n■ 1차장지: 가짜추모공원 07시20분 화장\n'
+             '■ 2차장지: 가짜추모의집\n■  식사100인분  평토상 35만원 부탁드립니다 (한분)')
+    pc.click('tr.item .btn-paste')
+    pc.fill('#paste-text', order)
+    pc.click('#paste-ok')
+    assert text_of(pc, 'tr.item [data-f="depart"]') == '05시30분'
+    assert text_of(pc, 'tr.item [data-f="cremate"]') == '07시20분'
+    assert text_of(pc, 'tr.item [data-f="time"]') == ''            # 발인 · 화장은 상차림 시간이 아니다
+    assert text_of(pc, 'tr.item [data-f="hall"]') == ''            # 장례식장 이름은 읽지 않는다 (손으로)
+
+
 def test_call_page_shows_nothing_for_a_bad_link(phone, repo_url):
     """'전화 걸기' 화면 — 링크가 잘렸거나 이상하면 전화 버튼을 만들지 않는다 (엉뚱한 번호로 걸지 않게)."""
     for tail in ('', '#', '#abc', '#20261022-9x01000001234-1c123-1c010000012345'):

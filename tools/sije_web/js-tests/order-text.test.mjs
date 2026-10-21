@@ -4,13 +4,21 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { parseOrder } from '../../../js/docs/order-text.js';
 
-const { samples, rejects, time_edge: timeEdge, price_edge: priceEdge } = JSON.parse(readFileSync(new URL('./fixtures/order-samples.json', import.meta.url), 'utf8'));
+const { samples, rejects, time_edge: timeEdge, funeral_edge: funeralEdge, price_edge: priceEdge } = JSON.parse(readFileSync(new URL('./fixtures/order-samples.json', import.meta.url), 'utf8'));
 
 test('표본마다 사장님이 정한 칸 값', () => {
   for (const s of samples) {
     const got = parseOrder(s.text);
-    console.log(`${s.name}\n  → 시간 '${got.time}' · 연락처 ${JSON.stringify(got.tel)} · 단가 ${got.price}`);   // 눈으로 본다
-    assert.deepEqual({ tel: got.tel, time: got.time, price: got.price }, { tel: s.tel, time: s.time, price: s.price }, s.name);
+    console.log(`${s.name}\n  → 시간 '${got.time}' · 발인 '${got.depart}' · 화장 '${got.cremate}' · 연락처 ${JSON.stringify(got.tel)} · 단가 ${got.price}`);   // 눈으로 본다
+    assert.deepEqual({ tel: got.tel, time: got.time, depart: got.depart, cremate: got.cremate, price: got.price },
+      { tel: s.tel, time: s.time, depart: s.depart, cremate: s.cremate, price: s.price }, s.name);
+  }
+});
+
+test('발인 · 화장 — 그 말이 붙은 시간만, 화장 회차는 화장 (2026-10-21)', () => {
+  for (const c of funeralEdge) {
+    const got = parseOrder(c.text);
+    assert.deepEqual({ depart: got.depart, cremate: got.cremate }, { depart: c.depart, cremate: c.cremate }, c.text);
   }
 });
 
@@ -32,5 +40,5 @@ test('번호로 보면 안 되는 숫자', () => {
 });
 
 test('빈 글자', () => {
-  assert.deepEqual(parseOrder(''), { tel: [], time: '', price: null, memo: '' });
+  assert.deepEqual(parseOrder(''), { tel: [], time: '', depart: '', cremate: '', price: null, memo: '' });
 });

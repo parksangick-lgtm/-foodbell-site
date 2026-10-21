@@ -3,6 +3,7 @@
           앞쪽에서 가장 가까운 말('발인 05시30분', '도착 약 11시', '일시 : … 15시'), 그래도 없으면 바로 앞 줄의 '도착'(…도착시간 / 약 11시)로
           무슨 시각인지 가린다. 화장 · 발인 · 회차는 빼고, 상차림 > 도착 > 일시 > 아무 말 없음 차례로 고른다.
           적힌 그대로('3시', '11시반', '오후 3:30') — 오전 · 오후를 짐작하지 않는다. '시제 · 시사 · 시간' 은 시각이 아니다.
+   발인 · 화장 = 같은 방법으로 '발인' · '화장' 이 붙은 첫 시각 (화장 회차 '09시50분/4회차' 는 화장) — 2026-10-21 부터 그 칸에 따로.
    연락처 = 휴대폰 번호(010 …, 하이픈 없어도 010-0000-0000 꼴로). 계좌 · 묘역번호 · 번지는 모양이 달라 안 걸린다.
    단가 = '35만(원)' · '15,000원' 같은 값이 하나일 때만 — 줄을 넘어 읽지 않고, 번호 끝자리('…-5678 원하시는')는 값이 아니다.
    인원은 안 뽑는다(식사 100인분 × 평토상 35만 같은 틀린 곱셈). 메모 = 원문 그대로.
@@ -21,9 +22,10 @@ function timesIn(line) {
   return [...line.matchAll(TIME)].map((m) => ({ text: m[2].trim(), start: m.index + m[1].length, end: m.index + m[0].length }));
 }
 
-function findTime(text) {
+/* 글 속 시각마다 무슨 시각인지(붙은 말) — { text, word } */
+function timesWithWords(text) {
   const lines = text.replace(STAMP, ' ').split('\n');
-  let best = null;
+  const out = [];
   lines.forEach((line, i) => {
     const toks = timesIn(line);
     toks.forEach((t, k) => {
@@ -33,12 +35,22 @@ function findTime(text) {
       const word = (after.match(NEAR_AFTER) || [])[1]
         || (before.match(WORD) || []).pop()
         || (/도착/.test(prev) && !timesIn(prev).length ? '도착' : '');
-      const rank = RANK[word];
-      if (rank && (!best || rank > best.rank)) best = { text: t.text, rank };
+      out.push({ text: t.text, word });
     });
   });
+  return out;
+}
+
+function findTime(times) {
+  let best = null;
+  for (const t of times) {
+    const rank = RANK[t.word];
+    if (rank && (!best || rank > best.rank)) best = { text: t.text, rank };
+  }
   return best ? best.text : '';
 }
+
+const firstWith = (times, words) => (times.find((t) => words.includes(t.word)) || { text: '' }).text;
 
 function findTels(text) {
   const out = [];
@@ -56,5 +68,7 @@ function findPrice(text) {
 
 export function parseOrder(text) {
   const t = String(text || '').replace(/\r\n?/g, '\n').trim();
-  return { tel: findTels(t), time: findTime(t), price: findPrice(t), memo: t };
+  const times = timesWithWords(t);
+  return { tel: findTels(t), time: findTime(times), depart: firstWith(times, ['발인']), cremate: firstWith(times, ['화장', '회차']),
+    price: findPrice(t), memo: t };
 }
