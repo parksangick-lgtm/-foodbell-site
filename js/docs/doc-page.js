@@ -40,6 +40,15 @@ gate.innerHTML = `
   </section>
   <p class="doc-net" id="doc-net" role="status" hidden>연결 안 됨 — 연결되면 올라갑니다</p>`;
 document.body.prepend(gate);
+// 일일 일정표 주소를 직원이 열었을 때 — 직원 화면은 단톡방 공지의 '푸드벨 일정' 링크다 (사장님 2026-10-21 밤)
+if (D.kind === 'daily-schedule') {
+  for (const card of gate.querySelectorAll('[data-show="login"], [data-show="denied"]')) {
+    const p = document.createElement('p');
+    p.className = 'doc-staff-hint';
+    p.textContent = "직원이시면 단톡방 공지의 '푸드벨 일정' 링크를 누르세요";
+    card.querySelector('p').after(p);
+  }
+}
 gate.querySelector('h1').textContent = `${title} 목록`;
 $('doc-new').textContent = `새 ${noun}`;
 
