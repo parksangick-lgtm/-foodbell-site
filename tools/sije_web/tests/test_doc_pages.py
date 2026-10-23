@@ -892,8 +892,8 @@ def save_pages(page, out_dir):
         window.__shotRows = [];
         window.html2canvas = (el, o) => orig(el, { ...o, onclone: async (doc, ref) => {
             if (o && o.onclone) await o.onclone(doc, ref);
-            const root = ref || doc.querySelector('.sheet');
-            window.__shotRows.push([...root.querySelectorAll('tr.item:not([data-shot-hide]) [data-k="no"]')].map((n) => +n.textContent));
+            const root = ref || doc.querySelector('.shot-cards');   // 사진 = 휴대폰 카드 묶음 (10-24 검토 반영)
+            window.__shotRows.push([...root.querySelectorAll('article.card:not([data-shot-hide])')].map((c) => +c.dataset.no));
         } });
     }""")
     files = []
@@ -948,7 +948,7 @@ def test_daily_fifteen_rows_split_into_pages(pc, browser, repo_url, custom_token
         assert len(names) >= 2 and names[0].endswith('_1.png') and names[1].endswith('_2.png'), (where, names)
         assert len(shots) == len(names) and sum(shots, []) == list(range(1, 16)), (where, shots)
         for w, h in sizes:
-            assert h / w <= 297 / 210 * 1.03, (where, w, h)
+            assert h / w <= 16 / 9 * 1.03, (where, w, h)                 # 한 장 = 휴대폰 화면 비율 (10-24 검토 반영)
     assert results['휴대폰'][1] == results['PC'][1], results     # 휴대폰도 PC 와 같은 장 나눔
 
 
@@ -1162,21 +1162,14 @@ def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_tok
     assert calls == ['tel:01000001234', 'tel:01000001235', 'tel:01000002000', 'tel:020004000']
     saved = phone.evaluate('window.FoodbellDoc.serialize()')
     assert 'map1' not in saved and 'tel1' not in saved and place.replace('&', '&amp;') in saved   # 저장은 글자만
-    # 직원에게 보내는 사진(html.shot)에서는 밑줄 · 색이 바뀌지 않는다
-    look = phone.evaluate("""() => {
-        document.documentElement.classList.add('shot');
-        const a = document.querySelector('tr.item a.map1'), td = a.parentElement;
-        const r = [getComputedStyle(a).textDecorationLine, getComputedStyle(a).color === getComputedStyle(td).color];
-        document.documentElement.classList.remove('shot');
-        return r.concat(getComputedStyle(a).textDecorationLine);
-    }""")
-    assert look == ['none', True, 'underline']                                            # 화면에서만 밑줄 (대조)
+    # 직원 사진은 글자로 새로 그린 카드라 링크가 없다(10-24 검토 반영) — 화면에서만 밑줄 (대조)
+    assert phone.evaluate("getComputedStyle(document.querySelector('tr.item a.map1')).textDecorationLine") == 'underline'
     phone.click('#btn-edit')                                                              # 편집 중에는 글자만
     assert phone.locator('tr.item a.map1, tr.item a.tel1').count() == 0
     assert text_of(phone, 'tr.item [data-f="place"]') == place
 
 
-STAFF_NOTE = '전화 · 지도는 단톡방 공지의 링크를 누르세요'
+STAFF_NOTE = "전화 · 지도는 홈 화면의 '푸드벨 일정' 아이콘을 누르세요"      # 10-24 검토 반영 — 공지 링크는 사라진 적이 있다
 STAFF_LIKE = '확인했으면 사진을 길게 눌러 👍 해 주세요'
 STAFF_HINT = "직원이시면 단톡방 공지의 '푸드벨 일정' 링크를 누르세요"
 
@@ -1193,9 +1186,8 @@ def test_daily_photo_ends_with_staff_note(pc, repo_url, custom_token, made):
         window.__notes = [];
         window.html2canvas = (el, o) => orig(el, { ...o, onclone: async (doc, ref) => {
             if (o && o.onclone) await o.onclone(doc, ref);
-            const root = ref || doc.querySelector('.sheet');
-            const shown = [...root.children].filter((e) => getComputedStyle(e).display !== 'none');
-            window.__notes.push(shown.slice(-2).map((e) => e.textContent.trim()));
+            const root = ref || doc.querySelector('.shot-cards');   // 사진 = 휴대폰 카드 묶음 (10-24 검토 반영)
+            window.__notes.push([...root.querySelector('.shot-foot').children].map((e) => e.textContent.trim()));
         } });
     }""")
     pc.click('#btn-save-file')
@@ -1335,3 +1327,67 @@ def test_daily_stats_line(pc, repo_url, custom_token, made):
     pc.emulate_media(media='print')
     assert pc.locator('.day-stats').is_hidden()
     pc.emulate_media(media='screen')
+
+
+def watch_shots(page, expr):
+    """사진을 찍는 순간의 카드 묶음(사본)에서 expr 로 값을 뽑아 window.__shots 에 모은다."""
+    page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    page.evaluate("""(expr) => { window.__shots = []; const o = window.html2canvas;
+        window.html2canvas = (el, opt) => o(el, { ...opt, onclone: async (d, ref) => { if (opt.onclone) await opt.onclone(d, ref);
+            const root = ref || d.querySelector('.shot-cards'); window.__shots.push(new Function('root', 'return ' + expr)(root)); } }); }""", expr)
+
+
+def test_daily_photo_is_phone_cards(pc, repo_url, custom_token, made, tmp_path):
+    """사진은 카드 묶음 — 폭 1080, 상호 · QR · 인장 없음, 첫 장에 날짜 · 순번 · 전달 메모 · '만듦' 표시, 카드 줄 순서는 cards.js."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="order"]', '가짜1 · 가짜2')
+    for f, t in [('staff', '가짜직원'), ('leave', '06:30 가게'), ('time', '오전 10:30'), ('place', '가짜추모공원'), ('tel', '010-0000-0001'),
+                 ('work', '가짜 상차림'), ('people', '60명'), ('price', '15,000원')]:
+        edit_cell(pc, f'tr.item [data-f="{f}"]', t)
+    pc.click('#btn-edit')
+    watch_shots(pc, 'root.innerText')
+    names, shots, sizes = save_pages(pc, tmp_path)
+    assert len(names) == 1 and re.fullmatch(r'\d{4}-\d{2}-\d{2}\.png', names[0]), names   # 날짜는 내일 — 이름 형식만 본다
+    assert sizes[0][0] == 1080 and sizes[0][1] / sizes[0][0] <= 16 / 9 * 1.03, sizes
+    text = pc.evaluate('window.__shots[0]')
+    for s in ('푸드벨 일일 일정표', '순번: 가짜1 · 가짜2', '1번 · 오전 10:30 · 가짜직원', '출발', '06:30 가게', '60명 × 15,000원 = 900,000원',
+              '만듦', STAFF_NOTE, STAFF_LIKE):
+        assert s in text, s
+    for s in ('foodbell.kr', '전통 제례', '010-5353-3477', '단위를 적어 주세요', '건 · 금액 합계'):
+        assert s not in text, s
+
+
+def test_daily_tall_card_gets_own_page(pc, repo_url, custom_token, made, tmp_path):
+    """메모 40줄짜리 카드는 혼자 한 장(그 장만 9:16 보다 길어도 된다), 앞뒤 카드는 잘리지 않는다."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    for _ in range(2):
+        pc.click('tr.addrow button')
+    pc.evaluate("""() => { const trs = document.querySelectorAll('tr.item');
+        trs.forEach((tr, i) => { tr.querySelector('[data-f="work"]').textContent = '일 ' + (i + 1); });
+        trs[1].querySelector('[data-f="memo"]').textContent = Array.from({ length: 40 }, (_, i) => '주문 글 ' + (i + 1)).join('\\n');
+        trs[0].querySelector('[data-f="work"]').dispatchEvent(new Event('input', { bubbles: true })); }""")
+    pc.click('#btn-edit')
+    names, shots, sizes = save_pages(pc, tmp_path)
+    assert shots == [[1], [2], [3]] and sizes[1][1] > sizes[0][1], (shots, sizes)
+
+
+def test_daily_send_count_and_stamp(phone, repo_url, custom_token, test_db, made):
+    """보내기(공유창)마다 차수가 오르고 사진에 '보냄 · N차'. 취소(AbortError)는 안 오른다."""
+    doc_id = daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    phone.click('#btn-edit')
+    edit_cell(phone, 'tr.item [data-f="work"]', '가짜 상차림')
+    phone.click('#btn-edit')
+    watch_shots(phone, "root.querySelector('.shot-stamp').textContent")
+    phone.evaluate("""() => { navigator.canShare = () => true; window.__shares = 0;
+        navigator.share = () => { window.__shares++; return window.__shares === 1 ? Promise.reject(Object.assign(new Error('x'), { name: 'AbortError' })) : Promise.resolve(); }; }""")
+    for _ in range(3):
+        phone.click('#btn-send')
+        phone.locator('#btn-send', has_text='준비 중').wait_for(timeout=10_000)
+        phone.locator('#btn-send', has_text='직원에게 보내기').wait_for(timeout=60_000)
+    stamps = phone.evaluate('window.__shots')
+    assert [s.split(' ', 2)[2] for s in stamps] == ['보냄 · 1차', '보냄 · 1차', '보냄 · 2차'], stamps
+    sent = re.compile(r'data-k="sent"[^>]*>2<')
+    html = wait_db(test_db.collection('docs').document(doc_id), lambda s: sent.search((s.to_dict() or {}).get('html', ''))).to_dict()['html']
+    assert sent.search(html)

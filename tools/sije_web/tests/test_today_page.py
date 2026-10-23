@@ -233,3 +233,35 @@ def test_today_leave_line_and_map_link(phone, repo_url, test_db, key):
     assert lines[0].startswith('출발') and '05:30 가게' in lines[0]
     assert hrefs(phone, 'a.btn-map') == ['https://naver.me/abc', naver('가짜공원'), naver('가짜납골당')]
     assert '출발' not in c.nth(1).inner_text()
+
+
+def test_today_remembers_key_for_home_icon(phone, repo_url, test_db, key):
+    """링크(#암호)로 한 번 열면 같은 브라우저에서 # 없이 열어도(홈 화면 아이콘) 일정이 보인다."""
+    put(test_db, key, docA=entry(day(0), [row(1, work='가짜 상차림')]))
+    open_today(phone, repo_url, f'#{key}')
+    cards(phone)
+    open_today(phone, repo_url, '')
+    assert cards(phone).count() == 1
+    assert phone.evaluate("localStorage.getItem('foodbell-today-key')") == key
+
+
+def test_today_no_hash_without_saved_key(phone, repo_url, test_db, key):
+    """# 없이 열었는데 그 브라우저에 기억된 암호가 없으면(처음 · 저장소 지워짐) '링크가 바뀌었습니다' — 새 문맥이라 아무것도 없다."""
+    open_today(phone, repo_url, '')
+    phone.locator('#status', has_text=CHANGED).wait_for(timeout=10_000)
+
+
+def test_today_has_manifest_icons_and_install_guide(phone, repo_url, test_db, key):
+    """앱 정보 파일 '푸드벨 일정' + 아이콘이 전부 열리고, 맨 아래 '홈 화면에 아이콘으로 두기' 안내가 있다(카톡 → 다른 브라우저로 열기)."""
+    put(test_db, key, docA=entry(day(0), [row(1, work='가짜 상차림')]))
+    open_today(phone, repo_url, f'#{key}')
+    cards(phone)
+    assert phone.get_attribute('link[rel="manifest"]', 'href') == 'manifest-today.webmanifest'
+    m = phone.request.get(f'{repo_url}manifest-today.webmanifest')
+    assert m.status == 200 and m.json()['name'] == '푸드벨 일정'
+    for icon in m.json()['icons']:
+        assert phone.request.get(f'{repo_url}{icon["src"]}').status == 200, icon
+    guide = phone.locator('#install')
+    assert guide.is_visible() and '홈 화면' in guide.inner_text()
+    guide.locator('summary').click()
+    assert '다른 브라우저로 열기' in guide.inner_text()
