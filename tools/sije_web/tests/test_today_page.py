@@ -110,9 +110,10 @@ def test_today_cards_match_board(phone, repo_url, test_db, key):
 
 
 def test_today_day_buttons(phone, repo_url, test_db, key):
-    """오늘 이후 일정만 날짜 순 버튼 — 처음은 오늘 것, 오늘 것이 없으면 가장 가까운 날."""
+    """오늘 이후 일정만 날짜 순 버튼 — 처음은 오늘 것(오전), 오늘 것이 없으면 가장 가까운 날."""
     put(test_db, key, y=entry(day(-1), [row(work='가짜어제')]), t=entry(day(0), [row(work='가짜오늘')]),
         m=entry(day(1), [row(work='가짜내일')]), a=entry(day(2), [row(work='가짜모레')]))
+    phone.clock.set_fixed_time(datetime.datetime.combine(day(0), datetime.time(10, 0)))   # 저녁엔 내일 것이 먼저라 오전으로
     open_today(phone, repo_url, f'#{key}')
     cards(phone)
     assert [t.strip() for t in phone.locator('button.day-btn').all_inner_texts()] == \
@@ -124,6 +125,25 @@ def test_today_day_buttons(phone, repo_url, test_db, key):
     put(test_db, key, m=entry(day(1), [row(work='가짜내일')]), a=entry(day(2), [row(work='가짜모레')]))
     open_today(phone, repo_url, f'#{key}')
     phone.locator('#cards', has_text='가짜내일').wait_for(timeout=20_000)
+
+
+def test_today_evening_shows_tomorrow_first(phone, repo_url, test_db, key):
+    """오후 6시부터는 내일 일정이 먼저 — 사장님이 저녁에 내일 일정 사진을 보낸다 (사장님 10-23).
+    내일 것이 없으면 그대로 오늘 것, 오후 6시 전에는 오늘 것."""
+    put(test_db, key, t=entry(day(0), [row(work='가짜오늘')]), m=entry(day(1), [row(work='가짜내일')]))
+    phone.clock.set_fixed_time(datetime.datetime.combine(day(0), datetime.time(18, 0)))
+    open_today(phone, repo_url, f'#{key}')
+    phone.locator('#cards', has_text='가짜내일').wait_for(timeout=20_000)
+    assert phone.locator('button.day-btn[aria-pressed="true"]').inner_text().strip() == f'내일 {md(day(1))}'
+    phone.locator('button.day-btn').first.click()                       # 오늘 것은 '오늘' 버튼으로
+    phone.locator('#cards', has_text='가짜오늘').wait_for(timeout=5_000)
+    phone.clock.set_fixed_time(datetime.datetime.combine(day(0), datetime.time(17, 59)))
+    open_today(phone, repo_url, f'#{key}')
+    phone.locator('#cards', has_text='가짜오늘').wait_for(timeout=20_000)
+    put(test_db, key, t=entry(day(0), [row(work='가짜오늘')]), a=entry(day(2), [row(work='가짜모레')]))
+    phone.clock.set_fixed_time(datetime.datetime.combine(day(0), datetime.time(19, 0)))
+    open_today(phone, repo_url, f'#{key}')
+    phone.locator('#cards', has_text='가짜오늘').wait_for(timeout=20_000)   # 내일 것이 없으면 오늘 것 (모레가 아니라)
 
 
 def test_today_hides_empty_and_prefers_latest(phone, repo_url, test_db, key):

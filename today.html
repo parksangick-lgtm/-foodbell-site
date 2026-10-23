@@ -165,7 +165,9 @@ function render() {
     return status(EMPTY);
   }
   status('');
-  if (!list.some(([id]) => id === picked)) picked = (list.find(([, e]) => e.date === today) || list[0])[0];
+  // 오후 6시부터는 내일 것이 먼저 — 사장님이 저녁에 내일 일정 사진을 보낸다 (사장님 10-23). 내일 것이 없으면 오늘 것
+  const evening = new Date().getHours() >= 18 && list.find(([, e]) => e.date === tomorrow);
+  if (!list.some(([id]) => id === picked)) picked = (evening || list.find(([, e]) => e.date === today) || list[0])[0];
   $('days').replaceChildren(...list.map(([id, e]) => {
     const b = el('button', 'day-btn', dayName(e.date, today, tomorrow));
     b.type = 'button';
