@@ -1168,12 +1168,13 @@ def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_tok
 
 
 STAFF_NOTE = '전화 · 지도는 단톡방 공지의 링크를 누르세요'
+STAFF_LIKE = '확인했으면 사진을 길게 눌러 👍 해 주세요'
 STAFF_HINT = "직원이시면 단톡방 공지의 '푸드벨 일정' 링크를 누르세요"
 
 
 def test_daily_photo_ends_with_staff_note(pc, repo_url, custom_token, made):
     """직원에게 가는 사진 맨 아래에 '전화 · 지도는 공지 링크' 한 줄 — 사진 속 글자는 눌리지 않아서 (사장님 10-21 밤).
-    화면 · 인쇄에는 없다."""
+    그 아래에 '👍 해 주세요' 한 줄이 더 붙는다 (사장님 10-23). 화면 · 인쇄에는 없다."""
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     fill_work(pc)
     assert pc.get_by_text(STAFF_NOTE).count() == 0 or pc.get_by_text(STAFF_NOTE).is_hidden()   # 화면에는 없음
@@ -1184,14 +1185,13 @@ def test_daily_photo_ends_with_staff_note(pc, repo_url, custom_token, made):
         window.html2canvas = (el, o) => orig(el, { ...o, onclone: async (doc, ref) => {
             if (o && o.onclone) await o.onclone(doc, ref);
             const root = ref || doc.querySelector('.sheet');
-            const n = [...root.querySelectorAll('*')].find((e) => e.textContent.trim() === %r);
-            const last = [...root.children].filter((e) => getComputedStyle(e).display !== 'none').pop();
-            window.__notes.push(n ? [getComputedStyle(n).display !== 'none', last === n || last.contains(n)] : null);
+            const shown = [...root.children].filter((e) => getComputedStyle(e).display !== 'none');
+            window.__notes.push(shown.slice(-2).map((e) => e.textContent.trim()));
         } });
-    }""" % STAFF_NOTE)
+    }""")
     pc.click('#btn-save-file')
     pc.wait_for_function('window.__notes.length >= 1', timeout=60_000)
-    assert pc.evaluate('window.__notes[0]') == [True, True]                       # 사진에는 보이고, 맨 아래
+    assert pc.evaluate('window.__notes[0]') == [STAFF_NOTE, STAFF_LIKE]           # 사진에는 보이고, 맨 아래 두 줄 (차례대로)
     pc.emulate_media(media='print')
     assert pc.get_by_text(STAFF_NOTE).count() == 0 or pc.get_by_text(STAFF_NOTE).is_hidden()   # 인쇄에도 없음
     pc.emulate_media(media='screen')
