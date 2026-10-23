@@ -8,6 +8,9 @@
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 -->
 <meta name="color-scheme" content="only light">
 <title>푸드벨 일정</title>
+<!-- 홈 화면 아이콘 '푸드벨 일정' (10-24 검토 반영) — 암호는 앱 정보 파일에 없다. 아래 스크립트가 링크로 열 때 기기에 기억해 둔다 -->
+<link rel="manifest" href="manifest-today.webmanifest">
+<link rel="apple-touch-icon" href="icons/app-today-180.png">
 <!-- 직원용 고정 링크 (사장님 2026-10-21, 설계서 docs/superpowers/specs/2026-10-21-staff-today-link-design.md).
      단톡방 공지에 한 번 올린 today.html#암호 — 열 때마다 직원 게시판(share/암호)의 지금 일정표를 카드로 보여 준다.
      사장님이 일정표를 고치면(daily-schedule.html 이 저장할 때 올림) 열어 둔 화면도 새로고침 없이 바뀐다.
@@ -42,6 +45,11 @@ article.card{background:var(--white); border:1px solid var(--border); border-rad
 a.btn-call, a.btn-map{flex:none; display:inline-flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:8px; font-weight:600; text-decoration:none; white-space:nowrap}
 a.btn-call{background:var(--primary); color:#fff}
 a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--primary)}
+/* 홈 화면 아이콘 설치 안내 — 접혀 있다가 누르면 펼쳐진다 (10-24 검토 반영) */
+#install{margin-top:28px; border-top:1px solid var(--border); padding-top:8px; font-size:15px; color:var(--ink-mute)}
+#install summary{min-height:44px; display:flex; align-items:center; cursor:pointer; font-weight:600; color:var(--ink)}
+#install ol{margin:4px 0 0; padding-left:22px}
+#install li{margin:6px 0}
 </style>
 </head>
 <body>
@@ -56,6 +64,14 @@ a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--
     <p class="note" id="day-memo" hidden></p>
     <div id="cards"></div>
   </section>
+  <details id="install">
+    <summary>홈 화면에 아이콘으로 두기</summary>
+    <ol>
+      <li>카톡 안에서 열렸으면 오른쪽 위 ⋮ → <b>다른 브라우저로 열기</b>(크롬)</li>
+      <li>크롬 오른쪽 위 ⋮ → <b>홈 화면에 추가</b>(또는 앱 설치). 삼성 인터넷은 아래 ≡ → 현재 페이지 추가 → 홈 화면</li>
+      <li>다음부터는 홈 화면의 <b>푸드벨 일정</b>을 누르면 됩니다. "링크가 바뀌었습니다"가 뜨면 단톡방 공지 링크를 한 번 더 누르세요</li>
+    </ol>
+  </details>
 </main>
 <script type="module">
 import { watchShare } from './js/sije/share-store.js';
@@ -209,8 +225,14 @@ function offline(fromCache) {
   offTimer = setTimeout(() => { $('offline').hidden = false; }, Math.max(0, 2000 - (Date.now() - cacheSince)));
 }
 
-const key = location.hash.slice(1);
-if (!/^[\w-]{8,64}$/.test(key)) gone();
+/* 암호 — 링크(#암호)로 열면 이 브라우저에 기억해 두고, 홈 화면 아이콘으로(# 없이) 열면 기억한 것을 쓴다 (10-24 검토 반영).
+   브라우저마다 저장소가 달라서(카톡 안 브라우저 ≠ 크롬) 아이콘은 링크를 연 그 브라우저에서 추가해야 한다 — 아래 설치 안내 */
+const KEY_STORE = 'foodbell-today-key';
+const KEY_SHAPE = /^[\w-]{8,64}$/;
+let key = location.hash.slice(1);
+if (KEY_SHAPE.test(key)) { try { localStorage.setItem(KEY_STORE, key); } catch {} }
+else { try { key = localStorage.getItem(KEY_STORE) || ''; } catch { key = ''; } }
+if (!KEY_SHAPE.test(key)) gone();
 else {
   watchShare(key, (got, meta) => {
     offline(meta.fromCache);

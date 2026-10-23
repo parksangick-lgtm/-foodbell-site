@@ -577,16 +577,8 @@ def test_daily_bare_number_price_asks_for_unit(pc, repo_url, custom_token, test_
         assert 'warn' in (amt.get_attribute('class') or ''), bare
     edit_cell(pc, 'tr.item [data-f="people"]', '60명')              # 인원이 있어도 곱하지 않는다
     assert amt.inner_text().strip() == '단위를 적어 주세요(예: 25만)'
-    # 사진은 html2canvas 가 만든 사본을 찍는다 — 그 사본에서 알림이 보이는지 본다. 'shot' 표시 없이는 보이고(대조), 있으면 안 보인다.
-    pc.wait_for_function("typeof html2canvas === 'function'", timeout=30_000)
-    in_copy = """(shot) => new Promise((res) => {
-      document.documentElement.classList.toggle('shot', shot);
-      html2canvas(document.querySelector('.sheet'), { logging: false, onclone: (doc) =>
-        res(doc.defaultView.getComputedStyle(doc.querySelector('tr.item [data-k="amt"]')).display) })
-        .finally(() => document.documentElement.classList.remove('shot'));
-    })"""
-    assert pc.evaluate(in_copy, False) != 'none'
-    assert pc.evaluate(in_copy, True) == 'none'
+    # 직원 사진(카드) · 게시판은 rowsData() 의 글자로 만든다 — 거기에는 알림이 없다 (10-24 검토 반영: 사진은 카드, html.shot 없음)
+    assert pc.evaluate("window.FoodbellDoc.rowsData().map((r) => r.amt)") == ['']
     pc.click('#btn-edit')
     ref = test_db.collection('docs').document(doc_id)
     wait_db(ref, lambda s: '삼우제' in (s.to_dict() or {}).get('text', ''))
