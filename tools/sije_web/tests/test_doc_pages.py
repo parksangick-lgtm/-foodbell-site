@@ -1301,3 +1301,37 @@ def test_daily_time_without_ampm_gets_hint(pc, repo_url, custom_token, test_db, 
     assert '오전? 오후?' not in pc.locator('.sheet').inner_text()
     html = wait_db(test_db.collection('docs').document(doc_id), lambda s: '12시' in (s.to_dict() or {}).get('html', '')).to_dict()['html']
     assert 'data-ampm' not in html
+
+
+def test_daily_send_asks_when_amount_missing(pc, repo_url, custom_token, made):
+    """단위 없는 단가('250')가 있으면 '직원에게 보내기'가 한 번 묻고, 아니오면 사진을 만들지 않고 단추가 돌아온다."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 상차림')
+    edit_cell(pc, 'tr.item [data-f="price"]', '250')
+    pc.click('#btn-edit')
+    asked = []
+    pc.once('dialog', lambda d: (asked.append(d.message), d.dismiss()))
+    pc.click('#btn-send')
+    pc.wait_for_timeout(800)
+    assert asked == ['1번 줄 금액이 비어 있습니다(단위 없음). 그래도 보낼까요?']
+    assert pc.locator('#btn-send').inner_text() == '직원에게 보내기' and pc.locator('#btn-send').is_enabled()
+
+
+def test_daily_stats_line(pc, repo_url, custom_token, made):
+    """곱셈 줄 + 단가만 줄 + 단위 없는 줄 → '3건 · 금액 합계 1,250,000원 · 금액 빠진 줄 1'. 0건이면 숨김. 인쇄엔 없음."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    assert pc.locator('.day-stats').is_hidden()
+    pc.click('#btn-edit')
+    for _ in range(2):
+        pc.click('tr.addrow button')
+    pc.evaluate("""() => {
+        const v = [{ work: '시제', people: '60명', price: '15,000원' }, { work: '평토상', price: '35만' }, { work: '배달', price: '250' }];
+        document.querySelectorAll('tr.item').forEach((tr, i) => { for (const [f, t] of Object.entries(v[i])) tr.querySelector(`[data-f="${f}"]`).textContent = t; });
+        document.querySelector('tr.item [data-f="work"]').dispatchEvent(new Event('input', { bubbles: true }));
+    }""")
+    pc.click('#btn-edit')
+    assert pc.locator('.day-stats').inner_text() == '3건 · 금액 합계 1,250,000원 · 금액 빠진 줄 1'
+    pc.emulate_media(media='print')
+    assert pc.locator('.day-stats').is_hidden()
+    pc.emulate_media(media='screen')

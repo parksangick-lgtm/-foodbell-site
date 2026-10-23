@@ -266,6 +266,11 @@ body:not(.editing) tr.addrow{display:none !important}
 .lunar{font-size:.6em; font-weight:var(--w-normal); color:var(--ink); margin-left:.4em; white-space:nowrap}
 .pageno{font-size:.6em; font-weight:var(--w-medium); color:var(--ink-mute); margin-left:.6em}
 .pageno:empty{display:none}
+/* 사장님 한 줄 — '4건 · 금액 합계 1,264,000원 · 금액 빠진 줄 1'. 화면에서만 — 사진 · 인쇄 · 직원 화면 · 복사 글에는 없다 (2026-10-24 검토 반영) */
+.day-stats{font-size:14.5px; color:var(--ink-mute); margin:-.3rem 0 .6rem}
+.day-stats:empty{display:none}
+html.shot .day-stats{display:none}
+@media print{ .day-stats{display:none} }
 
 /* 순번 · 전달 메모 — 비어 있으면 보기 · 사진 · 인쇄에서 숨긴다 */
 .order{display:flex; gap:.8rem; align-items:baseline; padding:.45rem .8rem; margin:0 0 .6rem; border-left:3px solid var(--gold); background:var(--band)}
@@ -401,6 +406,7 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
 
   <!-- ================= 날짜 · 순번 ================= -->
   <p class="day"><span data-edit data-t="text" data-k="date" data-ph="날짜 (예: 2026년 10월 21일)"></span> <span data-k="dow"></span><span class="lunar" data-k="lunar"></span><span class="pageno" data-k="pageno"></span></p>
+  <p class="day-stats"></p>
   <p class="order"><b>순번</b><span data-edit data-t="text" data-k="order" data-ph="순번 (예: ○○ · ○○ · ○○)"></span></p>
 
   <!-- ================= 일정 (한 줄 = 일 하나) ================= -->
@@ -490,7 +496,7 @@ function recalc() {
   const d = parseDay(getText('date'));
   setText('dow', d ? `(${WEEK[d.getDay()]})` : '');
   setText('lunar', d ? lunarText(d) : '');
-  let count = 0;
+  let count = 0, sum = 0, missing = 0;   // 사장님 한 줄: 건수 · 금액 합계(곱셈 + 단가만) · 단위 없는 줄 수
   each(sheet.querySelectorAll('tr.item'), (tr, i) => {
     const no = tr.querySelector('[data-k="no"]');
     if (no) no.textContent = String(i + 1);
@@ -508,8 +514,12 @@ function recalc() {
       amt.textContent = bare ? '단위를 적어 주세요(예: 25만)'
         : people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : price ? `${fmt(price)}원` : '';
     }
+    if (bare) missing++; else if (price) sum += people ? people * price : price;
     if (filled(tr)) count++;
   });
+  let stats = sheet.querySelector('.day-stats');
+  if (!stats) { stats = el('p', 'day-stats'); sheet.querySelector('.day')?.after(stats); }   // 옛 일정표의 저장 HTML 에는 없다
+  stats.textContent = count ? `${count}건 · 금액 합계 ${fmt(sum)}원` + (missing ? ` · 금액 빠진 줄 ${missing}` : '') : '';
   return count;
 }
 
@@ -848,6 +858,9 @@ document.getElementById('btn-copy').addEventListener('click', function () {
 
 document.getElementById('btn-send').addEventListener('click', function () {
   if (!recalc() && !window.confirm('일정을 아직 안 넣으셨습니다. 그래도 보낼까요?')) return;
+  // 단위 없는 단가('250')는 사진에서 금액이 빠진 채 나간다 — 보내기 전에 한 번 묻는다 (2026-10-24 검토 반영, 10-21 실제로 난 일)
+  const noAmt = Array.prototype.map.call(sheet.querySelectorAll('tr.item'), (tr, i) => (tr.querySelector('.amt.warn') ? i + 1 : 0)).filter(Boolean);
+  if (noAmt.length && !window.confirm(`${noAmt.join(' · ')}번 줄 금액이 비어 있습니다(단위 없음). 그래도 보낼까요?`)) return;
   const btn = this, old = btn.textContent;
   btn.disabled = true; btn.textContent = '준비 중…';
   setEditing(false);
