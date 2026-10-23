@@ -591,6 +591,7 @@ function serialize() {
   each(c.querySelectorAll('.rowctl, tr.addrow, .btn-open'), (n) => n.remove());
   each(c.querySelectorAll('td.meet.folded'), (n) => n.classList.remove('folded'));
   each(c.querySelectorAll('[data-ampm]'), (n) => n.removeAttribute('data-ampm'));
+  each(c.querySelectorAll('.day-stats'), (n) => { n.textContent = ''; });   // 사장님 한 줄은 그릴 때마다 계산 — 저장 HTML 에는 없다
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
   telsPlain(c);

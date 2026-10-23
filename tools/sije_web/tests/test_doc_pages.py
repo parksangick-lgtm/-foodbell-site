@@ -125,8 +125,8 @@ def wait_db(ref, check, timeout=15):
 
 def unfold_if_folded(page, selector):
     """일정표의 장례 칸이 접혀 있으면(10-24 검토 반영) 사람이 하듯 '장례 칸 펼치기'를 먼저 누른다. 다른 서류에는 해당 없음."""
-    page.evaluate("""(sel) => { const e = document.querySelector(sel); const td = e && e.closest('td.meet.folded');
-                                if (td) td.querySelector('.btn-open').click(); }""", selector)
+    # Playwright 선택자(:text-is 등)도 받아야 하므로 브라우저 querySelector 가 아니라 locator 로 찾는다
+    page.locator(selector).first.evaluate("""(e) => { const td = e.closest('td.meet.folded'); if (td) td.querySelector('.btn-open').click(); }""")
 
 
 def set_text(page, selector, text):
@@ -1185,6 +1185,7 @@ def test_daily_photo_ends_with_staff_note(pc, repo_url, custom_token, made):
     pc.click('#btn-save-file')
     pc.wait_for_function('window.__notes.length >= 1', timeout=60_000)
     assert pc.evaluate('window.__notes[0]') == [STAFF_NOTE, STAFF_LIKE]           # 사진에는 보이고, 맨 아래 두 줄 (차례대로)
+    pc.locator('#btn-save-file', has_text='파일로 저장').wait_for(timeout=60_000)   # 다 찍혀 카드 묶음이 치워진 뒤에 본다
     pc.emulate_media(media='print')
     assert pc.get_by_text(STAFF_NOTE).count() == 0 or pc.get_by_text(STAFF_NOTE).is_hidden()   # 인쇄에도 없음
     pc.emulate_media(media='screen')
@@ -1319,6 +1320,7 @@ def test_daily_stats_line(pc, repo_url, custom_token, made):
     pc.emulate_media(media='print')
     assert pc.locator('.day-stats').is_hidden()
     pc.emulate_media(media='screen')
+    assert '금액 합계' not in pc.evaluate('window.FoodbellDoc.serialize()')          # 저장 HTML 에는 없다 (설계 5절)
 
 
 def watch_shots(page, expr):
