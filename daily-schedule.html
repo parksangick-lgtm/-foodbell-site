@@ -256,10 +256,9 @@ body:not(.editing) tr.addrow{display:none !important}
 /* ================= 일일 일정표 전용 (거래명세서 · 알바비 스타일 위에 덧붙임 — 견본 2026-10-20 모양) ================= */
 .doc-title{letter-spacing:.12em; text-indent:.12em; white-space:nowrap}
 
-/* 표제: 푸드벨 옆 사이트 주소, 인장 옆 QR (사진으로 받은 폰에서는 못 찍으니 주로 인쇄용) */
+/* 표제: 푸드벨 옆 사이트 주소 (인장 옆 QR 은 2026-10-24 사장님 요청으로 뺌 — 그림 images/qr-foodbell.png 는 남아 있음) */
 .brand-row{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
 .brand-url{font-size:16px; font-weight:var(--w-medium); color:var(--seal); text-decoration:none; border-bottom:1px solid var(--gold); letter-spacing:.02em}
-.qr{flex:none; width:64px; height:64px; image-rendering:pixelated}
 
 /* 큰 날짜(요일은 저절로) · 음력 · 장 번호 */
 .day{font-family:var(--serif); font-weight:var(--w-bold); font-size:30px; color:var(--ink); margin:0 0 .6rem; letter-spacing:.02em}
@@ -403,7 +402,6 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
     </div>
     <div class="doc-meta">
       <div><h2 class="doc-title">일일 일정표</h2></div>
-      <img class="qr" src="images/qr-foodbell.png" alt="foodbell.kr QR 코드" width="64" height="64">
       <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="푸드벨 인장">
         <rect x="1.5" y="1.5" width="61" height="61" rx="4" fill="#6E1E2B"></rect>
         <rect x="5.5" y="5.5" width="53" height="53" rx="2" fill="none" stroke="#FFFDF8" stroke-width="1.2" opacity=".6"></rect>
