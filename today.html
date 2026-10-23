@@ -12,7 +12,8 @@
      단톡방 공지에 한 번 올린 today.html#암호 — 열 때마다 직원 게시판(share/암호)의 지금 일정표를 카드로 보여 준다.
      사장님이 일정표를 고치면(daily-schedule.html 이 저장할 때 올림) 열어 둔 화면도 새로고침 없이 바뀐다.
      암호는 # 뒤에만 있어 사이트 서버 · 카톡 미리보기로 가지 않는다. 로그인 없음(직원은 구글 계정이 없다).
-     산속 약한 신호에서도 바로 뜨게 글꼴은 기다리지 않는다(곱은바탕은 받아지면 바뀐다) -->
+     산속 약한 신호에서도 바로 뜨게 글꼴은 기다리지 않는다(곱은바탕은 받아지면 바뀐다).
+     10-24 검토 반영: 카드에 출발 줄, [지도]는 사장님이 적은 지도 링크가 있으면 그 주소 (설계 docs/superpowers/specs/2026-10-24-daily-schedule-review-fixes-design.md) -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{--cream:#F7F2E9; --white:#FFFFFF; --ink:#120C06; --ink-mute:#6B5E48; --primary:#6E1E2B; --gold:#B08D57; --border:#E2D6BF; --band:#F1EADB}
@@ -78,6 +79,7 @@ function telShape(d) {
   return m ? m.slice(1).join('-') : null;
 }
 const NUM = /\d[\d-]{6,}\d/g;
+const NAVER = 'https://m.map.naver.com/search2/search.naver?query=';
 const trimSep = (s) => s.replace(/^[\s,·/]+|[\s,·/]+$/g, '');
 
 function status(text) {
@@ -128,8 +130,11 @@ function card(r) {
   const crew = [r.staff, r.car].filter(Boolean).join(' · ');
   if (crew) head.append(el('span', 'crew', crew));
   c.append(head);
-  // 휴대폰용 네이버 지도 검색 — map.naver.com/p/search 는 휴대폰 카톡 안에서 '앱 설치' 화면만 나오고 장소가 사라졌다 (10-21 저녁)
-  if (r.place) line(c, '장소', r.place, link('btn-map', 'https://m.map.naver.com/search2/search.naver?query=' + encodeURIComponent(r.place), '지도'));
+  if (r.leave) line(c, '출발', r.leave);   // 출발 시각 · 장소 — 직원이 맨 먼저 찾는 것 (10-24 검토 반영)
+  // 휴대폰용 네이버 지도 검색 — map.naver.com/p/search 는 휴대폰 카톡 안에서 '앱 설치' 화면만 나오고 장소가 사라졌다 (10-21 저녁).
+  // 사장님이 지도 링크(네이버 지도 공유 주소)를 적어 두었으면 검색 대신 그 주소 (10-24 검토 반영 — 산 지번은 검색이 빗나간다)
+  const mapHref = /^https?:\/\//.test(r.map || '') ? r.map : NAVER + encodeURIComponent(r.place);
+  if (r.place) line(c, '장소', r.place, link('btn-map', mapHref, '지도'));
   phoneLines(c, '연락처', '', r.tel || '');
   if (r.work) line(c, '행사', r.work);
   if (r.amt) line(c, '금액', r.amt);

@@ -289,6 +289,14 @@ table.stmt.day-table a.tel1, table.stmt.day-table a.map1{color:inherit; text-dec
 html.shot table.stmt.day-table a.tel1, html.shot table.stmt.day-table a.map1{text-decoration:none}
 @media print{ table.stmt.day-table a.tel1, table.stmt.day-table a.map1{text-decoration:none} }
 table.stmt.day-table [data-f="memo"]{white-space:pre-line}   /* 붙여넣은 주문 글은 줄을 바꿔 그대로 (문자 붙여넣기) */
+/* 지도 링크 칸 — 편집할 때만 보인다. 보기에서는 장소 글자가 그 주소를 연다 (2026-10-24 검토 반영) */
+body:not(.editing) table.stmt.day-table .maplink{display:none}
+@media print{ table.stmt.day-table .maplink{display:none} }
+/* 장례 칸 접기 — 편집 중 여섯 칸(상조팀장 · 팀장 전화 · 안내 · 장례식장 · 발인 · 화장)이 다 비면 '장례 칸 펼치기' 단추만 (2026-10-24 검토 반영) */
+body.editing table.stmt.day-table td.meet.folded > :not(.btn-open){display:none !important}
+/* 시간에 오전 · 오후가 없으면 편집 중에만 묻는다 — 사진 · 직원 화면 · 저장에는 없다 (2026-10-24 검토 반영) */
+body.editing table.stmt.day-table [data-f="time"][data-ampm]::after{content:" 오전? 오후?"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
+@media print{ body.editing table.stmt.day-table [data-f="time"][data-ampm]::after{content:none} }
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
 table.stmt.day-table .amt:empty{display:none}
@@ -407,15 +415,15 @@ html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍
           <col style="width:6%"><col style="width:15%"><col style="width:23%"><col style="width:24%"><col style="width:15%"><col>
         </colgroup>
         <thead>
-          <tr><th>번호</th><th>담당 직원 · 차량</th><th>시간 · 장소 · 연락처</th><th>행사 내용 · 인원 · 금액</th><th>상조팀장 · 현지 안내인</th><th>메모</th></tr>
+          <tr><th>번호</th><th>담당 직원 · 차량 · 출발</th><th>시간 · 장소 · 연락처</th><th>행사 내용 · 인원 · 금액</th><th>상조팀장 · 현지 안내인</th><th>메모</th></tr>
         </thead>
         <tbody>
           <tr class="item">
             <td class="c" data-label="번호" data-k="no"></td>
-            <td class="crew" data-label="담당 직원 · 차량"><b data-edit data-t="text" data-f="staff" data-ph="담당 직원"></b><span class="sub" data-edit data-t="text" data-f="car" data-ph="차량"></span></td>
-            <td class="when" data-label="시간 · 장소 · 연락처"><b data-edit data-t="text" data-f="time" data-ph="시간"></b><span class="sub" data-edit data-t="text" data-f="place" data-ph="장소"></span><span class="sub" data-edit data-t="text" data-f="tel" data-ph="연락처"></span></td>
+            <td class="crew" data-label="담당 직원 · 차량 · 출발"><b data-edit data-t="text" data-f="staff" data-ph="담당 직원"></b><span class="sub" data-edit data-t="text" data-f="car" data-ph="차량"></span><span class="sub" data-edit data-t="text" data-f="leave" data-ph="출발 (예: 06:30 가게)"></span></td>
+            <td class="when" data-label="시간 · 장소 · 연락처"><b data-edit data-t="text" data-f="time" data-ph="시간"></b><span class="sub" data-edit data-t="text" data-f="place" data-ph="장소"></span><span class="sub maplink" data-edit data-t="text" data-f="map" data-ph="지도 링크 (선택 — 네이버 지도 공유)"></span><span class="sub" data-edit data-t="text" data-f="tel" data-ph="연락처 (예: 상주 010-… / 자녀 010-…)" inputmode="tel"></span></td>
             <td class="work" data-label="행사 내용 · 인원 · 금액"><span data-edit data-t="text" data-f="work" data-ph="행사 내용"></span><span class="qty"><span data-edit data-t="text" data-f="people" data-ph="인원"></span>×<span data-edit data-t="text" data-f="price" data-ph="단가"></span></span><span class="amt" data-k="amt"></span></td>
-            <td class="meet" data-label="상조팀장 · 현지 안내인"><b data-edit data-t="text" data-f="lead" data-ph="상조팀장"></b><span class="sub" data-edit data-t="text" data-f="lead-tel" data-ph="팀장 전화"></span><span class="sub guide">안내 <span data-edit data-t="text" data-f="guide-tel" data-ph="현지 안내인 전화"></span></span><span class="sub" data-edit data-t="text" data-f="hall" data-ph="장례식장 · 화장장"></span><span class="sub rites"><span class="rite">발인 <span data-edit data-t="text" data-f="depart" data-ph="발인 시간"></span></span><span class="rite">화장 <span data-edit data-t="text" data-f="cremate" data-ph="화장 시간"></span></span></span></td>
+            <td class="meet" data-label="상조팀장 · 현지 안내인"><b data-edit data-t="text" data-f="lead" data-ph="상조팀장"></b><span class="sub" data-edit data-t="text" data-f="lead-tel" data-ph="팀장 전화" inputmode="tel"></span><span class="sub guide">안내 <span data-edit data-t="text" data-f="guide-tel" data-ph="현지 안내인 전화" inputmode="tel"></span></span><span class="sub" data-edit data-t="text" data-f="hall" data-ph="장례식장 · 화장장"></span><span class="sub rites"><span class="rite">발인 <span data-edit data-t="text" data-f="depart" data-ph="발인 시간"></span></span><span class="rite">화장 <span data-edit data-t="text" data-f="cremate" data-ph="화장 시간"></span></span></span></td>
             <td class="memo-cell" data-label="메모"><span data-edit data-t="text" data-f="memo" data-ph="메모 (예: 연기)"></span></td>
           </tr>
         </tbody>
@@ -434,13 +442,15 @@ import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
 import { parseOrder } from './js/docs/order-text.js?v=3';
+import { needsAmPm } from './js/docs/time-hint.js?v=1';
 
 const SITE = 'https://foodbell.kr/';
 const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
 const WEEK = '일월화수목금토';
 // 이어받을 일정표가 하나도 없을 때(맨 처음)의 전달 메모 — 사장님 결정 2026-10-20
 const FIRST_MEMO = '추모공원(협력업체)은 회사에서 출발 전에 전화 · 화장은 시작 5분 후 전화 · 매장은 발인 5분 전에 팀장에게 전화 · 상주(직접주문)에게는 가게 출발 전에 전화';
-const FIELDS = ['staff', 'car', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'guide-tel', 'hall', 'depart', 'cremate', 'memo'];
+// 지도 링크(map)는 일부러 뺐다 — 링크만 적힌 줄은 "채운 줄"이 아니다 (2026-10-24)
+const FIELDS = ['staff', 'car', 'leave', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'guide-tel', 'hall', 'depart', 'cremate', 'memo'];
 
 const sheet = document.querySelector('.sheet');
 const body = document.body;
@@ -503,6 +513,26 @@ function recalc() {
   return count;
 }
 
+/* 메모 칸의 줄들 — 붙여넣은 주문 글의 줄바꿈은 그대로, 빈 줄은 뺀다 */
+const memoLines = (tr) => (tr.querySelector('[data-f="memo"]')?.textContent || '').split('\n').map(clean).filter(Boolean);
+
+/* 채운 줄만, 번호는 일정표 그대로(빈 줄을 건너도 사진 · 직원 화면과 같은 번호). 금액에 '단위를 적어 주세요' 는 안 넣는다 */
+function rowsData() {
+  recalc();
+  const rows = [];
+  each(sheet.querySelectorAll('tr.item'), (tr, i) => {
+    if (!filled(tr)) return;
+    rows.push({
+      no: i + 1, staff: field(tr, 'staff'), car: field(tr, 'car'), leave: field(tr, 'leave'), time: field(tr, 'time'),
+      place: field(tr, 'place'), map: field(tr, 'map'), tel: field(tr, 'tel'), work: field(tr, 'work'),
+      amt: clean(tr.querySelector('[data-k="amt"]:not(.warn)')?.textContent),
+      lead: field(tr, 'lead'), leadTel: field(tr, 'lead-tel'), guideTel: field(tr, 'guide-tel'), hall: field(tr, 'hall'),
+      depart: field(tr, 'depart'), cremate: field(tr, 'cremate'), memo: memoLines(tr).join('\n'),
+    });
+  });
+  return rows;
+}
+
 /* ---------- 문자 · 카톡용 요약 (복사 · 옵시디언 사본) ---------- */
 function buildText() {
   recalc();
@@ -516,11 +546,15 @@ function buildText() {
     const amtEl = tr.querySelector('[data-k="amt"]:not(.warn)');   // '단위를 적어 주세요' 는 요약 글에 넣지 않는다
     const what = [field(tr, 'work'), clean(amtEl?.textContent)].filter(Boolean).join(' ');
     const crew = [field(tr, 'staff'), field(tr, 'car')].filter(Boolean).join(' · ');
+    const leave = field(tr, 'leave') ? '출발 ' + field(tr, 'leave') : '';
     const lead = [[field(tr, 'lead'), field(tr, 'lead-tel')].filter(Boolean).join(' '),
       field(tr, 'guide-tel') ? '안내 ' + field(tr, 'guide-tel') : '', field(tr, 'hall'),
       field(tr, 'depart') ? '발인 ' + field(tr, 'depart') : '', field(tr, 'cremate') ? '화장 ' + field(tr, 'cremate') : ''].filter(Boolean).join(' · ');
     const head = [where, what].filter(Boolean).join(' — ');
-    L.push(`${i + 1}. ` + [head, crew, lead, field(tr, 'memo')].filter(Boolean).join(' / '));
+    // 여러 줄 메모(붙여넣은 주문 글)는 줄바꿈을 살려 다음 줄부터 세 칸 들여 쓴다 (2026-10-24 검토 반영)
+    const memo = memoLines(tr);
+    L.push(`${i + 1}. ` + [head, crew, leave, lead, memo.length === 1 ? memo[0] : ''].filter(Boolean).join(' / '));
+    if (memo.length > 1) memo.forEach((m) => L.push('   ' + m));
   });
   L.push('', SITE);
   return L.join('\n');
@@ -529,7 +563,9 @@ function buildText() {
 /* ---------- 저장 / 복원 : 문서면 전체 HTML (줄 추가 · 삭제까지) ---------- */
 function serialize() {
   const c = sheet.cloneNode(true);
-  each(c.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove());
+  each(c.querySelectorAll('.rowctl, tr.addrow, .btn-open'), (n) => n.remove());
+  each(c.querySelectorAll('td.meet.folded'), (n) => n.classList.remove('folded'));
+  each(c.querySelectorAll('[data-ampm]'), (n) => n.removeAttribute('data-ampm'));
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
   telsPlain(c);
@@ -558,7 +594,25 @@ function addControls() {
     td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
   }
 }
-function removeControls() { each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove()); }
+function removeControls() {
+  each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove());
+  each(sheet.querySelectorAll('td.meet'), unfoldMeet);
+  each(sheet.querySelectorAll('[data-ampm]'), (n) => n.removeAttribute('data-ampm'));
+}
+/* 장례 칸 접기 (2026-10-24 검토 반영) — 편집을 시작할 때와 줄을 새로 더할 때만 접는다. 펼친 줄은 그 편집 동안 펼쳐진 채로 둔다.
+   하나라도 적혀 있으면(문자 붙여넣기로 채워진 것 포함) 펼친다. 접힘 표시 · 단추는 저장 HTML 에 넣지 않는다 */
+const MEET = ['lead', 'lead-tel', 'guide-tel', 'hall', 'depart', 'cremate'];
+const meetEmpty = (tr) => MEET.every((f) => !field(tr, f));
+function unfoldMeet(td) { td.classList.remove('folded'); td.querySelector('.btn-open')?.remove(); }
+function foldMeet(tr) {
+  const td = tr.querySelector('td.meet');
+  if (!td) return;
+  if (!meetEmpty(tr)) { unfoldMeet(td); return; }
+  td.classList.add('folded');
+  if (!td.querySelector('.btn-open')) { const b = el('button', 'btn-mini btn-open', '장례 칸 펼치기'); b.type = 'button'; td.appendChild(b); }
+}
+/* 시간 칸 — 오전 · 오후가 없으면 편집 중에만 '오전? 오후?' (js/docs/time-hint.js) */
+function hintAmPm(t) { if (needsAmPm(t.textContent)) t.setAttribute('data-ampm', ''); else t.removeAttribute('data-ampm'); }
 function setCE(on) { each(sheet.querySelectorAll('[data-edit]'), (e) => { e.contentEditable = on ? 'true' : 'false'; }); }
 /* 전화번호 칸: 보기에서만 번호마다 한 덩어리(.tel1)로 묶어 번호 사이에서만 줄이 바뀌게 — 크롬은 하이픈 뒤에서도 끊는다.
    그 덩어리는 누르면 전화가 걸리는 링크(사장님 2026-10-21 저녁). 편집 · 저장은 글자 그대로 (최종 검토 I4) */
@@ -579,11 +633,14 @@ function telsWrapped() {
    (사장님 2026-10-21 저녁 — 일정표 화면에서 장소를 눌러도 지도가 안 나왔다) */
 const MAP = 'https://m.map.naver.com/search2/search.naver?query=';
 function placesPlain(root) { each(root.querySelectorAll('[data-f="place"]'), (n) => { if (n.children.length) n.textContent = n.textContent; }); }
+const isUrl = (s) => /^https?:\/\//.test(s || '');
 function placesLinked() {
   each(sheet.querySelectorAll('[data-f="place"]'), (n) => {
     if (n.children.length || !clean(n.textContent)) return;
     const a = el('a', 'map1', n.textContent);
-    a.href = MAP + encodeURIComponent(clean(n.textContent));
+    // 같은 줄에 지도 링크(네이버 지도 공유 주소)를 적어 두었으면 검색 대신 그 주소 (2026-10-24 검토 반영)
+    const map = clean(n.closest('tr')?.querySelector('[data-f="map"]')?.textContent);
+    a.href = isUrl(map) ? map : MAP + encodeURIComponent(clean(n.textContent));
     a.target = '_blank';
     a.rel = 'noopener';
     n.replaceChildren(a);
@@ -604,13 +661,18 @@ function setEditing(on) {
   body.classList.toggle('editing', on);
   btnEdit.setAttribute('aria-pressed', String(on));
   btnEdit.textContent = on ? '편집 완료' : '편집';
-  if (on) { telsPlain(sheet); placesPlain(sheet); addControls(); setCE(true); }
-  else { removeControls(); setCE(false); telsWrapped(); placesLinked(); save(); }
+  if (on) {
+    telsPlain(sheet); placesPlain(sheet); addControls(); setCE(true);
+    each(sheet.querySelectorAll('tr.item'), foldMeet);
+    each(sheet.querySelectorAll('[data-f="time"]'), hintAmPm);
+  } else { removeControls(); setCE(false); telsWrapped(); placesLinked(); save(); }
 }
 
 /* ---------- 입력 처리 (새로 추가한 줄까지) ---------- */
 sheet.addEventListener('input', (e) => {
-  if (!e.target.closest?.('[data-edit]')) return;
+  const t = e.target.closest?.('[data-edit]');
+  if (!t) return;
+  if (t.matches('[data-f="time"]')) hintAmPm(t);
   recalc();
   save();
 });
@@ -632,6 +694,12 @@ sheet.addEventListener('click', (e) => {
   const b = e.target.closest?.('button.btn-mini');
   if (!b) return;
   e.preventDefault();
+  if (b.classList.contains('btn-open')) {
+    const td = b.closest('td.meet');
+    unfoldMeet(td);
+    td.querySelector('[data-f="lead"]')?.focus();
+    return;
+  }
   if (b.classList.contains('btn-paste')) {
     pasteRow = b.closest('tr.item');
     pasteText.value = '';
@@ -644,7 +712,7 @@ sheet.addEventListener('click', (e) => {
   } else if (b.closest('tr.addrow')) {
     const tr = el('tr', 'item'); tr.innerHTML = ROW_HTML;
     b.closest('tr.addrow').parentNode.insertBefore(tr, b.closest('tr.addrow'));
-    addControls(); setCE(true);
+    addControls(); setCE(true); foldMeet(tr);
     tr.querySelector('[data-f="staff"]').focus();
   }
   recalc(); save();
@@ -665,6 +733,8 @@ function pasteOrder(tr, text) {
   put('price', o.price ? `${fmt(o.price)}원` : '');
   const m = tr.querySelector('[data-f="memo"]');
   if (m && o.memo) m.textContent = [m.textContent.trim(), o.memo].filter(Boolean).join('\n');
+  foldMeet(tr);                                   // 발인 · 화장이 채워졌으면 접힌 장례 칸을 편다
+  const t = tr.querySelector('[data-f="time"]'); if (t) hintAmPm(t);
   recalc(); save();
 }
 document.getElementById('paste-ok').addEventListener('click', () => {
@@ -861,20 +931,11 @@ window.FoodbellDoc = {
   // 직원 게시판 한 장 (today.html — 단톡방 공지의 고정 링크, 사장님 2026-10-21). 사진에 있는 글자만, 채운 줄만 —
   // 번호는 일정표 그대로(사진과 같게). 금액에 '단위를 적어 주세요' 는 안 넣는다. 날짜를 못 읽거나 일이 하나도 없으면 올리지 않는다
   // (null → 칸을 뺌 — 같은 날 빈 일정표가 먼저 골라져 직원 화면에 [전화] · [지도]가 안 보였다, 10-21 저녁)
+  // 채운 줄 목록(번호는 일정표 그대로) — 게시판 한 장과 직원 사진(카드)이 같이 쓴다 (2026-10-24 검토 반영)
+  rowsData,
   share() {
     if (!parseDay(getText('date'))) return null;
-    recalc();
-    const rows = [];
-    each(sheet.querySelectorAll('tr.item'), (tr, i) => {
-      if (!filled(tr)) return;
-      const memo = (tr.querySelector('[data-f="memo"]')?.textContent || '').split('\n').map(clean).filter(Boolean).join('\n');   // 붙여넣은 주문 글의 줄바꿈은 그대로
-      rows.push({
-        no: i + 1, staff: field(tr, 'staff'), car: field(tr, 'car'), time: field(tr, 'time'), place: field(tr, 'place'),
-        tel: field(tr, 'tel'), work: field(tr, 'work'), amt: clean(tr.querySelector('[data-k="amt"]:not(.warn)')?.textContent),
-        lead: field(tr, 'lead'), leadTel: field(tr, 'lead-tel'), guideTel: field(tr, 'guide-tel'), hall: field(tr, 'hall'),
-        depart: field(tr, 'depart'), cremate: field(tr, 'cremate'), memo,
-      });
-    });
+    const rows = rowsData();
     if (!rows.length) return null;
     return { date: ymd(), label: label(), lunar: getText('lunar'), order: getText('order'), memo: getText('memo'), rows };
   },

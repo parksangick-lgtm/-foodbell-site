@@ -123,8 +123,15 @@ def wait_db(ref, check, timeout=15):
     raise AssertionError('저장소에 기대한 값이 안 들어왔다')
 
 
+def unfold_if_folded(page, selector):
+    """일정표의 장례 칸이 접혀 있으면(10-24 검토 반영) 사람이 하듯 '장례 칸 펼치기'를 먼저 누른다. 다른 서류에는 해당 없음."""
+    page.evaluate("""(sel) => { const e = document.querySelector(sel); const td = e && e.closest('td.meet.folded');
+                                if (td) td.querySelector('.btn-open').click(); }""", selector)
+
+
 def set_text(page, selector, text):
     """편집 중인 칸 하나의 글자를 통째로 바꾼다 (사람이 누르고 지우고 치는 것처럼)."""
+    unfold_if_folded(page, selector)
     page.click(selector)
     page.keyboard.press('Control+A')
     page.keyboard.type(text)
@@ -468,6 +475,7 @@ def edit_cell(page, selector, text):
     if text:
         set_text(page, selector, text)
     else:
+        unfold_if_folded(page, selector)
         page.click(selector)
         page.keyboard.press('Control+A')
         page.keyboard.press('Backspace')
@@ -790,6 +798,7 @@ def test_daily_funeral_hall_and_times(pc, phone, repo_url, custom_token, test_db
     doc_id = daily_new(pc, repo_url, token, made)
     pc.click('#btn-edit')
     edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 평토상')
+    pc.click('tr.item td.meet button.btn-open')                    # 장례 칸은 접혀 있다 — 사람도 먼저 편다 (10-24 검토 반영)
     edit_cell(pc, 'tr.item [data-f="hall"]', '가짜병원장례식장')
     edit_cell(pc, 'tr.item [data-f="cremate"]', '08시20분')
     pc.click('#btn-edit')
@@ -1027,9 +1036,9 @@ def test_daily_board_gets_filled_rows(pc, repo_url, custom_token, test_db, made,
     assert (e['date'], e['label']) == (today.isoformat(), day_label(today))
     assert e['lunar'].startswith('음력 ') and (e['order'], e['memo']) == ('가짜1 · 가짜2', '가짜 전달 메모')
     r1, r3 = e['rows']
-    assert r1 == {'no': 1, 'staff': '가짜직원', 'car': '1톤', 'time': '06:30', 'place': '가짜추모공원', 'tel': '010-0000-1234',
-                  'work': '가짜동 상차림', 'amt': '60명 × 15,000원 = 900,000원', 'lead': '가짜팀장', 'leadTel': '010-0000-2000',
-                  'guideTel': '', 'hall': '', 'depart': '', 'cremate': '', 'memo': '가짜 메모'}
+    assert r1 == {'no': 1, 'staff': '가짜직원', 'car': '1톤', 'leave': '', 'time': '06:30', 'place': '가짜추모공원', 'map': '',
+                  'tel': '010-0000-1234', 'work': '가짜동 상차림', 'amt': '60명 × 15,000원 = 900,000원', 'lead': '가짜팀장',
+                  'leadTel': '010-0000-2000', 'guideTel': '', 'hall': '', 'depart': '', 'cremate': '', 'memo': '가짜 메모'}   # leave · map: 10-24 검토 반영
     assert (r3['work'], r3['amt']) == ('가짜동 제사상', '')
 
 
@@ -1209,3 +1218,86 @@ def test_daily_login_and_denied_point_staff_to_notice(pc, repo_url, custom_token
     pc.goto(f'{repo_url}staff-pay.html?testToken={custom_token(DENIED, allowed=False)}')
     pc.get_by_text('권한이 없습니다').wait_for(timeout=20_000)
     assert pc.get_by_text(STAFF_HINT).count() == 0
+
+
+# ---------- 10-24 검토 반영 (설계 docs/superpowers/specs/2026-10-24-daily-schedule-review-fixes-design.md) ----------
+
+def test_daily_leave_and_map_fields(pc, repo_url, custom_token, test_db, made, share_key):
+    """출발 · 지도 링크 칸 — 보기에서 출발이 보이고, 게시판 한 장에 leave · map 이 들어가며, 지도 링크가 있으면 장소 글자가 그 주소를 연다.
+    http 없는 지도 링크는 무시(검색). 전화 칸은 숫자 자판."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    assert pc.get_attribute('tr.item [data-f="tel"]', 'inputmode') == 'tel'
+    assert pc.get_attribute('tr.item [data-f="lead-tel"]', 'inputmode') == 'tel'
+    assert pc.get_attribute('tr.item [data-f="guide-tel"]', 'inputmode') == 'tel'
+    assert '상주 010' in pc.get_attribute('tr.item [data-f="tel"]', 'data-ph')
+    pc.click('#btn-edit')
+    assert pc.locator('tr.item [data-f="map"]').is_visible()
+    for f, t in [('staff', '가짜직원'), ('leave', '06:30 가게'), ('place', '가짜추모공원'), ('map', 'https://naver.me/abc'), ('work', '가짜 상차림')]:
+        edit_cell(pc, f'tr.item [data-f="{f}"]', t)
+    pc.click('tr.addrow button')
+    for f, t in [('place', '가짜공원'), ('map', 'naver.me/abc'), ('work', '둘째')]:
+        edit_cell(pc, f'tr.item:nth-child(2) [data-f="{f}"]', t)
+    pc.click('#btn-edit')
+    assert pc.locator('tr.item [data-f="map"]').first.is_hidden()
+    assert pc.get_attribute('tr.item:nth-child(1) [data-f="place"] a', 'href') == 'https://naver.me/abc'
+    assert pc.get_attribute('tr.item:nth-child(2) [data-f="place"] a', 'href').startswith('https://m.map.naver.com/search2/search.naver?query=')
+    assert '06:30 가게' in pc.locator('tr.item:nth-child(1)').inner_text()
+    snap = wait_db(test_db.collection('share').document(share_key), lambda s: doc_id in (s.to_dict() or {}).get('entries', {}))
+    rows = snap.to_dict()['entries'][doc_id]['rows']
+    assert (rows[0]['leave'], rows[0]['map'], rows[1]['leave'], rows[1]['map']) == ('06:30 가게', 'https://naver.me/abc', '', 'naver.me/abc')
+
+
+def test_daily_copy_text_keeps_memo_lines(pc, repo_url, custom_token, made):
+    """복사 글 — 출발은 '/ 출발 …', 여러 줄 메모는 다음 줄부터 세 칸 들여 한 줄씩."""
+    pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 상차림')
+    edit_cell(pc, 'tr.item [data-f="leave"]', '06:30 가게')
+    pc.evaluate("""() => { const m = document.querySelector('tr.item [data-f="memo"]'); m.textContent = '첫 줄\\n둘째 줄';
+                           m.dispatchEvent(new Event('input', { bubbles: true })); }""")
+    pc.click('#btn-edit')
+    pc.click('#btn-copy')
+    pc.locator('#btn-copy', has_text='복사됨').wait_for(timeout=5_000)
+    lines = pc.evaluate('navigator.clipboard.readText()').strip().splitlines()
+    i = next(n for n, l in enumerate(lines) if l.startswith('1. '))
+    assert lines[i] == '1. 가짜 상차림 / 출발 06:30 가게' and lines[i + 1] == '   첫 줄' and lines[i + 2] == '   둘째 줄'
+
+
+def test_daily_funeral_cells_fold_until_opened(pc, repo_url, custom_token, test_db, made):
+    """편집 중 장례 여섯 칸이 모두 비면 '장례 칸 펼치기' 단추만, 누르면 펼쳐지고 첫 칸에 커서. 하나라도 적혀 있으면 늘 펼쳐짐.
+    저장 HTML 에는 접힘 표시가 없다."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    meet = pc.locator('tr.item td.meet')
+    assert meet.locator('button.btn-open').is_visible() and meet.locator('[data-f="lead"]').is_hidden()
+    meet.locator('button.btn-open').click()
+    assert meet.locator('[data-f="lead"]').is_visible() and pc.evaluate('document.activeElement?.dataset.f') == 'lead'
+    assert meet.locator('button.btn-open').count() == 0
+    edit_cell(pc, 'tr.item [data-f="hall"]', '가짜장례식장')
+    pc.click('#btn-edit')
+    pc.click('#btn-edit')                                               # 다시 편집: 적힌 줄은 펼쳐져 있다
+    assert meet.locator('button.btn-open').count() == 0 and meet.locator('[data-f="lead"]').is_visible()
+    pc.click('tr.addrow button')                                        # 새 줄은 접혀 있다
+    assert pc.locator('tr.item:nth-child(2) td.meet button.btn-open').is_visible()
+    pc.click('#btn-edit')
+    html = wait_db(test_db.collection('docs').document(doc_id), lambda s: '가짜장례식장' in (s.to_dict() or {}).get('html', '')).to_dict()['html']
+    assert 'folded' not in html and 'btn-open' not in html
+
+
+def test_daily_time_without_ampm_gets_hint(pc, repo_url, custom_token, test_db, made):
+    """'11시20분' 은 편집 중 '오전? 오후?' 가 붙고, '오후 1시' · '13:30' 은 안 붙는다. 보기 · 저장 HTML 에는 없다."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    t = pc.locator('tr.item [data-f="time"]')
+    edit_cell(pc, 'tr.item [data-f="time"]', '11시20분')
+    assert t.get_attribute('data-ampm') is not None
+    assert '오전? 오후?' in pc.evaluate("""getComputedStyle(document.querySelector('tr.item [data-f="time"]'), '::after').content""")
+    for v in ('오후 1시', '13:30'):
+        edit_cell(pc, 'tr.item [data-f="time"]', v)
+        assert t.get_attribute('data-ampm') is None, v
+    edit_cell(pc, 'tr.item [data-f="time"]', '12시')
+    pc.click('#btn-edit')
+    assert '오전? 오후?' not in pc.locator('.sheet').inner_text()
+    html = wait_db(test_db.collection('docs').document(doc_id), lambda s: '12시' in (s.to_dict() or {}).get('html', '')).to_dict()['html']
+    assert 'data-ampm' not in html

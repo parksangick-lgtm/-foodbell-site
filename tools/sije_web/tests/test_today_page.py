@@ -12,7 +12,7 @@ from test_offline import wait_controlled
 WEEK = '월화수목금토일'
 CHANGED = '링크가 바뀌었습니다. 단톡방 공지의 새 링크를 눌러 주세요.'
 EMPTY = '올라온 일정이 없습니다. 단톡방의 일정표 사진을 확인해 주세요.'
-FIELDS = ('staff', 'car', 'time', 'place', 'tel', 'work', 'amt', 'lead', 'leadTel', 'guideTel', 'hall', 'depart', 'cremate', 'memo')
+FIELDS = ('staff', 'car', 'leave', 'time', 'place', 'map', 'tel', 'work', 'amt', 'lead', 'leadTel', 'guideTel', 'hall', 'depart', 'cremate', 'memo')
 
 
 def day(n):
@@ -217,3 +217,19 @@ def test_today_offline_shows_last(ctx, phone, repo_url, test_db, key):
     open_today(phone, repo_url, f'#{key}')
     phone.locator('#cards', has_text='가짜동 산속 상차림').wait_for(timeout=20_000)
     phone.locator('#offline', has_text='연결 안 됨 — 마지막으로 받은 내용입니다').wait_for(timeout=10_000)
+
+
+# ---------- 10-24 검토 반영 (설계 docs/superpowers/specs/2026-10-24-daily-schedule-review-fixes-design.md) ----------
+
+def test_today_leave_line_and_map_link(phone, repo_url, test_db, key):
+    """출발 줄은 머리 다음에, [지도]는 지도 링크가 http(s) 면 그 주소 · 아니면 검색."""
+    put(test_db, key, docA=entry(day(0), [
+        row(1, time='06:30', place='가짜추모공원', leave='05:30 가게', map='https://naver.me/abc', work='가짜 상차림'),
+        row(2, place='가짜공원', map='naver.me/abc', work='둘째'),
+        row(3, place='가짜납골당', work='셋째')]))
+    open_today(phone, repo_url, f'#{key}')
+    c = cards(phone)
+    lines = [l.strip() for l in c.nth(0).locator('p.line').all_inner_texts()]
+    assert lines[0].startswith('출발') and '05:30 가게' in lines[0]
+    assert hrefs(phone, 'a.btn-map') == ['https://naver.me/abc', naver('가짜공원'), naver('가짜납골당')]
+    assert '출발' not in c.nth(1).inner_text()
