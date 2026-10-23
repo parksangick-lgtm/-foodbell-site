@@ -321,6 +321,7 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
 html.shot table.stmt tr.item td::before{content:none !important}   /* 사진 찍는 순간 — renderImage */
 /* 사진 맨 아래 한 줄 — 사진을 만들 때 사본에만 붙인다(renderPages). 화면 · 인쇄 · 저장에는 없다 (사장님 2026-10-21 밤) */
 .staff-note{margin:20px 0 0; text-align:center; font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute)}
+.staff-note + .staff-note{margin-top:6px}
 
 @media (max-width:699px){
   .doc-title{font-size:21px; letter-spacing:.06em; text-indent:.06em}
@@ -728,6 +729,8 @@ async function renderPages() {
   const pageOf = (g) => (s) => {
     // 사진 속 글자는 눌리지 않는다 — 직원이 전화 · 지도를 어디서 누르는지 장마다 맨 아래에 (사장님 2026-10-21 밤)
     if (!s.querySelector('.staff-note')) s.append(el('p', 'staff-note', '전화 · 지도는 단톡방 공지의 링크를 누르세요'));
+    // 사장님이 누가 봤는지 알 수 있게 — 카톡 공감 목록에 이름이 남는다 (사장님 2026-10-23)
+    if (s.querySelectorAll('.staff-note').length < 2) s.append(el('p', 'staff-note', '확인했으면 사진을 길게 눌러 👍 해 주세요'));
     const rows = [...s.querySelectorAll('tr.item')];
     const firstOnly = [...s.querySelectorAll('.masthead, .rule-double, .order, .memo, .sec-head')];
     const hide = (list, on) => list.forEach((e) => e.toggleAttribute('data-shot-hide', on));
