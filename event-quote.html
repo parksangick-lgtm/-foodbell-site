@@ -678,13 +678,13 @@ body:not(.editing) .addjrow{display:none !important}
     } else if (b.classList.contains("btn-del")) {
       var jrow = b.closest(".jrow");
       if (jrow) {                                                // 음식 구성 한 줄 삭제
-        jrow.remove();
+        if (window.confirm("이 줄을 삭제할까요?")) jrow.remove();
       } else if (b.closest(".grouprow")) {                       // 구분 전체 삭제
         var g = b.closest("tbody[data-group]");
         if (g && window.confirm("이 구분을 통째로 삭제할까요?")) g.remove();
       } else {                                                    // 항목 한 줄 삭제
         var row = b.closest("tr.item");
-        if (row) row.remove();
+        if (row && window.confirm("이 항목을 삭제할까요?")) row.remove();   // 묻지 않으면 두 번 누를 때 올라온 아랫줄까지 지워졌다
       }
     } else if (addJ) {                                            // 음식 구성 줄 추가
       var jn2 = sheet.querySelector(".jinseol");

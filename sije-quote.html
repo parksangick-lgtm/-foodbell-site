@@ -662,7 +662,9 @@ body:not(.editing) .tier-switch{display:none !important}
     if (t) { e.preventDefault(); t.blur(); }
   });
   /* "가.제수 음식" 5개 항목 수량칸을 고임 규격 기본값으로 한 번에 채운다.
-     둘 다 언제든 눌러 바꿀 수 있고, 채운 뒤에도 각 칸을 직접 고쳐 쓸 수 있다. */
+     둘 다 언제든 눌러 바꿀 수 있고, 채운 뒤에도 각 칸을 직접 고쳐 쓸 수 있다.
+     줄은 이름으로 찾는다 — 윗줄부터 차례로 채우면 지운 줄이 있을 때 수량이 한 칸씩 밀렸다 (사장님 2026-10-24). */
+  var TIER_ROWS = ["과실 · 조과", "포 · 혜 · 나물", "탕 3종", "적 · 전", "반 · 갱 · 면"];
   var TIER_PRESETS = {
     "7chi": ["7치", "500g", "1식", "6개", "1"],
     "1ja":  ["1자", "700g", "1식", "8개", "1"],
@@ -681,14 +683,23 @@ body:not(.editing) .tier-switch{display:none !important}
     if (b.classList.contains("tier-btn")) {                       // 고임 규격 기본값 채우기
       var preset = TIER_PRESETS[b.getAttribute("data-tier")];
       var firstGroup = sheet.querySelector("tbody[data-group]");
+      var missing = [];
       if (firstGroup && preset) {
-        var spans = firstGroup.querySelectorAll("tr.item td[data-label='수량'] span[data-edit]");
-        each(spans, function (sp, i) { if (preset[i] != null) sp.textContent = preset[i]; });
+        var bare = function (s) { return s.replace(/\s+/g, ""); };
+        var rows = firstGroup.querySelectorAll("tr.item");
+        each(TIER_ROWS, function (name, i) {
+          var sp = null;
+          each(rows, function (tr) {
+            var nm = tr.querySelector(".item-name");
+            if (!sp && nm && bare(nm.textContent) === bare(name)) sp = tr.querySelector("td[data-label='수량'] span[data-edit]");
+          });
+          if (sp) sp.textContent = preset[i]; else missing.push(name);
+        });
       }
       each(sheet.querySelectorAll(".tier-btn"), function (tb) {
         tb.setAttribute("aria-pressed", String(tb === b));
       });
-      toast(b.textContent + " 기준 수량으로 채웠습니다.");
+      toast(b.textContent + " 기준 수량으로 채웠습니다." + (missing.length ? " (없는 줄: " + missing.join(", ") + ")" : ""));
     } else if (b.classList.contains("btn-add")) {                 // 진설 태그 추가
       var span = el("span", null, "품목");
       span.setAttribute("data-edit", ""); span.setAttribute("data-t", "text");
@@ -701,7 +712,7 @@ body:not(.editing) .tier-switch{display:none !important}
         if (g && window.confirm("이 구분을 통째로 삭제할까요?")) g.remove();
       } else {                                                    // 항목 한 줄 삭제
         var row = b.closest("tr.item");
-        if (row) row.remove();
+        if (row && window.confirm("이 항목을 삭제할까요?")) row.remove();   // 묻지 않으면 두 번 누를 때 올라온 아랫줄까지 지워졌다
       }
     } else if (addRow) {                                          // 항목 추가
       var g2 = addRow.closest("tbody[data-group]");

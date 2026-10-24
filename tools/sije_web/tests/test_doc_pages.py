@@ -247,6 +247,35 @@ def test_delete_asks_then_removes_and_returns_to_list(pc, repo_url, custom_token
     wait_db(ref, lambda s: not s.exists)
 
 
+@pytest.mark.parametrize(PAGE_ARGS, [p for p in PAGES if p.id != 'daily-schedule'])
+def test_row_delete_asks_first(pc, repo_url, custom_token, made, kind, file, noun, title, send, label, edit_sel):
+    """줄 ✕ · '줄 삭제' 는 묻고 지운다 — 묻지 않을 때 첫 줄 ✕ 를 두 번 누르면 올라온 아랫줄까지 지워졌다
+    (사장님 10-24, 시제견적서 과실 · 조과와 포 · 혜 · 나물이 함께 사라짐)."""
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    tested = []
+    for sel, msg in (('tr.item', '이 항목을 삭제할까요?'), ('.jrow', '이 줄을 삭제할까요?')):
+        x = pc.locator(f'{sel} .btn-del')
+        if x.count() == 0:
+            continue
+        rows = pc.locator(sel).count()
+        asked = []
+
+        def answer(d, ok):
+            asked.append(d.message)
+            d.accept() if ok else d.dismiss()
+
+        pc.once('dialog', lambda d: answer(d, False))
+        x.first.click()
+        assert asked == [msg] and pc.locator(sel).count() == rows          # 아니오 → 그대로
+        pc.once('dialog', lambda d: answer(d, True))
+        x.first.click()
+        assert pc.locator(sel).count() == rows - 1                         # 예 → 한 줄만
+        tested.append(sel)
+    assert tested[:1] == ['tr.item']      # 음식 구성 줄(.jrow)은 옛 행사견적서 · 작업지시서에만 있어 새 서류에서는 건너뛴다
+
+
 @pytest.mark.parametrize(PAGE_ARGS, PAGES)
 def test_missing_doc_shows_not_found_with_list_button(pc, repo_url, custom_token, kind, file, noun, title, send, label,
                                                       edit_sel):
@@ -312,6 +341,22 @@ def test_supply_updates_total_summary(pc, repo_url, custom_token, test_db, made)
     set_text(pc, '[data-k="supply"]', '1000000')
     pc.click('#btn-edit')
     wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('total') == '1,100,000')
+
+
+def test_tier_fills_rows_by_name_even_after_a_row_is_deleted(pc, repo_url, custom_token, made):
+    """수량 단추는 줄 이름으로 채운다 — 윗줄부터 차례로 채우면 지운 줄이 있을 때 한 칸씩 밀렸다
+    (사장님 10-24: 탕 3종에 '3개', 적 · 전에 '500g'). 없는 줄은 알림에 적는다."""
+    open_list(pc, repo_url, QUOTE['file'], custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    pc.once('dialog', lambda d: d.accept())
+    pc.locator('tbody[data-group] tr.item .btn-del').first.click()              # 과실 · 조과 지움
+    pc.click('.tier-btn[data-tier="basic"]')
+    qty = pc.evaluate("""() => Object.fromEntries([...document.querySelector('tbody[data-group]').querySelectorAll('tr.item')]
+        .map(r => [r.querySelector('.item-name').textContent.trim(),
+                   r.querySelector('td[data-label="수량"] span[data-edit]').textContent.trim()]))""")
+    assert qty == {'포 · 혜 · 나물': '500g', '탕 3종': '1식', '적 · 전': '6개', '반 · 갱 · 면': '1'}
+    assert '과실 · 조과' in pc.text_content('#toast')
 
 
 @pytest.mark.parametrize(PAGE_ARGS, PAGES)

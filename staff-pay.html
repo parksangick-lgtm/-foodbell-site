@@ -549,7 +549,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     e.preventDefault();
     if (b.classList.contains("btn-del")) {
       var row = b.closest("tr.item");
-      if (row) row.remove();
+      if (row && window.confirm("이 항목을 삭제할까요?")) row.remove();   // 묻지 않으면 두 번 누를 때 올라온 아랫줄까지 지워졌다
     } else if (b.closest("tr.addrow")) {
       var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
       b.closest("tr.addrow").parentNode.insertBefore(tr, b.closest("tr.addrow"));
