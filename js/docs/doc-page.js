@@ -293,6 +293,12 @@ async function makeNew(bundle) {
       if (D.inherit) D.inherit(sortDocs(lastRows)[0]?.doc ?? null);   // 가장 최근에 고친 같은 종류 서류에서 이어받기
       if (bundle) D.prefill(bundle.fields);
     });
+    // 같은 날짜 서류가 이미 있으면 묻는다 — sameDoc 은 일일 일정표만 내준다. 취소하면 있는 것을 연다 (사장님 10-24 저녁)
+    const same = !bundle && D.sameDoc ? D.sameDoc(sortDocs(lastRows)) : null;
+    if (same && !window.confirm(`${same.label} ${noun}가 이미 있습니다.\n\n[확인] 그래도 새로 만들기\n[취소] 있는 ${noun} 열기`)) {
+      location.href = `${listUrl}?id=${encodeURIComponent(same.id)}`;
+      return;
+    }
     const id = await createDoc(D.kind, D.serialize(), D.summary());
     if (bundle?.notes.length) sessionStorage.setItem(NOTES, JSON.stringify(bundle.notes));
     const url = `${listUrl}?id=${encodeURIComponent(id)}`;

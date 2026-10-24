@@ -23,6 +23,13 @@ test('빈 줄은 머리(번호)만', () => {
   assert.deepEqual(cardLines({ no: 4 }), [{ lab: '', text: '4번' }]);
 });
 
+test('연기 · 취소 표시는 머리 줄에 state 로 — 표시가 없으면 state 칸도 없다 (사장님 10-24 저녁)', () => {
+  assert.deepEqual(cardLines({ no: 2, state: '연기', time: '11시', work: '평토상' }),
+    [{ lab: '', text: '2번 · 11시', state: '연기' }, { lab: '행사', text: '평토상' }]);
+  assert.deepEqual(cardLines({ no: 3, state: '취소' }), [{ lab: '', text: '3번', state: '취소' }]);
+  assert.deepEqual(cardLines({ no: 1, state: '', work: '시제' }), [{ lab: '', text: '1번' }, { lab: '행사', text: '시제' }]);
+});
+
 test('보냄 표시', () => {
   const d = new Date(2026, 9, 24, 19, 32);
   assert.equal(stampText(0, d), '10-24 19:32 만듦');

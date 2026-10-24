@@ -42,6 +42,9 @@ article.card{background:var(--white); border:1px solid var(--border); border-rad
 .card .lab{flex:none; width:3.2em; font-size:14px; color:var(--ink-mute)}
 .card .txt{flex:1; min-width:0; word-break:keep-all; overflow-wrap:anywhere}
 .card .memo{white-space:pre-line}
+/* 연기 · 취소 — 머리 맨 앞에 표시, 나머지 줄은 흐리게 (사장님 10-24 저녁) */
+.card .state{padding:0 8px; border-radius:4px; background:var(--primary); color:#fff; font-size:15px; font-weight:700}
+.card.off .line{opacity:.55}
 a.btn-call, a.btn-map{flex:none; display:inline-flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:8px; font-weight:600; text-decoration:none; white-space:nowrap}
 a.btn-call{background:var(--primary); color:#fff}
 a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--primary)}
@@ -139,8 +142,9 @@ function phoneLines(card, lab, head, text) {
 
 /* 일 하나 = 카드 한 장 (사진의 줄 번호 그대로). 빈 칸은 이름표까지 숨긴다 */
 function card(r) {
-  const c = el('article', 'card');
+  const c = el('article', r.state ? 'card off' : 'card');
   const head = el('p', 'head');
+  if (r.state) head.append(el('span', 'state', r.state));   // 연기 · 취소 (사장님 10-24 저녁) — 칸이 없는 옛 줄은 그대로
   head.append(el('span', 'no', `${r.no}번`));
   if (r.time) head.append(el('span', 'time', r.time));
   const crew = [r.staff, r.car].filter(Boolean).join(' · ');

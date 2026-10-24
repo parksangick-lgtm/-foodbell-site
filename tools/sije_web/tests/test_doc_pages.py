@@ -104,10 +104,17 @@ def open_doc(page, repo_url, file, doc_id, token=None):
 
 
 def new_doc(page, made):
-    """목록에서 '새 서류' → 열린 서류의 id."""
-    page.click('#doc-new')
-    page.wait_for_url('**?id=*', timeout=20_000)
-    wait_view(page, 'doc')
+    """목록에서 '새 서류' → 열린 서류의 id. 일일 일정표가 '같은 날짜 일정표가 이미 있습니다'를 물으면 '그래도 새로 만들기'(확인) —
+    시험 프로젝트에 같은 날짜 일정표가 남아 있어도 늘 새 서류를 만든다 (그 물음 자체는 test_daily_new_asks_when_same_date_exists)."""
+    def make_anyway(d):
+        d.accept()
+    page.on('dialog', make_anyway)
+    try:
+        page.click('#doc-new')
+        page.wait_for_url('**?id=*', timeout=20_000)
+        wait_view(page, 'doc')
+    finally:
+        page.remove_listener('dialog', make_anyway)
     doc_id = page.evaluate("new URLSearchParams(location.search).get('id')")
     made.append(doc_id)
     return doc_id
@@ -247,10 +254,10 @@ def test_delete_asks_then_removes_and_returns_to_list(pc, repo_url, custom_token
     wait_db(ref, lambda s: not s.exists)
 
 
-@pytest.mark.parametrize(PAGE_ARGS, [p for p in PAGES if p.id != 'daily-schedule'])
+@pytest.mark.parametrize(PAGE_ARGS, PAGES)
 def test_row_delete_asks_first(pc, repo_url, custom_token, made, kind, file, noun, title, send, label, edit_sel):
     """줄 ✕ · '줄 삭제' 는 묻고 지운다 — 묻지 않을 때 첫 줄 ✕ 를 두 번 누르면 올라온 아랫줄까지 지워졌다
-    (사장님 10-24, 시제견적서 과실 · 조과와 포 · 혜 · 나물이 함께 사라짐)."""
+    (사장님 10-24, 시제견적서 과실 · 조과와 포 · 혜 · 나물이 함께 사라짐). 일일 일정표도 같다 — 처음 고칠 때 빠졌었다(10-24 저녁)."""
     open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
     new_doc(pc, made)
     pc.click('#btn-edit')
@@ -1075,7 +1082,8 @@ def test_daily_board_gets_filled_rows(pc, repo_url, custom_token, test_db, made,
     r1, r3 = e['rows']
     assert r1 == {'no': 1, 'staff': '가짜직원', 'car': '1톤', 'leave': '', 'time': '06:30', 'place': '가짜추모공원', 'map': '',
                   'tel': '010-0000-1234', 'work': '가짜동 상차림', 'amt': '60명 × 15,000원 = 900,000원', 'lead': '가짜팀장',
-                  'leadTel': '010-0000-2000', 'guideTel': '', 'hall': '', 'depart': '', 'cremate': '', 'memo': '가짜 메모'}   # leave · map: 10-24 검토 반영
+                  'leadTel': '010-0000-2000', 'guideTel': '', 'hall': '', 'depart': '', 'cremate': '', 'memo': '가짜 메모',
+                  'state': ''}   # leave · map: 10-24 검토 반영, state(연기 · 취소): 10-24 저녁
     assert (r3['work'], r3['amt']) == ('가짜동 제사상', '')
 
 
@@ -1430,3 +1438,132 @@ def test_daily_send_count_and_stamp(phone, repo_url, custom_token, test_db, made
     sent = re.compile(r'data-k="sent"[^>]*>2<')
     html = wait_db(test_db.collection('docs').document(doc_id), lambda s: sent.search((s.to_dict() or {}).get('html', ''))).to_dict()['html']
     assert sent.search(html)
+
+
+# ---------- 10-24 저녁 사장님 요청: 연기 · 취소 표시, 같은 날짜 일정표 물음 ----------
+
+def mark(page, row, state):
+    """편집 중 그 줄의 [연기] · [취소] 단추를 누른다."""
+    page.click(f'tr.item:nth-child({row}) .btn-state[data-set="{state}"]')
+
+
+def badges(page):
+    """줄마다 번호 칸 옆의 표시 글자 — 표시가 없으면 ''."""
+    return page.eval_on_selector_all('tr.item', "trs => trs.map((tr) => tr.querySelector('td.c .state')?.textContent || '')")
+
+
+def test_daily_row_state_marks_row_and_leaves_total(pc, repo_url, custom_token, test_db, made, share_key):
+    """줄마다 [연기] · [취소] — 누르면 켜지고 다시 누르면 풀리며, 둘 중 하나만. 표시한 줄은 번호 옆 · 복사 글 · 직원 게시판에 붙고
+    사장님 한 줄의 건수 · 합계 · 금액 빠진 줄에서는 빠진다. 다시 열어도 남는다 (사장님 10-24 저녁 — 메모에 '연기'만 적으면 사진에서 똑같아 보였다)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    for _ in range(2):
+        pc.click('tr.addrow button')
+    pc.evaluate("""() => {
+        const v = [{ work: '가짜 시제', price: '120만' }, { work: '가짜 평토상', price: '35만' }, { work: '가짜 제사', price: '250' }];
+        document.querySelectorAll('tr.item').forEach((tr, i) => { for (const [f, t] of Object.entries(v[i])) tr.querySelector(`[data-f="${f}"]`).textContent = t; });
+        document.querySelector('tr.item [data-f="work"]').dispatchEvent(new Event('input', { bubbles: true }));
+    }""")
+    mark(pc, 1, '연기')
+    mark(pc, 1, '연기')                                   # 다시 누르면 풀린다
+    mark(pc, 2, '연기')
+    mark(pc, 3, '연기')
+    mark(pc, 3, '취소')                                   # 둘 중 하나만 — 연기에서 취소로
+    assert badges(pc) == ['', '연기', '취소']
+    pressed = pc.eval_on_selector_all('tr.item .btn-state', "bs => bs.map((b) => b.dataset.set + ':' + b.getAttribute('aria-pressed'))")
+    assert pressed == ['연기:false', '취소:false', '연기:true', '취소:false', '연기:false', '취소:true']
+    pc.click('#btn-edit')
+    assert pc.locator('.day-stats').inner_text() == '1건 · 금액 합계 1,200,000원 · 연기 1 · 취소 1'   # 단위 없는 3번(취소)은 '금액 빠진 줄'에도 안 든다
+    text = pc.evaluate('window.FoodbellDoc.summary().text').splitlines()
+    assert '1. 가짜 시제 1,200,000원' in text and '2. [연기] 가짜 평토상 350,000원' in text and '3. [취소] 가짜 제사' in text, text
+    entries = wait_board(test_db, share_key, lambda e: [r.get('state') for r in e.get(doc_id, {}).get('rows', [])] == ['', '연기', '취소'])
+    assert [r['no'] for r in entries[doc_id]['rows']] == [1, 2, 3]
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: '취소' in s.get('html'))
+    open_doc(pc, repo_url, DAILY, doc_id)                 # 다시 열어도 남는다(저장된 화면)
+    pc.locator('tr.item td.c .state').first.wait_for(timeout=15_000)
+    assert badges(pc) == ['', '연기', '취소']
+
+
+def test_daily_send_skips_state_rows_in_amount_check(phone, repo_url, custom_token, made):
+    """취소 · 연기한 줄의 단위 없는 단가는 '금액이 비어 있습니다' 물음에 안 든다 — 묻지 않고 사진을 넘긴다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    stub_share(phone)
+    phone.click('#btn-edit')
+    edit_cell(phone, 'tr.item [data-f="work"]', '가짜 상차림')
+    edit_cell(phone, 'tr.item [data-f="price"]', '250')
+    mark(phone, 1, '취소')
+    phone.click('#btn-edit')
+    asked = []
+    phone.on('dialog', lambda d: (asked.append(d.message), d.dismiss()))
+    phone.click('#btn-send')
+    assert shared(phone, 1)['files'] >= 1
+    assert asked == []
+
+
+def test_daily_photo_marks_state(pc, repo_url, custom_token, made, tmp_path):
+    """직원 사진 카드에도 연기 · 취소 표시가 머리 맨 앞에 — 표시 없는 카드에는 없다."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    pc.click('tr.addrow button')
+    edit_cell(pc, 'tr.item:nth-child(1) [data-f="work"]', '가짜 시제')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="work"]', '가짜 제사')
+    mark(pc, 2, '연기')
+    pc.click('#btn-edit')
+    watch_shots(pc, "[...root.querySelectorAll('article.card:not([data-shot-hide]) .head')].map((h) => h.innerText)")
+    save_pages(pc, tmp_path)
+    heads = pc.evaluate('window.__shots')[0]
+    assert len(heads) == 2 and not heads[0].startswith('연기') and heads[1].startswith('연기'), heads
+
+
+def test_daily_new_asks_when_same_date_exists(pc, repo_url, custom_token, test_db, made, no_daily):
+    """'새 일정표'를 누를 때 같은 날짜(내일) 일정표가 이미 있으면 묻는다 — 취소 = 있는 일정표를 연다(새로 안 만듦),
+    확인 = 그래도 새로 만든다. 날짜가 다르면 묻지 않는다 (10-21 같은 날 일정표가 넷 생겨 직원 화면에 빈 일정이 먼저 떴다)."""
+    token = custom_token(ALLOWED, allowed=True)
+    first = daily_new(pc, repo_url, token, made)
+
+    def daily_ids():
+        return sorted(d.id for d in test_db.collection('docs').where('kind', '==', 'daily-schedule').stream())
+
+    def to_list():
+        pc.click('#btn-list')
+        wait_view(pc, 'list')
+        pc.locator(f'#doc-rows .doc-row[data-id="{first}"]').wait_for(timeout=15_000)
+
+    def press_new():
+        pc.click('#doc-new')
+        pc.wait_for_url(re.compile(r'\?id='), timeout=20_000)
+        wait_view(pc, 'doc')
+        return pc.evaluate("new URLSearchParams(location.search).get('id')")
+
+    asked = []
+    to_list()
+    pc.once('dialog', lambda d: (asked.append(d.message), d.dismiss()))
+    assert press_new() == first                                    # 취소 → 있는 일정표가 열린다
+    assert len(asked) == 1 and asked[0].startswith(f'{expected_label("TOMORROW")} 일정표가 이미 있습니다'), asked
+    assert daily_ids() == [first]                                  # 새로 만들지 않았다
+
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(datetime.date.today()))   # 있는 것을 오늘 날짜로 → 내일 일정표는 없다
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(first), lambda s: s.get('label') == day_label(datetime.date.today()))
+    to_list()
+    asked.clear()
+
+    def record(d):
+        asked.append(d.message)
+        d.dismiss()
+
+    pc.on('dialog', record)
+    second = press_new()
+    pc.remove_listener('dialog', record)
+    made.append(second)
+    assert second != first and asked == []                         # 날짜가 다르면 묻지 않는다
+
+    pc.click('#btn-list')
+    wait_view(pc, 'list')
+    pc.locator(f'#doc-rows .doc-row[data-id="{second}"]').wait_for(timeout=15_000)
+    pc.once('dialog', lambda d: (asked.append(d.message), d.accept()))
+    third = press_new()
+    made.append(third)
+    assert third not in (first, second) and len(asked) == 1        # 확인 → 그래도 새로 만든다
+    wait_db(test_db.collection('docs').document(third), lambda s: s.exists)

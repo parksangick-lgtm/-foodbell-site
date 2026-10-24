@@ -229,6 +229,8 @@ daily-schedule.html   직원용 일일 일정표 (2026-10-20, 설계 docs/superp
                       2026-10-24 검토 반영(설계 docs/superpowers/specs/2026-10-24-daily-schedule-review-fixes-design.md): 직원 사진은 **휴대폰 카드 묶음**(js/docs/cards.js,
                       9:16 장마다 · 상호 · QR 없음 · '보냄 · N차' 표시 · 아래 두 줄) — 표는 화면 · 인쇄에만. 줄마다 출발 · 지도 링크 칸, 전화 칸 숫자 자판, 장례 여섯 칸은
                       비면 접힘('장례 칸 펼치기'), 시간에 오전 · 오후 없으면 편집 중 '오전? 오후?'(js/docs/time-hint.js), 보내기 전 금액 빠진 줄 확인창, 날짜 아래 사장님 한 줄(건수 · 합계).
+                      2026-10-24 저녁(사장님 요청): 줄마다 [연기] · [취소](tr 의 data-state — 표 번호 아래 · 사진 카드 · 직원 화면 · 복사 글에 표시, 사장님 한 줄의 건수 · 합계에서 빠짐),
+                      줄 삭제는 묻고(다른 서류와 같게), 새 일정표를 누를 때 같은 날짜 일정표가 있으면 묻는다(확인 = 새로 만들기 · 취소 = 있는 것 열기, doc-page.js 의 sameDoc).
 today.html            직원용 고정 링크 "푸드벨 일정" (2026-10-21, 설계 docs/superpowers/specs/2026-10-21-staff-today-link-design.md). 단톡방 공지에 한 번 올린
                       today.html#암호 — 로그인 없이 오늘 · 내일 일정을 카드로, 전화번호마다 [전화] · 장소에 [지도](네이버). 일정표가 저장될 때마다
                       직원 게시판(share/암호, 일정표마다 한 칸)에 올라가고 열린 화면도 바로 바뀐다(js/sije/store.js publishShare · js/sije/share-store.js).

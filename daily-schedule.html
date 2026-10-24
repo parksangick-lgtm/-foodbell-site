@@ -146,7 +146,7 @@ body.editing td[data-edit]:empty::after,
 body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
 :focus-visible{outline:2px solid var(--seal); outline-offset:2px}
 
-.rowctl{display:inline-flex; margin-left:6px; vertical-align:middle}
+.rowctl{display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:6px; vertical-align:middle}
 .btn-mini{
   font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
   border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
@@ -155,6 +155,7 @@ body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute
 .btn-mini:hover{border-color:var(--seal); color:var(--seal); background:#fff}
 .btn-del{color:var(--seal-dark); border-color:rgba(110,30,43,.35)}
 .btn-del:hover{background:var(--seal); color:var(--paper); border-color:var(--seal)}
+.btn-state[aria-pressed="true"]{background:var(--seal); color:var(--paper); border-color:var(--seal)}   /* 연기 · 취소 켜짐 (사장님 10-24 저녁) */
 body:not(.editing) .rowctl,
 body:not(.editing) tr.addrow{display:none !important}
 
@@ -314,6 +315,10 @@ body:not(.editing) table.stmt.day-table .guide:has([data-f="guide-tel"]:empty){d
 table.stmt.day-table .rite{display:inline-block; white-space:nowrap; margin-right:.7em}
 body:not(.editing) table.stmt.day-table .rite:has([data-edit]:empty),
 body:not(.editing) table.stmt.day-table .rites:not(:has([data-edit]:not(:empty))){display:none}
+/* 연기 · 취소 — 번호 아래 표시(recalc 가 그림), 보기에서는 그 줄 글자를 흐리게. 메모에 '연기'만 적으면 다른 일과 똑같아 보였다 (사장님 10-24 저녁) */
+table.stmt.day-table td.c .state{display:block; width:max-content; margin:4px auto 0; padding:0 4px; background:var(--seal); color:var(--paper);
+  font-size:12px; font-weight:var(--w-bold); line-height:1.6; border-radius:3px; white-space:nowrap}
+body:not(.editing) table.stmt.day-table tr.item[data-state] td:not(.c){opacity:.55}
 
 /* 편집할 때: 두세 줄 칸도 한 칸씩 따로 누르게, 빈 칸에는 무엇을 적을지 흐린 글자로 */
 body.editing table.stmt.day-table td > [data-edit],
@@ -344,6 +349,8 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
 .shot-cards .card .lab{flex:none; width:3.2em; font-size:14px; color:var(--ink-mute)}
 .shot-cards .card .txt{flex:1; min-width:0; word-break:keep-all; overflow-wrap:anywhere}
 .shot-cards .card .txt.memo{white-space:pre-line}
+.shot-cards .card .head .state{display:inline-block; margin-right:8px; padding:0 8px; background:var(--seal); color:var(--paper); border-radius:4px; font-size:15px}
+.shot-cards article.card.off .line{opacity:.55}   /* 연기 · 취소한 일 — 머리의 표시만 진하게 */
 .shot-cards .shot-foot{margin-top:16px; text-align:center; font-size:14px; color:var(--ink-mute)}
 .shot-cards .shot-foot p{margin:4px 0 0}
 
@@ -461,7 +468,7 @@ import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
 import { parseOrder } from './js/docs/order-text.js?v=3';
 import { needsAmPm } from './js/docs/time-hint.js?v=1';
-import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W, SHOT_H } from './js/docs/cards.js?v=1';
+import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W, SHOT_H } from './js/docs/cards.js?v=2';
 
 const SITE = 'https://foodbell.kr/';
 const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
@@ -510,9 +517,12 @@ function recalc() {
   setText('dow', d ? `(${WEEK[d.getDay()]})` : '');
   setText('lunar', d ? lunarText(d) : '');
   let count = 0, sum = 0, missing = 0;   // 사장님 한 줄: 건수 · 금액 합계(곱셈 + 단가만) · 단위 없는 줄 수
+  let active = 0;
+  const held = { 연기: 0, 취소: 0 };      // 연기 · 취소한 줄은 건수 · 합계 · 금액 빠진 줄에서 뺀다 (사장님 10-24 저녁)
   each(sheet.querySelectorAll('tr.item'), (tr, i) => {
+    const state = tr.dataset.state || '';
     const no = tr.querySelector('[data-k="no"]');
-    if (no) no.textContent = String(i + 1);
+    if (no) { no.textContent = String(i + 1); if (state) no.append(el('span', 'state', state)); }
     const people = readNumber(field(tr, 'people'));     // 애매하면(범위 · 숫자 둘) null → 곱하지 않고 단가만
     // 단위(만 · 천 · 원) 없이 숫자만('250')이면 25만인지 250원인지 모른다 — 금액을 만들지 않고 단위를 적으라고 알린다.
     // 사장님이 '250' 을 25만 뜻으로 쳤는데 250원으로 직원 사진에 나갔다 (사장님 결정 2026-10-21)
@@ -527,12 +537,13 @@ function recalc() {
       amt.textContent = bare ? '단위를 적어 주세요(예: 25만)'
         : people && price ? `${fmt(people)}명 × ${fmt(price)}원 = ${fmt(people * price)}원` : price ? `${fmt(price)}원` : '';
     }
-    if (bare) missing++; else if (price) sum += people ? people * price : price;
-    if (filled(tr)) count++;
+    if (!state) { if (bare) missing++; else if (price) sum += people ? people * price : price; }
+    if (filled(tr)) { count++; if (state) held[state] = (held[state] || 0) + 1; else active++; }
   });
   let stats = sheet.querySelector('.day-stats');
   if (!stats) { stats = el('p', 'day-stats'); sheet.querySelector('.day')?.after(stats); }   // 옛 일정표의 저장 HTML 에는 없다
-  stats.textContent = count ? `${count}건 · 금액 합계 ${fmt(sum)}원` + (missing ? ` · 금액 빠진 줄 ${missing}` : '') : '';
+  stats.textContent = count ? `${active}건 · 금액 합계 ${fmt(sum)}원` + (missing ? ` · 금액 빠진 줄 ${missing}` : '')
+    + Object.entries(held).filter(([, n]) => n).map(([s, n]) => ` · ${s} ${n}`).join('') : '';
   return count;
 }
 
@@ -551,6 +562,7 @@ function rowsData() {
       amt: clean(tr.querySelector('[data-k="amt"]:not(.warn)')?.textContent),
       lead: field(tr, 'lead'), leadTel: field(tr, 'lead-tel'), guideTel: field(tr, 'guide-tel'), hall: field(tr, 'hall'),
       depart: field(tr, 'depart'), cremate: field(tr, 'cremate'), memo: memoLines(tr).join('\n'),
+      state: tr.dataset.state || '',   // 연기 · 취소 — 사진 카드 · 직원 화면이 머리에 표시 (사장님 10-24 저녁)
     });
   });
   return rows;
@@ -576,7 +588,8 @@ function buildText() {
     const head = [where, what].filter(Boolean).join(' — ');
     // 여러 줄 메모(붙여넣은 주문 글)는 줄바꿈을 살려 다음 줄부터 세 칸 들여 쓴다 (2026-10-24 검토 반영)
     const memo = memoLines(tr);
-    L.push(`${i + 1}. ` + [head, crew, leave, lead, memo.length === 1 ? memo[0] : ''].filter(Boolean).join(' / '));
+    const held = tr.dataset.state ? `[${tr.dataset.state}] ` : '';   // 연기 · 취소 (사장님 10-24 저녁)
+    L.push(`${i + 1}. ` + held + [head, crew, leave, lead, memo.length === 1 ? memo[0] : ''].filter(Boolean).join(' / '));
     if (memo.length > 1) memo.forEach((m) => L.push('   ' + m));
   });
   L.push('', SITE);
@@ -606,9 +619,15 @@ function addControls() {
   each(tb.querySelectorAll('tr.item'), (tr) => {
     if (tr.querySelector('.rowctl')) return;
     const box = el('span', 'rowctl');
+    // 연기 · 취소 — 누르면 켜지고 다시 누르면 풀린다, 둘 중 하나만 (사장님 10-24 저녁)
+    const marks = ['연기', '취소'].map((s) => {
+      const b = el('button', 'btn-mini btn-state', s); b.type = 'button'; b.dataset.set = s;
+      b.setAttribute('aria-pressed', String(tr.dataset.state === s));
+      return b;
+    });
     const p = el('button', 'btn-mini btn-paste', '문자 붙여넣기'); p.type = 'button';
     const d = el('button', 'btn-mini btn-del', '✕ 줄 삭제'); d.type = 'button';
-    box.append(p, d);
+    box.append(...marks, p, d);
     tr.querySelector('td.memo-cell').appendChild(box);
   });
   if (!tb.querySelector('tr.addrow')) {
@@ -731,8 +750,14 @@ sheet.addEventListener('click', (e) => {
     pasteText.focus();
     return;
   }
-  if (b.classList.contains('btn-del')) {
-    b.closest('tr.item')?.remove();
+  if (b.classList.contains('btn-state')) {
+    const tr = b.closest('tr.item');
+    if (tr.dataset.state === b.dataset.set) delete tr.dataset.state; else tr.dataset.state = b.dataset.set;
+    each(tr.querySelectorAll('.btn-state'), (x) => x.setAttribute('aria-pressed', String(tr.dataset.state === x.dataset.set)));
+  } else if (b.classList.contains('btn-del')) {
+    // 묻고 지운다 — 다른 서류 다섯 종과 같다 (사장님 10-24, 묻지 않으면 잘못 누른 한 번에 줄이 사라졌다)
+    const row = b.closest('tr.item');
+    if (row && window.confirm('이 항목을 삭제할까요?')) row.remove();
   } else if (b.closest('tr.addrow')) {
     const tr = el('tr', 'item'); tr.innerHTML = ROW_HTML;
     b.closest('tr.addrow').parentNode.insertBefore(tr, b.closest('tr.addrow'));
@@ -820,9 +845,10 @@ function buildCards(stamp) {
   head.append(el('p', 'shot-stamp', stamp));
   box.append(head);
   rowsData().forEach((r) => {
-    const card = el('article', 'card'); card.dataset.no = String(r.no);
+    const card = el('article', r.state ? 'card off' : 'card'); card.dataset.no = String(r.no);
     cardLines(r).forEach((ln, i) => {
       const p = el('p', i ? 'line' : 'head');
+      if (ln.state) p.append(el('span', 'state', ln.state));   // 연기 · 취소 — 머리 맨 앞 (사장님 10-24 저녁)
       if (ln.lab) p.append(el('span', 'lab', ln.lab));
       p.append(el('span', ln.lab === '메모' ? 'txt memo' : 'txt', ln.text));
       card.append(p);
@@ -889,7 +915,8 @@ document.getElementById('btn-copy').addEventListener('click', function () {
 document.getElementById('btn-send').addEventListener('click', function () {
   if (!recalc() && !window.confirm('일정을 아직 안 넣으셨습니다. 그래도 보낼까요?')) return;
   // 단위 없는 단가('250')는 사진에서 금액이 빠진 채 나간다 — 보내기 전에 한 번 묻는다 (2026-10-24 검토 반영, 10-21 실제로 난 일)
-  const noAmt = Array.prototype.map.call(sheet.querySelectorAll('tr.item'), (tr, i) => (tr.querySelector('.amt.warn') ? i + 1 : 0)).filter(Boolean);
+  // 연기 · 취소한 줄은 묻지 않는다 (사장님 10-24 저녁)
+  const noAmt = Array.prototype.map.call(sheet.querySelectorAll('tr.item'), (tr, i) => (tr.querySelector('.amt.warn') && !tr.dataset.state ? i + 1 : 0)).filter(Boolean);
   if (noAmt.length && !window.confirm(`${noAmt.join(' · ')}번 줄 금액이 비어 있습니다(단위 없음). 그래도 보낼까요?`)) return;
   const btn = this, old = btn.textContent;
   btn.disabled = true; btn.textContent = '준비 중…';
@@ -975,6 +1002,13 @@ window.FoodbellDoc = {
     const count = recalc();
     return { label: label(), issue: label(), total: '', count: `${count}건`, text: buildText() };
   },
+  // 새 일정표(내일 날짜)와 같은 날짜 일정표가 이미 있으면 그 하나 — rows 는 최근에 고친 순. 공통 부품이 '그래도 새로 만들까요?' 를 묻는다
+  // (사장님 10-24 저녁 — 10-21 같은 날 일정표가 넷 생겨 직원 화면에 빈 일정이 먼저 떴다)
+  sameDoc(rows) {
+    const l = label();
+    const hit = (rows || []).find((r) => r.doc && r.doc.label === l);
+    return hit ? { id: hit.id, label: l } : null;
+  },
   // 직원 게시판 한 장 (today.html — 단톡방 공지의 고정 링크, 사장님 2026-10-21). 사진에 있는 글자만, 채운 줄만 —
   // 번호는 일정표 그대로(사진과 같게). 금액에 '단위를 적어 주세요' 는 안 넣는다. 날짜를 못 읽거나 일이 하나도 없으면 올리지 않는다
   // (null → 칸을 뺌 — 같은 날 빈 일정표가 먼저 골라져 직원 화면에 [전화] · [지도]가 안 보였다, 10-21 저녁)
@@ -995,6 +1029,6 @@ fillFresh();
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=6"></script>
+<script type="module" src="js/docs/doc-page.js?v=7"></script>
 </body>
 </html>

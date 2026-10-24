@@ -9,11 +9,14 @@ export const SHOT_H = 960;   // 한 장 = 휴대폰 화면 비율 9:16
 const clean = (s) => (s == null ? '' : String(s)).trim();
 const join = (parts, sep) => parts.map(clean).filter(Boolean).join(sep);
 
-/* 게시판 한 장의 줄(no · staff · car · leave · time · place · tel · work · amt · lead · leadTel · guideTel · hall · depart · cremate · memo)
-   → [{ lab, text }]. 첫 줄은 머리(번호 · 시간 · 담당 · 차량), 빈 칸은 이름표까지 뺀다. 메모는 줄바꿈 그대로. 지도 링크(map)는 사진에 안 나온다 */
+/* 게시판 한 장의 줄(no · staff · car · leave · time · place · tel · work · amt · lead · leadTel · guideTel · hall · depart · cremate · memo · state)
+   → [{ lab, text }]. 첫 줄은 머리(번호 · 시간 · 담당 · 차량), 빈 칸은 이름표까지 뺀다. 메모는 줄바꿈 그대로. 지도 링크(map)는 사진에 안 나온다.
+   연기 · 취소(state)는 머리 줄의 state 로 — 화면이 머리 맨 앞에 표시를 그린다 (사장님 10-24 저녁) */
 export function cardLines(row) {
   const r = row || {};
-  const lines = [{ lab: '', text: join([`${r.no}번`, r.time, join([r.staff, r.car], ' · ')], ' · ') }];
+  const head = { lab: '', text: join([`${r.no}번`, r.time, join([r.staff, r.car], ' · ')], ' · ') };
+  if (clean(r.state)) head.state = clean(r.state);
+  const lines = [head];
   const push = (lab, text) => { if (clean(text)) lines.push({ lab, text: clean(text) }); };
   push('출발', r.leave);
   push('장소', r.place);

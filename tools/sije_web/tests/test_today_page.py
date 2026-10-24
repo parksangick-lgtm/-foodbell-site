@@ -235,6 +235,18 @@ def test_today_leave_line_and_map_link(phone, repo_url, test_db, key):
     assert '출발' not in c.nth(1).inner_text()
 
 
+def test_today_marks_postponed_and_cancelled(phone, repo_url, test_db, key):
+    """사장님이 연기 · 취소로 표시한 일은 카드 머리 맨 앞에 그 글자 — 표시가 없거나 칸이 없는 옛 게시판 줄에는 없다 (사장님 10-24 저녁)."""
+    old = row(4, work='옛 줄')
+    old.pop('state', None)                                     # state 칸이 생기기 전에 올라간 줄
+    put(test_db, key, docA=entry(day(0), [row(1, work='가짜 시제', state=''), row(2, work='가짜 평토상', state='연기'),
+                                          row(3, work='가짜 제사', state='취소'), old]))
+    open_today(phone, repo_url, f'#{key}')
+    cards(phone)
+    states = phone.eval_on_selector_all('article.card', "cs => cs.map((c) => c.querySelector('.head .state')?.textContent || '')")
+    assert states == ['', '연기', '취소', '']
+
+
 def test_today_remembers_key_for_home_icon(phone, repo_url, test_db, key):
     """링크(#암호)로 한 번 열면 같은 브라우저에서 # 없이 열어도(홈 화면 아이콘) 일정이 보인다."""
     put(test_db, key, docA=entry(day(0), [row(1, work='가짜 상차림')]))
