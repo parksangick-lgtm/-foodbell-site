@@ -103,7 +103,7 @@ async function chooseTemplate(bundle) {
 $('new-event').addEventListener('click', () => chooseTemplate(null));
 
 // 3단계 — 시제 견적서의 '내역서 만들기' 로 ?make=1 열림: 1분 안의 꾸러미만 한 번 쓴다 (읽으면 늘 지움).
-// 눌린 수량 버튼과 같은 빈 양식이 있으면 바로, 없으면(40만원상 · 안 누름) 고르기 창.
+// 눌린 수량 버튼과 같은 빈 양식이 있으면 바로, 없으면(45만원상 · 안 누름) 고르기 창.
 const incoming = takeBundle(sessionStorage, 'event', new URLSearchParams(location.search).get('make') === '1', Date.now());
 async function receive(bundle) {
   toast('견적서 내용으로 내역서를 만드는 중…');   // 신호가 약하면 몇 초 걸린다 — 안 된 줄 알고 또 누르지 않게 (내역서는 지울 수 없다)
