@@ -563,7 +563,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
       var tr = el("tr", "item"); tr.innerHTML = ROW_HTML;
       b.closest("tr.addrow").parentNode.insertBefore(tr, b.closest("tr.addrow"));
       addControls(); setCE(true);
-      tr.querySelector('[data-f="date"]').focus();
+      tr.querySelector('[data-f="name"]').focus();   // 휴대폰은 이름 칸이 맨 위 — 날짜 칸으로 가면 밑으로 내려갔다
     }
     recalc(); save();
   });

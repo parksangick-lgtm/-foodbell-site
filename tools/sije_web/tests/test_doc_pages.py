@@ -384,6 +384,16 @@ def test_staff_pay_paydate_is_first_and_big(pc, repo_url, custom_token, made):
     assert size > title                                    # 제목 '알바비 지급내역서' 보다 크게
 
 
+def test_staff_pay_add_row_puts_cursor_in_name(phone, repo_url, custom_token, made):
+    """'줄 추가' 를 누르면 새 줄의 이름 칸에 커서 — 휴대폰은 이름 칸이 맨 위라, 날짜 칸으로 가면 밑으로 내려갔다 (사장님 2026-10-26)."""
+    open_list(phone, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    new_doc(phone, made)
+    phone.click('#btn-edit')
+    phone.click('tr.addrow button')
+    assert phone.evaluate("""(() => { const a = document.activeElement, rows = document.querySelectorAll('tr.item');
+        return [a.dataset.f || a.tagName, a.closest('tr.item') === rows[rows.length - 1]]; })()""") == ['name', True]
+
+
 # ---------- 시제 견적서 ----------
 
 QUOTE = dict(file='sije-quote.html', sel='.brief-row dd span[data-edit]')
