@@ -1569,6 +1569,14 @@ def test_daily_new_asks_when_same_date_exists(pc, repo_url, custom_token, test_d
     token = custom_token(ALLOWED, allowed=True)
     first = daily_new(pc, repo_url, token, made)
 
+    def touch(memo):
+        """한 글자라도 적어야 남는다 — 안 고친 새 일정표는 떠날 때 지운다 (10-26). 새 일정표는 앞 것의 메모를 물려받으니 장마다 다른 글자로."""
+        pc.click('#btn-edit')
+        edit_cell(pc, '[data-k="memo"]', memo)
+        pc.click('#btn-edit')
+
+    touch('가짜 메모 1')
+
     def daily_ids():
         return sorted(d.id for d in test_db.collection('docs').where('kind', '==', 'daily-schedule').stream())
 
@@ -1607,6 +1615,7 @@ def test_daily_new_asks_when_same_date_exists(pc, repo_url, custom_token, test_d
     made.append(second)
     assert second != first and asked == []                         # 날짜가 다르면 묻지 않는다
 
+    touch('가짜 메모 2')
     pc.click('#btn-list')
     wait_view(pc, 'list')
     pc.locator(f'#doc-rows .doc-row[data-id="{second}"]').wait_for(timeout=15_000)
