@@ -133,6 +133,10 @@ let drawing = false;    // 그리는 동안 화면이 부르는 save 는 무시 
 let gone = false;       // 서류가 지워짐 — 더는 올리지 않는다
 let deleting = false;   // 이 기기에서 지우는 중 — '찾을 수 없음' 을 띄우지 않고 목록으로 간다
 let timer = null;
+// '새 서류' 로 만들고 한 글자도 안 고친 채 떠나면 지운다 — 열었다 닫기만 해도 빈 서류가 목록에 남았다 (사장님 2026-10-26)
+const FRESH = 'foodbell-doc-fresh:';   // 이 탭에서 '새 서류' 로 만든 서류 id 표시 (sessionStorage)
+const DROP = 'foodbell-doc-drop:';     // 창을 닫아 끝나지 못한 지우기 — 서류 id → 그때 저장소 글자 (localStorage, 다음에 열 때 마저 지움)
+let untouched = null;                  // 그런 서류면 처음 그린 직후의 serialize() — 이것과 같으면 안 고친 것
 let current = null;     // 마지막으로 받은 서류 (저장 표시용)
 let pending = false;
 let failed = false;
@@ -190,6 +194,10 @@ function flush() {
   }
   shownFrom = html;
   lastHtml = html;
+  if (untouched !== null) {                      // 고쳤다 — 이제 남길 서류 (새로 고침해도 다시 '안 고친 것' 이 되지 않게 표시도 지운다)
+    untouched = null;
+    try { sessionStorage.removeItem(FRESH + docId); } catch { /* 못 지워도 이번 화면은 된다 */ }
+  }
   waiting = null;                                // 내 것이 나중 — 들고 있던 다른 기기 것은 버린다
   failed = false;
   pending = true;
@@ -214,8 +222,39 @@ function publish(removed) {
     toast(`직원 링크 화면에 올리지 못했습니다 (${why(e)})`);
   });
 }
-// 화면을 끄거나 앱을 바꾸면 모으던 것을 바로 올린다
-addEventListener('pagehide', flush);
+// 안 고친 새 서류 지우기 — 지우기는 기기 저장소에 먼저 들어가므로 창을 닫아 끊겨도 다음에 열 때 올라간다.
+// 앱만 바꾸는 것(visibilitychange)으로는 지우지 않는다 — 카톡을 보고 돌아와 마저 쓸 수 있다.
+function dropUntouched() {
+  if (untouched === null || gone || !docId || viewerOnly() || D.serialize() !== untouched) return null;
+  gone = true;
+  deleting = true;
+  clearTimeout(timer);
+  timer = null;
+  try { sessionStorage.removeItem(FRESH + docId); } catch { /* 못 지워도 이번 화면은 된다 */ }
+  // 창을 닫으면 지우기가 끝나기 전에 화면이 사라진다(10-26 시험) — 바로 남는 기기 칸에 적어 두고, 끝나면 지운다
+  const id = docId;
+  try { localStorage.setItem(DROP + id, shownFrom); } catch { /* 못 적으면 이번 지우기만 믿는다 */ }
+  publish(true);
+  return removeDoc(id).then(() => { try { localStorage.removeItem(DROP + id); } catch { /* 다음에 열 때 정리된다 */ } });
+}
+// 지난번에 창을 닫아 끝나지 못한 지우기를 마저 한다 (주인만). 서버에서 받은 서류가 그때 글자 그대로일 때만 지운다 —
+// 그사이 다른 기기에서 고쳤으면 남긴다. 끊긴 곳에서는 서버 것을 못 받으니 다음 기회로 미룬다.
+function sweepDrops() {
+  let keys = [];
+  try { keys = Object.keys(localStorage).filter((k) => k.startsWith(DROP)); } catch { return; }
+  for (const key of keys) {
+    const id = key.slice(DROP.length);
+    const stop = watchDoc(id, (doc, meta) => {
+      if (meta.fromCache) return;
+      stop();
+      let html = null;
+      try { html = localStorage.getItem(key); localStorage.removeItem(key); } catch { return; }
+      if (doc && doc.html === html) removeDoc(id).catch(() => {});
+    }, () => {});
+  }
+}
+// 화면을 끄거나 앱을 바꾸면 모으던 것을 바로 올린다 (창을 닫을 때 안 고친 새 서류면 지운다)
+addEventListener('pagehide', () => { if (!dropUntouched()) flush(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
 
 function onDoc(doc, meta) {
@@ -232,6 +271,7 @@ function onDoc(doc, meta) {
   trackCache(meta.fromCache);
   if (shownFrom === null) {                       // 처음 (방금 이 기기에서 만들어 아직 안 올라간 것도)
     apply(doc.html);
+    try { if (sessionStorage.getItem(FRESH + docId)) untouched = lastHtml; } catch { /* 표시를 못 읽으면 지우지 않는다 */ }
     view('doc');
     publish(false);                               // 열기만 해도 직원 게시판에 올라간다
     const notes = sessionStorage.getItem(NOTES);  // 다른 서류에서 옮겨 만들며 못 읽은 칸이 있었다
@@ -277,7 +317,7 @@ $('doc-sign-out').addEventListener('click', () => signOutUser());
 $('doc-back').addEventListener('click', () => { location.href = listUrl; });
 // 목록으로 넘어가기 전에 고친 것을 올린다 — 페이지가 넘어가면 보내던 것이 끊긴다 (끊긴 곳에서는 3초까지만 기다림)
 document.getElementById('btn-list')?.addEventListener('click', async () => {
-  const saving = flush();
+  const saving = dropUntouched() ?? flush();   // 안 고친 새 서류면 지우고, 아니면 고친 것을 올린다
   if (saving && navigator.onLine) await atMost(saving);
   location.href = listUrl;
 });
@@ -300,6 +340,9 @@ async function makeNew(bundle) {
       return;
     }
     const id = await createDoc(D.kind, D.serialize(), D.summary());
+    if (!bundle) {                        // 다른 서류에서 옮겨 만든 것(bundle)은 내용이 있으니 안 고쳐도 남긴다
+      try { sessionStorage.setItem(FRESH + id, '1'); } catch { /* 못 적으면 지우지 않을 뿐 */ }
+    }
     if (bundle?.notes.length) sessionStorage.setItem(NOTES, JSON.stringify(bundle.notes));
     const url = `${listUrl}?id=${encodeURIComponent(id)}`;
     if (bundle) location.replace(url);   // 뒤로 가면 ?make=1 이 아니라 원래 서류로
@@ -369,6 +412,7 @@ onUser(async (user) => {
   role = (await atMost(asked)) ?? lastRole(email) ?? 'none';
   if (who !== email) return;            // 기다리는 동안 로그아웃 · 다른 사람 로그인
   document.body.dataset.role = role;
+  if (role === 'owner') sweepDrops();   // 지난번 창을 닫아 남은 빈 새 서류
   if (docId) {
     stop = watchDoc(docId, onDoc, onError);
   } else if (incoming && !incoming.used) {

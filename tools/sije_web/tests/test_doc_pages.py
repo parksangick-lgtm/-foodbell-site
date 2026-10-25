@@ -206,6 +206,43 @@ def test_new_doc_creates_one_and_opens_it(pc, repo_url, custom_token, test_db, m
 
 
 @pytest.mark.parametrize(PAGE_ARGS, PAGES)
+def test_untouched_new_doc_is_removed_on_list(pc, repo_url, custom_token, test_db, made, kind, file, noun, title, send,
+                                              label, edit_sel):
+    """'새 서류' 만 누르고 한 글자도 안 고친 채 목록으로 가면 그 빈 서류는 지운다
+    (사장님 10-26: 열었다 닫기만 해도 빈 알바비 지급내역서가 목록에 남음)."""
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    ref = test_db.collection('docs').document(new_doc(pc, made))
+    wait_db(ref, lambda s: s.exists)
+    pc.click('#btn-list')
+    wait_view(pc, 'list')
+    wait_db(ref, lambda s: not s.exists)
+
+
+def test_edited_new_doc_is_kept_on_list(pc, repo_url, custom_token, test_db, made):
+    """한 글자라도 고쳤으면 목록으로 가도 남는다."""
+    open_list(pc, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    ref = test_db.collection('docs').document(new_doc(pc, made))
+    pc.click('#btn-edit')
+    set_text(pc, '[data-k="memo"]', '가짜 전달 메모')
+    pc.click('#btn-list')
+    wait_view(pc, 'list')
+    wait_db(ref, lambda s: s.exists and '가짜 전달 메모' in s.get('html'))
+    time.sleep(2)
+    assert ref.get().exists
+
+
+def test_untouched_new_doc_is_removed_when_page_closes(pc, repo_url, custom_token, test_db, made):
+    """창을 닫아도(목록 단추 없이 떠남) 빈 새 서류는 지운다 — 지우기가 기기에 남았다가 다음에 열 때 올라가도 된다."""
+    token = custom_token(ALLOWED, allowed=True)
+    open_list(pc, repo_url, 'staff-pay.html', token)
+    ref = test_db.collection('docs').document(new_doc(pc, made))
+    wait_db(ref, lambda s: s.exists)
+    pc.goto('about:blank')                                   # 떠남 (pagehide)
+    open_list(pc, repo_url, 'staff-pay.html', token)         # 다음에 목록을 연다
+    wait_db(ref, lambda s: not s.exists)
+
+
+@pytest.mark.parametrize(PAGE_ARGS, PAGES)
 def test_edit_on_phone_appears_on_pc_without_reload(pc, phone, repo_url, custom_token, test_db, made, kind, file, noun,
                                                     title, send, label, edit_sel):
     token = custom_token(ALLOWED, allowed=True)
