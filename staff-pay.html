@@ -59,6 +59,12 @@ body{
 }
 
 /* ---------- 표제 ---------- */
+/* 지급일 — 서류 맨 위 첫 줄에 크게 (사장님 2026-10-25) */
+.pay-date{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 14px; margin:0 0 20px; padding-bottom:14px; border-bottom:1px solid var(--line-strong)}
+.pay-date .lab{font-family:var(--serif); font-weight:var(--w-bold); font-size:17px; letter-spacing:.2em; color:var(--ink-mute)}
+.pay-date [data-k="paydate"]{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; line-height:1.25; color:var(--seal); font-variant-numeric:tabular-nums}
+body:not(.editing) .pay-date:has([data-k="paydate"]:empty){display:none}
+@media (max-width:699px){ .pay-date [data-k="paydate"]{font-size:26px} }
 .masthead{display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:flex-start}
 .brand{display:flex; flex-direction:column; gap:6px}
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
@@ -317,6 +323,8 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <article class="sheet">
+  <!-- ================= 지급일 (맨 위 첫 줄, 크게 — 사장님 2026-10-25) ================= -->
+  <div class="pay-date"><span class="lab">지급일</span><span data-edit data-t="text" data-k="paydate">2026년 10월 3일 (토)</span></div>
 
   <!-- ================= 표제 ================= -->
   <header class="masthead">
@@ -464,10 +472,11 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
   }
   /* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
   function save() { var D = window.FoodbellDoc; if (D && D.onSave) D.onSave(); }
-  /* 처음 여는 화면일 때만: 문서번호 · 작성일자를 오늘로 */
+  /* 처음 여는 화면일 때만: 문서번호 · 작성일자 · 지급일을 오늘로 */
   function fillFreshDefaults() {
     var d = new Date();
     setText("issue", fmtDateKR(d));
+    setText("paydate", fmtDateKR(d) + " (" + "일월화수목금토"[d.getDay()] + ")");
     setText("dno", "FB-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
                    "-" + pad2(d.getHours()) + pad2(d.getMinutes()));
   }

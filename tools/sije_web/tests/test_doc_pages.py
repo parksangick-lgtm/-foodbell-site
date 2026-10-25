@@ -336,6 +336,17 @@ def test_staff_pay_row_updates_count_and_total_summary(pc, repo_url, custom_toke
             lambda s: s.get('count') == '1명' and s.get('total') == '150,000')
 
 
+def test_staff_pay_paydate_is_first_and_big(pc, repo_url, custom_token, made):
+    """지급일은 서류 맨 위 첫 줄에 크게 — 새 지급내역서는 오늘 날짜(요일)로 채워 둔다 (사장님 2026-10-25)."""
+    open_list(pc, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    assert pc.evaluate("document.querySelector('article.sheet').firstElementChild.className") == 'pay-date'
+    assert pc.text_content('[data-k="paydate"]').strip() == day_label(datetime.date.today())
+    size = pc.evaluate("""parseFloat(getComputedStyle(document.querySelector('[data-k="paydate"]')).fontSize)""")
+    title = pc.evaluate("parseFloat(getComputedStyle(document.querySelector('.doc-title')).fontSize)")
+    assert size > title                                    # 제목 '알바비 지급내역서' 보다 크게
+
+
 # ---------- 시제 견적서 ----------
 
 QUOTE = dict(file='sije-quote.html', sel='.brief-row dd span[data-edit]')
