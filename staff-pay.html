@@ -305,6 +305,25 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
   body.editing table.stmt.pay [data-ph]:empty::after,
   body.editing .memo [data-ph]:empty::after{content:none}
 }
+
+/* ---------- 직원 사진 = 휴대폰 카드 묶음, 9:16 장마다 (일일 일정표와 같은 모양 — 사장님 2026-10-26) ----------
+   휴대폰 폭 그대로 찍은 한 장은 카톡에서 길쭉했다. 화면 밖(.shot-cards, 540px)에 카드를 새로 그려 html2canvas 로 2배(1080px)로 찍는다.
+   장마다 다른 장의 카드 · 첫 장(제목 · 메모) · 마지막 장(합계)에만 있는 부분은 data-shot-hide 로 잠깐 숨긴다 */
+.shot-cards{position:absolute; left:-9999px; top:0; width:540px; padding:16px; background:var(--cream); color:var(--ink);
+  font-family:var(--sans); font-weight:var(--w-normal); font-size:17px; line-height:1.6}
+.shot-cards [data-shot-hide]{display:none !important}
+.shot-cards .shot-title{margin:0 0 2px; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.04em}
+.shot-cards .shot-day{margin:0; font-family:var(--serif); font-weight:var(--w-bold); font-size:22px; line-height:1.4}
+.shot-cards .shot-day .pageno{font-family:var(--sans); font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); margin-left:8px}
+.shot-cards .shot-memo{margin:8px 0 0; padding:8px 12px; background:var(--band); border-left:3px solid var(--seal); font-size:15px; overflow-wrap:anywhere}
+.shot-cards article.card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px}
+.shot-cards .card .head{margin:0; font-weight:var(--w-bold); overflow-wrap:anywhere}
+.shot-cards .card .line{display:flex; gap:10px; margin:8px 0 0; min-width:0}
+.shot-cards .card .lab{flex:none; width:3.2em; font-size:14px; color:var(--ink-mute)}
+.shot-cards .card .txt{flex:1; min-width:0; word-break:keep-all; overflow-wrap:anywhere}
+.shot-cards .shot-foot{margin-top:16px; padding:12px 14px; background:var(--seal); color:var(--paper); border-radius:10px}
+.shot-cards .shot-foot p{margin:0; font-weight:var(--w-bold); font-size:19px}
+.shot-cards .shot-foot .note{margin-top:4px; font-weight:var(--w-normal); font-size:14px}
 </style>
 <link rel="stylesheet" href="css/docs.css?v=3">
 </head>
@@ -599,18 +618,74 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
-  /* ---------- 문서면을 이미지(PNG)로 ---------- */
-  function renderImage() {
-    if (typeof html2canvas !== "function") return Promise.resolve(null);
-    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-    return ready.then(function () {
-      return html2canvas(sheet, {
-        backgroundColor: "#FFFDF8", scale: 1.7,
-        useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth
+  /* ---------- 직원 사진(PNG) = 휴대폰 카드 묶음, 9:16 장마다 나눠 여러 장 (사장님 2026-10-26 — 일일 일정표와 같은 방식) ----------
+     휴대폰 폭 그대로 찍은 한 장은 카톡에서 길쭉했다. 첫 장에만 제목 · 전달 메모, 장마다 지급일, 마지막 장에만 인원 · 총 지급액.
+     상호 · 도장 · 문서번호 · 작성일자는 넣지 않는다. 카드 하나는 두 장에 안 갈라진다(js/docs/paging.js) */
+  var SHOT_W = 540, SHOT_H = 960, CARD_GAP = 12;   // 일정표(js/docs/cards.js)와 같은 값 — 2배로 찍어 1080px, 한 장 = 9:16
+  function buildCards() {
+    var old = document.getElementById("shot-cards"); if (old) old.remove();
+    var box = el("div", "shot-cards"); box.id = "shot-cards"; box.setAttribute("aria-hidden", "true");
+    box.appendChild(el("p", "shot-title", "푸드벨 알바비 지급내역서"));
+    var day = el("p", "shot-day", getText("paydate") ? "지급일 " + getText("paydate") : "작성일자 " + getText("issue"));   // 지급일이 없는 옛 서류
+    day.appendChild(el("span", "pageno", ""));
+    box.appendChild(day);
+    if (getText("memo")) box.appendChild(el("p", "shot-memo", "전달 메모: " + getText("memo")));
+    each(sheet.querySelectorAll("tr.item"), function (tr, i) {
+      var name = field(tr, "name"), pay = raw(tr.querySelector('[data-k="pay"]'));
+      if (!name && !pay) return;                     // 빈 줄은 요약 글처럼 뺀다
+      var card = el("article", "card"); card.dataset.no = String(i + 1);
+      card.appendChild(el("p", "head", [(i + 1) + "번", name, pay ? fmt(pay) + "원" : "일당 미입력"].filter(Boolean).join(" · ")));
+      [["전화", field(tr, "tel")], ["행사", [field(tr, "date"), field(tr, "event")].filter(Boolean).join(" ")],
+       ["계좌", field(tr, "acct")], ["메모", field(tr, "memo")]].forEach(function (ln) {
+        if (!ln[1]) return;
+        var p = el("p", "line");
+        p.appendChild(el("span", "lab", ln[0])); p.appendChild(el("span", "txt", ln[1]));
+        card.appendChild(p);
       });
-    }).then(function (canvas) {
-      return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
-    }).catch(function () { return null; });
+      box.appendChild(card);
+    });
+    var total = recalc(), foot = el("div", "shot-foot");
+    foot.appendChild(el("p", "", "인원 " + (getText("count") || "0명") + " · 총 지급액 " + fmt(total) + "원"));
+    foot.appendChild(el("p", "note", "모두 계좌이체, 세금 공제 없이 일당 그대로"));
+    box.appendChild(foot);
+    body.appendChild(box);
+    return box;
+  }
+  function shoot(box) {
+    return html2canvas(box, { backgroundColor: "#F7F2E9", scale: 2, useCORS: true, logging: false, windowWidth: SHOT_W, width: SHOT_W })
+      .then(function (canvas) { return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); }); });
+  }
+  function renderPages() {
+    if (typeof html2canvas !== "function") return Promise.resolve([]);
+    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    return Promise.all([import("./js/docs/paging.js?v=1"), ready]).then(function (r) {
+      var box = buildCards(), out = [];
+      var cards = Array.prototype.slice.call(box.querySelectorAll("article.card"));
+      var firstOnly = Array.prototype.slice.call(box.querySelectorAll(".shot-title, .shot-memo"));
+      var foot = [box.querySelector(".shot-foot")], no = box.querySelector(".pageno");
+      function hide(list, on) { list.forEach(function (e) { e.toggleAttribute("data-shot-hide", on); }); }
+      no.textContent = "1/1";                                   // 장 번호 자리까지 재어 둔다
+      var heights = cards.map(function (c) { return c.offsetHeight + CARD_GAP; });
+      hide(cards, true);
+      var first = box.offsetHeight;                             // 첫 장: 제목 · 지급일 · 메모 · 합계 (합계 자리는 장마다 비워 둔다)
+      hide(firstOnly, true);
+      var next = box.offsetHeight;                              // 다음 장: 지급일 · 합계
+      hide(firstOnly, false); hide(cards, false);
+      var groups = r[0].pageGroups(heights, SHOT_H - first, SHOT_H - next);
+      if (!groups.length) groups = [[]];                        // 사람이 없어도 한 장 (제목 · 합계)
+      function page(g) {
+        if (g === groups.length) return out;
+        cards.forEach(function (c, i) { c.toggleAttribute("data-shot-hide", groups[g].indexOf(i) < 0); });
+        hide(firstOnly, g > 0); hide(foot, g < groups.length - 1);
+        no.textContent = groups.length > 1 ? (g + 1) + "/" + groups.length : "";
+        return shoot(box).then(function (blob) {
+          if (!blob) return [];
+          out.push({ blob: blob, name: groups.length > 1 ? fileBase() + "_" + (g + 1) + ".png" : fileBase() + ".png" });
+          return page(g + 1);
+        });
+      }
+      return Promise.resolve(page(0)).finally(function () { box.remove(); });
+    }).catch(function () { return []; });
   }
 
   /* 인쇄 · PDF: 저장 창에 뜨는 파일 이름이 문서 제목을 따르므로, 그동안만 제목을 날짜 이름으로 바꾼다 */
@@ -635,26 +710,26 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
-    var fname = fileBase() + ".png";
     var title = "푸드벨 알바비 지급내역서 (" + getText("issue") + ")";
     var text = buildText();
     function done() { btn.disabled = false; btn.textContent = old; }
     function fallback() {
-      if (!fileBlob) { copyText(text); toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요."); return done(); }
-      downloadBlob(fileBlob, fname);
-      copyImage(fileBlob).then(function (ok) {
-        if (ok) toast("알바비 지급내역서 사진을 복사했습니다. 직원과의 카톡 대화창에서 Ctrl+V 로 붙여넣으세요. (다운로드 폴더에도 " + fname + " 저장됨)", 8000);
-        else { copyText(text); toast("사진(" + fname + ")을 저장하고 요약 문구를 복사했습니다. 카톡으로 직원에게 보내세요."); }
+      if (!pages.length) { copyText(text); toast("요약 문구를 복사했습니다. 이미지가 필요하면 ‘인쇄 · PDF’를 이용하세요."); return done(); }
+      pages.forEach(function (p) { downloadBlob(p.blob, p.name); });
+      copyImage(pages[0].blob).then(function (ok) {
+        var many = pages.length > 1 ? " (사진 " + pages.length + "장 — 첫 장만 복사됨, 모두 다운로드 폴더에)" : " (다운로드 폴더에도 " + pages[0].name + " 저장됨)";
+        if (ok) toast("알바비 지급내역서 사진을 복사했습니다. 직원과의 카톡 대화창에서 Ctrl+V 로 붙여넣으세요." + many, 8000);
+        else { copyText(text); toast("사진 " + pages.length + "장을 저장하고 요약 문구를 복사했습니다. 카톡으로 직원에게 보내세요."); }
         done();
       });
     }
-    var fileBlob = null;
-    renderImage().then(function (blob) {
-      fileBlob = blob;
-      var file = blob ? new File([blob], fname, { type: "image/png" }) : null;
-      // 휴대폰: 공유창(카톡·문자)으로 사진을 넘긴다. PC 공유 창에는 카카오톡 PC 가 안 나와서 쓰지 않는다
-      if (file && matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: title, text: text }).then(done, function (e) {
+    var pages = [];
+    renderPages().then(function (list) {
+      pages = list;
+      var files = pages.map(function (p) { return new File([p.blob], p.name, { type: "image/png" }); });
+      // 휴대폰: 공유창(카톡·문자)으로 사진(장마다)을 넘긴다. PC 공유 창에는 카카오톡 PC 가 안 나와서 쓰지 않는다
+      if (files.length && matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: files })) {
+        navigator.share({ files: files, title: title, text: text }).then(done, function (e) {
           if (e && e.name === "AbortError") return done();
           fallback();
         });
@@ -670,11 +745,12 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "저장 중…";
     setEditing(false);
-    var fname = fileBase() + ".png";
-    renderImage().then(function (blob) {
+    renderPages().then(function (pages) {
       btn.disabled = false; btn.textContent = old;
-      if (blob) { downloadBlob(blob, fname); toast(fname + " 으로 저장했습니다. (다운로드 폴더에서 확인하세요)"); }
-      else toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+      if (!pages.length) return toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+      pages.forEach(function (p) { downloadBlob(p.blob, p.name); });
+      toast(pages.length > 1 ? "사진 " + pages.length + "장으로 저장했습니다 (" + pages[0].name + " …). 다운로드 폴더에서 확인하세요."
+        : pages[0].name + " 으로 저장했습니다. (다운로드 폴더에서 확인하세요)");
     });
   });
 

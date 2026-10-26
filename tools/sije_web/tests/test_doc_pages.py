@@ -394,6 +394,64 @@ def test_staff_pay_add_row_puts_cursor_in_name(phone, repo_url, custom_token, ma
         return [a.dataset.f || a.tagName, a.closest('tr.item') === rows[rows.length - 1]]; })()""") == ['name', True]
 
 
+def pay_fill(page, n):
+    """알바비 편집 중: 줄을 n 개로 늘려 가짜 사람으로 채운다 — 일당은 150,000, 마지막 사람만 110,000."""
+    while page.evaluate("document.querySelectorAll('tr.item').length") < n:
+        page.click('tr.addrow button')
+    page.evaluate("""(n) => document.querySelectorAll('tr.item').forEach((tr, i) => {
+        const k = String(i + 1).padStart(4, '0');
+        const v = { name: '가짜' + (i + 1), tel: '010-0000-' + k, date: '10/31 (금)', event: '가짜시 시제 출장',
+                    acct: '가짜은행 000-0000-' + k, pay: i === n - 1 ? '110000' : '150000' };
+        for (const [f, t] of Object.entries(v)) {
+            const e = tr.querySelector(f === 'pay' ? '[data-k="pay"]' : `[data-f="${f}"]`);
+            e.textContent = t;
+            e.dispatchEvent(new Event('input', { bubbles: true }));
+            e.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+        }
+    })""", n)
+
+
+def test_staff_pay_photo_is_phone_cards(pc, repo_url, custom_token, made, tmp_path):
+    """사진은 일일 일정표처럼 휴대폰 카드 묶음 — 폭 1080 · 9:16 안, 첫 장에 제목 · 지급일, 사람마다 카드, 끝에 인원 · 총 지급액.
+    상호 · 도장 · 문서번호 · 작성일자는 넣지 않는다 (사장님 2026-10-26 — 휴대폰 폭 그대로 찍은 한 장이 카톡에서 길쭉했다)."""
+    open_list(pc, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    pay_fill(pc, 3)
+    pc.click('#btn-edit')
+    watch_shots(pc, 'root.innerText')
+    names, shots, sizes = save_pages(pc, tmp_path)
+    assert names == [f'알바비지급내역서_{datetime.date.today():%Y-%m-%d}.png'], names
+    assert shots == [[1, 2, 3]], shots
+    assert sizes[0][0] == 1080 and sizes[0][1] / sizes[0][0] <= 16 / 9 * 1.03, sizes
+    text = pc.evaluate('window.__shots[0]')
+    for s in ('푸드벨 알바비 지급내역서', day_label(datetime.date.today()), '1번 · 가짜1 · 150,000원', '010-0000-0001',
+              '10/31 (금) 가짜시 시제 출장', '가짜은행 000-0000-0001', '3번 · 가짜3 · 110,000원', '인원 3명', '410,000원', '모두 계좌이체'):
+        assert s in text, s
+    for s in ('010-5353-3477', '전통 제례', '문서번호', '작성일자'):
+        assert s not in text, s
+
+
+def test_staff_pay_many_people_split_into_pages(phone, repo_url, custom_token, made, tmp_path):
+    """열 명이면 사진이 장마다 나뉜다 — 어느 장도 9:16 보다 길지 않고, 한 사람이 두 장에 갈리지 않는다.
+    제목은 첫 장에만, 인원 · 총 지급액은 마지막 장에만. 휴대폰에서 보내도 폭 1080 (전에는 휴대폰 폭 그대로 한 장)."""
+    open_list(phone, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    new_doc(phone, made)
+    phone.click('#btn-edit')
+    pay_fill(phone, 10)
+    phone.click('#btn-edit')
+    watch_shots(phone, 'root.innerText')
+    names, shots, sizes = save_pages(phone, tmp_path)
+    assert len(names) >= 2 and names[0].endswith('_1.png') and names[1].endswith('_2.png'), names
+    assert sum(shots, []) == list(range(1, 11)), shots
+    for w, h in sizes:
+        assert w == 1080 and h / w <= 16 / 9 * 1.03, sizes
+    texts = phone.evaluate('window.__shots')
+    assert '푸드벨 알바비 지급내역서' in texts[0] and all('푸드벨 알바비 지급내역서' not in t for t in texts[1:]), texts
+    assert '총 지급액 1,460,000원' in texts[-1] and all('총 지급액' not in t for t in texts[:-1]), texts
+    assert all(f'{i + 1}/{len(names)}' in t for i, t in enumerate(texts)), texts
+
+
 # ---------- 시제 견적서 ----------
 
 QUOTE = dict(file='sije-quote.html', sel='.brief-row dd span[data-edit]')
