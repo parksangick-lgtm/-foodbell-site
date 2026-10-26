@@ -466,28 +466,31 @@ def test_supply_updates_total_summary(pc, repo_url, custom_token, test_db, made)
     wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('total') == '1,100,000')
 
 
-def quote_photo_size(page, repo_url, token, made, tmp_path, where):
-    """새 시제 견적서(양식 그대로)를 열어 '파일로 저장' 사진의 (가로, 세로)."""
-    from PIL import Image
-    open_list(page, repo_url, QUOTE['file'], token)
-    new_doc(page, made)
+def save_photo(page, tmp_path, where):
+    """'파일로 저장' 사진을 tmp_path/<where>.png 로 받아 그 경로."""
     page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
-    page.once('dialog', lambda d: d.accept())                  # 공급가액이 비어 있어도 저장
+    page.once('dialog', lambda d: d.accept())                  # 금액이 비어 있어도 저장
     with page.expect_download(timeout=60_000) as d:
         page.click('#btn-save-file')
     path = tmp_path / f'{where}.png'
     d.value.save_as(path)
-    with Image.open(path) as im:
-        return im.size
+    return path
 
 
-def test_sije_quote_photo_on_phone_is_paper_like_pc(pc, phone, repo_url, custom_token, made, tmp_path):
-    """휴대폰에서 만든 견적서 사진도 PC 와 같은 종이(A4) 모양 한 장 — 전에는 휴대폰 폭 그대로 찍혀
-    세로가 가로의 5.6배로 길쭉했다 (사장님 2026-10-26, 안 1 '종이 모양')."""
-    w_pc, h_pc = quote_photo_size(pc, repo_url, custom_token(ALLOWED, allowed=True), made, tmp_path, 'pc')
-    w_ph, h_ph = quote_photo_size(phone, repo_url, custom_token(ALLOWED, allowed=True), made, tmp_path, 'phone')
-    assert h_pc / w_pc < 1.5, (w_pc, h_pc)                     # PC 사진은 원래 종이 모양 (대조)
-    assert w_ph == w_pc and abs(h_ph - h_pc) <= 4, ((w_ph, h_ph), (w_pc, h_pc))
+@pytest.mark.parametrize('file', ['sije-quote.html', 'event-quote.html', 'statement.html'])
+def test_doc_photo_on_phone_is_paper_like_pc(pc, phone, repo_url, custom_token, made, tmp_path, file):
+    """같은 서류를 PC 와 휴대폰에서 사진으로 — 휴대폰 사진도 PC 와 똑같은 종이(A4) 모양 한 장.
+    전에는 휴대폰 폭 그대로 찍혀 세로가 가로의 5배쯤으로 길쭉했고(사장님 2026-10-26), 거래명세서는 PC 폭으로 그려도
+    휴대폰 표의 칸 이름(::before)이 끼어 표가 깨졌다 — 그래서 크기만이 아니라 그림이 같은지 본다."""
+    from PIL import Image, ImageChops
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    doc_id = new_doc(pc, made)
+    a = Image.open(save_photo(pc, tmp_path, 'pc')).convert('RGB')
+    open_doc(phone, repo_url, file, doc_id, custom_token(ALLOWED, allowed=True))
+    b = Image.open(save_photo(phone, tmp_path, 'phone')).convert('RGB')
+    assert a.height / a.width < 2, a.size                      # PC 사진은 원래 종이 모양 (대조 — 행사견적서는 양식이 길어 1.57)
+    assert b.size == a.size, (b.size, a.size)
+    assert ImageChops.difference(a, b).getbbox() is None, ImageChops.difference(a, b).getbbox()
 
 
 def test_tier_fills_rows_by_name_even_after_a_row_is_deleted(pc, repo_url, custom_token, made):

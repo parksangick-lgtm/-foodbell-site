@@ -601,7 +601,10 @@ body:not(.editing) tr.addrow{display:none !important}
     return ready.then(function () {
       return html2canvas(sheet, {
         backgroundColor: "#FFFDF8", scale: 1.7,
-        useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth
+        // 휴대폰에서도 PC 화면 폭으로 그린다 — 종이(A4) 모양 한 장. 휴대폰 폭 그대로면 세로가 가로의 4.7배로 길쭉했다 (사장님 2026-10-26)
+        useCORS: true, logging: false, windowWidth: 1280,
+        // 단 html2canvas 는 ::before 글자만은 지금 화면(휴대폰)에서 베껴 넣는다 — 휴대폰 표의 칸 이름(월/일 · 품목 …)이 끼어 표가 깨졌다
+        onclone: function (doc) { each(doc.querySelectorAll("table.stmt tr.item td > html2canvaspseudoelement"), function (n) { n.remove(); }); }
       });
     }).then(function (canvas) {
       return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
