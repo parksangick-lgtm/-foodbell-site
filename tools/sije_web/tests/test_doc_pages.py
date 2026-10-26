@@ -466,6 +466,30 @@ def test_supply_updates_total_summary(pc, repo_url, custom_token, test_db, made)
     wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('total') == '1,100,000')
 
 
+def quote_photo_size(page, repo_url, token, made, tmp_path, where):
+    """새 시제 견적서(양식 그대로)를 열어 '파일로 저장' 사진의 (가로, 세로)."""
+    from PIL import Image
+    open_list(page, repo_url, QUOTE['file'], token)
+    new_doc(page, made)
+    page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    page.once('dialog', lambda d: d.accept())                  # 공급가액이 비어 있어도 저장
+    with page.expect_download(timeout=60_000) as d:
+        page.click('#btn-save-file')
+    path = tmp_path / f'{where}.png'
+    d.value.save_as(path)
+    with Image.open(path) as im:
+        return im.size
+
+
+def test_sije_quote_photo_on_phone_is_paper_like_pc(pc, phone, repo_url, custom_token, made, tmp_path):
+    """휴대폰에서 만든 견적서 사진도 PC 와 같은 종이(A4) 모양 한 장 — 전에는 휴대폰 폭 그대로 찍혀
+    세로가 가로의 5.6배로 길쭉했다 (사장님 2026-10-26, 안 1 '종이 모양')."""
+    w_pc, h_pc = quote_photo_size(pc, repo_url, custom_token(ALLOWED, allowed=True), made, tmp_path, 'pc')
+    w_ph, h_ph = quote_photo_size(phone, repo_url, custom_token(ALLOWED, allowed=True), made, tmp_path, 'phone')
+    assert h_pc / w_pc < 1.5, (w_pc, h_pc)                     # PC 사진은 원래 종이 모양 (대조)
+    assert w_ph == w_pc and abs(h_ph - h_pc) <= 4, ((w_ph, h_ph), (w_pc, h_pc))
+
+
 def test_tier_fills_rows_by_name_even_after_a_row_is_deleted(pc, repo_url, custom_token, made):
     """수량 단추는 줄 이름으로 채운다 — 윗줄부터 차례로 채우면 지운 줄이 있을 때 한 칸씩 밀렸다
     (사장님 10-24: 탕 3종에 '3개', 적 · 전에 '500g'). 없는 줄은 알림에 적는다."""

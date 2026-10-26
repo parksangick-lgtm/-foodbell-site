@@ -776,7 +776,8 @@ body:not(.editing) .tier-switch{display:none !important}
       var tall = sheet.scrollHeight > 3200;   // 아주 긴 견적서는 캔버스 한계를 피해 축소
       return html2canvas(sheet, {
         backgroundColor: "#FFFDF8", scale: tall ? 1.3 : 1.7,
-        useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth
+        // 휴대폰에서도 PC 화면 폭으로 그린다 — 종이(A4) 모양 한 장. 휴대폰 폭 그대로면 세로가 가로의 5.6배로 길쭉했다 (사장님 2026-10-26)
+        useCORS: true, logging: false, windowWidth: 1280
       });
     }).then(function (canvas) {
       return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });
