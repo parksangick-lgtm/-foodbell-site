@@ -55,6 +55,31 @@ def test_target_path_uses_season_folder_and_status(tmp_path):
     assert p == tmp_path / '2026년 PDF (휴대폰용)' / '미확정' / '2025년11월16일 가짜동 시제행사 내역서.pdf'
 
 
+def test_confirmed_not_yet_printed_goes_to_pending_folder(tmp_path):
+    # 사장님 2026-10-26: 10-24 에 인쇄해 묶은 확정과 섞이지 않게, 그 뒤 확정한 것은 따로
+    p = target_path(tmp_path, fake_event(updatedAt='2026-10-26T10:00:00+00:00'))
+    assert p.parent.name == '확정 (인쇄 전)'
+
+
+def test_printed_confirmed_stays_in_confirmed_folder(tmp_path):
+    ev = fake_event(updatedAt='2026-10-24T03:03:00+00:00', printedAt='2026-10-24T03:03:00+00:00')
+    assert target_path(tmp_path, ev).parent.name == '확정'
+
+
+def test_confirmed_edited_after_printing_goes_back_to_pending(tmp_path):
+    ev = fake_event(updatedAt='2026-10-24T04:27:00+00:00', printedAt='2026-10-24T03:03:00+00:00')
+    assert target_path(tmp_path, ev).parent.name == '확정 (인쇄 전)'
+
+
+def test_printed_mark_compares_store_datetimes(tmp_path):
+    """저장소에서는 시각이 글자가 아니라 datetime 으로 온다."""
+    import datetime
+    t = datetime.datetime(2026, 10, 24, 3, 3, tzinfo=datetime.timezone.utc)
+    assert target_path(tmp_path, fake_event(updatedAt=t, printedAt=t)).parent.name == '확정'
+    later = t + datetime.timedelta(seconds=1)
+    assert target_path(tmp_path, fake_event(updatedAt=later, printedAt=t)).parent.name == '확정 (인쇄 전)'
+
+
 def test_only_changed_events_are_rendered(tmp_path):
     src = FakeSource({'a': ev_at(1, place='가'), 'b': ev_at(2, place='나')})
     render, state = make_render(), {}
@@ -83,7 +108,7 @@ def test_status_change_moves_pdf_to_new_folder(tmp_path):
     src.events['a'] = ev_at(2, place='가', status='확정')
     sync_once(src, tmp_path, state, render)
     pdfs = list(tmp_path.rglob('*.pdf'))
-    assert len(pdfs) == 1 and pdfs[0].parent.name == '확정'
+    assert len(pdfs) == 1 and pdfs[0].parent.name == '확정 (인쇄 전)'     # 새로 확정 = 아직 인쇄 전
 
 
 def test_render_failure_is_retried_next_run(tmp_path):
@@ -138,7 +163,7 @@ def test_locked_old_pdf_is_removed_on_a_later_run(tmp_path, monkeypatch):
 def test_locked_target_fails_only_that_event(tmp_path, monkeypatch):
     from pathlib import Path
     src = FakeSource({'a': ev_at(1, place='가'), 'b': ev_at(2, place='나')})
-    target_a = str(Path(tmp_path) / '2026년 PDF (휴대폰용)' / '확정' / pdf_name(src.events['a']))
+    target_a = str(target_path(tmp_path, src.events['a']))
     real_replace = Path.replace
     def locked(self, target):
         if str(target) == target_a:
@@ -147,6 +172,50 @@ def test_locked_target_fails_only_that_event(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, 'replace', locked)
     result = sync_once(src, tmp_path, {}, make_render())
     assert [i for i, _ in result['failed']] == ['a'] and len(result['made']) == 1
+
+
+class FakeDb:
+    """관리자 저장소 흉내 — 묶음(batch)의 update 를 commit 때 FakeSource 행사에 넣는다.
+    SERVER_TIMESTAMP 는 저장소처럼 한 번에 같은 새 시각이 된다."""
+
+    def __init__(self, src, now='2026-10-16T09:00:00+00:00'):
+        self.src, self.now, self.queued = src, now, []
+
+    def collection(self, name):
+        assert name == 'events'
+        return self
+
+    def document(self, id):
+        return id
+
+    def batch(self):
+        return self
+
+    def update(self, id, data):
+        self.queued.append((id, data))
+
+    def commit(self):
+        for id, data in self.queued:
+            self.src.events[id].update({k: self.now for k in data})
+
+
+def test_merge_moves_printed_pdfs_to_confirmed_on_next_run(tmp_path):
+    from tools.sije_web.printed import merge
+    src = FakeSource({'a': ev_at(1, place='가'), 'b': ev_at(2, place='나', status='미확정')})
+    render, state = make_render(), {}
+    sync_once(src, tmp_path, state, render)
+    assert sorted(p.parent.name for p in tmp_path.rglob('*.pdf')) == ['미확정', '확정 (인쇄 전)']
+    db = FakeDb(src)
+    assert merge(db, state) == [pdf_name(src.events['a'])]        # 인쇄 전 폴더에 있던 것만
+    assert [id for id, _ in db.queued] == ['a']
+    sync_once(src, tmp_path, state, render)
+    assert sorted(p.parent.name for p in tmp_path.rglob('*.pdf')) == ['미확정', '확정']
+
+
+def test_merge_with_nothing_waiting_writes_nothing(tmp_path):
+    from tools.sije_web.printed import merge
+    db = FakeDb(FakeSource({}))
+    assert merge(db, {'paths': {'a': str(tmp_path / '확정' / 'x.pdf')}}) == [] and db.queued == []
 
 
 def test_state_round_trip(tmp_path):

@@ -1,6 +1,8 @@
 r"""바뀐 행사만 PDF 로 — 원드라이브 '…\2026년 PDF (휴대폰용)\{상태}\' 에, 지금 PDF 와 같은 이름으로.
 
 - 날짜 · 장소 · 상태가 바뀌면 옛 이름의 PDF 를 지우고 새 이름 · 새 폴더로 (같은 행사 PDF 가 둘이 되지 않게).
+- 확정인데 아직 인쇄해 묶지 않은 것(인쇄 표시 printedAt 이 없거나 그 뒤에 고친 것)은 '확정 (인쇄 전)' 폴더로.
+  인쇄한 뒤 printed.py 로 표시하면 다음 차례에 '확정' 으로 옮긴다 (2026-10-26 사장님 — 인쇄해 둔 묶음과 섞이지 않게).
 - 실패(그리기 오류 · 1쪽이 아님 · 잘린 글자)는 기록하고 다음 차례에 다시. 이미 만든 판은 다시 그리지 않는다.
 """
 import datetime
@@ -13,10 +15,22 @@ from tools.sije_web.render_pdf import clipped_words
 
 SEASON = 2026   # PDF 폴더 연도 = 시제철 — 미확정 · 주문없음 행사는 작년 날짜를 들고 있어서 날짜에서 뽑지 않는다
 STATE_FILE = Path(os.environ.get('LOCALAPPDATA', Path.home())) / 'foodbell-sije' / 'state.json'
+PENDING = '확정 (인쇄 전)'
 
 
 def _iso(v) -> str:
     return v.isoformat() if isinstance(v, (datetime.datetime, datetime.date)) else str(v or '')
+
+
+def _when(v):
+    """저장소에서는 datetime, 시험에서는 ISO 글자로 온다."""
+    return datetime.datetime.fromisoformat(v) if isinstance(v, str) and v else (v or None)
+
+
+def printed(ev: dict) -> bool:
+    """인쇄 표시가 있고, 그 뒤로 고치지 않았다."""
+    at, up = _when(ev.get('printedAt')), _when(ev.get('updatedAt'))
+    return at is not None and (up is None or up <= at)
 
 
 def pdf_name(ev: dict) -> str:
@@ -27,7 +41,8 @@ def pdf_name(ev: dict) -> str:
 
 
 def target_path(work_root: Path, ev: dict) -> Path:
-    return Path(work_root) / f'{SEASON}년 PDF (휴대폰용)' / ev['status'] / pdf_name(ev)
+    folder = PENDING if ev['status'] == '확정' and not printed(ev) else ev['status']
+    return Path(work_root) / f'{SEASON}년 PDF (휴대폰용)' / folder / pdf_name(ev)
 
 
 def load_state(p: Path) -> dict:
