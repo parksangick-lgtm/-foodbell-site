@@ -15,17 +15,20 @@ SEEDED = {
                          expectedDate='2026년 11월 2일 (월)', basis='작년 음력 날짜'),
 }
 TEMPLATE = {'name': '가짜상', 'items': {'L01': {'group': '과일', 'no': '1', 'name': '배', 'qty': '5개', 'note': ''}}}
+BLANK = {'name': '가짜 빈 양식', 'type': '', 'items': {'L01': {'group': '과일', 'no': '1', 'name': '배', 'qty': '', 'note': ''}}}
 
 
 @pytest.fixture(scope='module', autouse=True)
 def seeded(test_db):
     for doc_id, ev in SEEDED.items():
         test_db.collection('events').document(doc_id).set(ev)
-    test_db.collection('templates').document(TEMPLATE['name']).set(TEMPLATE)
+    for tpl in (TEMPLATE, BLANK):
+        test_db.collection('templates').document(tpl['name']).set(tpl)
     yield
     for doc_id in SEEDED:
         test_db.collection('events').document(doc_id).delete()
-    test_db.collection('templates').document(TEMPLATE['name']).delete()
+    for tpl in (TEMPLATE, BLANK):
+        test_db.collection('templates').document(tpl['name']).delete()
 
 
 def open_list(page, repo_url, token=None):
@@ -69,6 +72,23 @@ def test_new_event_from_template_opens_sheet(page, repo_url, custom_token, test_
     try:
         doc = test_db.collection('events').document(new_id).get()
         assert doc.exists and doc.get('status') == '미확정' and doc.get('templateType') == TEMPLATE['name']
+    finally:
+        test_db.collection('events').document(new_id).delete()
+
+
+def test_blank_template_leaves_header_type_empty(page, repo_url, custom_token, test_db):
+    """수량 없는 빈 양식(type '')으로 만들면 내역서 머리글에 양식 이름이 안 붙는다 (사장님 2026-10-26)."""
+    open_list(page, repo_url, custom_token(ALLOWED, allowed=True))
+    page.locator('#rows .row[data-id="list-a"]').wait_for(timeout=20_000)
+    page.click('#new-event')
+    page.get_by_role('button', name=BLANK['name']).click()
+    page.wait_for_url(re.compile(r'sije-sheet\.html\?id='), timeout=20_000)
+    new_id = page.url.split('id=', 1)[1]
+    try:
+        doc = test_db.collection('events').document(new_id).get()
+        assert doc.exists and doc.get('templateType') == '' and doc.get('items')['L01']['qty'] == ''
+        page.locator('text=■ 준비 품목').first.wait_for(timeout=20_000)
+        assert page.locator('text=■ 준비 품목 —').count() == 0
     finally:
         test_db.collection('events').document(new_id).delete()
 

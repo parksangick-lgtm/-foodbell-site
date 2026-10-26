@@ -89,7 +89,7 @@ export async function listTemplates() {
 export async function createFromTemplate(name, extra = {}) {
   const tpl = (await fs.getDoc(fs.doc(db, 'templates', name))).data();
   const ref = fs.doc(fs.collection(db, 'events'));
-  const ev = { ...newEventFromTemplate({ name, items: tpl.items, itemRows: tpl.itemRows }), ...extra };
+  const ev = { ...newEventFromTemplate({ name, type: tpl.type, items: tpl.items, itemRows: tpl.itemRows }), ...extra };
   const saving = fs.setDoc(ref, { ...ev, updatedAt: fs.serverTimestamp() });
   await localSaved(ref);
   if (navigator.onLine) await atMost(saving);   // 끊긴 곳에서는 3초까지만 — 기기에 들고 있다가 연결되면 올라간다

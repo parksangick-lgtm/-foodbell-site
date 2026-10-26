@@ -38,7 +38,7 @@ export function newEventFromTemplate(tpl) {
   return {
     ...ev,
     status: '미확정',
-    templateType: tpl.name,
+    templateType: tpl.type ?? tpl.name,   // 머리글 상 종류 — 수량 없는 빈 양식은 type '' 라 안 붙는다
     contacts: [],
     items: structuredClone(tpl.items),
     itemRows: tpl.itemRows ?? 0,   // 품목표 줄 수 — 엑셀처럼 남는 줄에 '추가 기입' 칸을 그린다

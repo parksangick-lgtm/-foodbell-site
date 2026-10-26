@@ -51,6 +51,11 @@ test('새 행사는 빈 양식에서 시작해 미확정', () => {
   assert.equal(tpl.items.L01.qty, '5개', '새 행사를 고쳐도 빈 양식은 그대로');
 });
 
+test('빈 양식에 type 이 있으면 머리글 상 종류는 그것 — 수량 없는 빈 양식은 빈 글자 (사장님 2026-10-26)', () => {
+  assert.equal(newEventFromTemplate({ name: '빈 양식 (수량 없음)', type: '', items: {} }).templateType, '');
+  assert.equal(newEventFromTemplate({ name: '60만원상', items: {} }).templateType, '60만원상');
+});
+
 test('새 행사는 빈 양식의 품목표 줄 수를 이어받는다', () => {
   assert.equal(newEventFromTemplate({ name: '60만원상', items: {}, itemRows: 17 }).itemRows, 17);
   assert.equal(newEventFromTemplate({ name: '60만원상', items: {} }).itemRows, 0);
