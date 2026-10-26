@@ -756,7 +756,9 @@ body:not(.editing) .addjrow{display:none !important}
       return html2canvas(sheet, {
         backgroundColor: "#FFFDF8", scale: tall ? 1.3 : 1.7,
         // 휴대폰에서도 PC 화면 폭으로 그린다 — 종이(A4) 모양 한 장. 휴대폰 폭 그대로면 세로가 가로의 5.3배로 길쭉했다 (사장님 2026-10-26)
-        useCORS: true, logging: false, windowWidth: 1280
+        useCORS: true, logging: false, windowWidth: 1280,
+        // 사진에서는 숫자 폭 맞춤을 끈다 — html2canvas 가 자리는 맞춘 폭, 글자는 보통 폭으로 그려 "FB-20261026 -1054" 처럼 틈이 생겼다
+        onclone: function (doc) { var s = doc.createElement("style"); s.textContent = "*{font-variant-numeric:normal !important}"; doc.head.appendChild(s); }
       });
     }).then(function (canvas) {
       return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, "image/png"); });

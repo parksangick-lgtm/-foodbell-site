@@ -477,7 +477,33 @@ def save_photo(page, tmp_path, where):
     return path
 
 
-@pytest.mark.parametrize('file', ['sije-quote.html', 'event-quote.html', 'statement.html'])
+PAPER_DOCS = ['sije-quote.html', 'event-quote.html', 'statement.html', 'sije-worksheet.html']   # 사진이 종이(A4) 모양인 서류
+
+
+def tabular_in_photo(page):
+    """'파일로 저장' 사진을 그리는 사본(html2canvas)에 숫자 폭 맞춤(tabular-nums)이 남은 요소 수."""
+    page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    page.evaluate("""() => { window.__tabular = null; const o = window.html2canvas;
+        window.html2canvas = (el, opt) => o(el, { ...opt, onclone: async (d, ref) => { if (opt.onclone) await opt.onclone(d, ref);
+            const w = d.defaultView;
+            window.__tabular = [...d.querySelectorAll('*')].filter((e) => w.getComputedStyle(e).fontVariantNumeric.includes('tabular')).length; } }); }""")
+    page.once('dialog', lambda d: d.accept())                  # 금액이 비어 있어도 저장
+    with page.expect_download(timeout=60_000):
+        page.click('#btn-save-file')
+    return page.evaluate('window.__tabular')
+
+
+@pytest.mark.parametrize('file', PAPER_DOCS)
+def test_doc_photo_draws_numbers_without_tabular_gaps(pc, repo_url, custom_token, made, file):
+    """사진에서는 숫자 폭 맞춤(tabular-nums)을 끈다 — html2canvas 가 자리는 맞춘 폭으로 잡고 글자는 보통 폭으로 그려
+    'FB-20261026 -1054', '2026년 10 월 26일' 처럼 숫자 사이에 틈이 생겼다 (사장님 2026-10-26). 화면 · 인쇄는 그대로."""
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    assert pc.evaluate("[...document.querySelectorAll('*')].some((e) => getComputedStyle(e).fontVariantNumeric.includes('tabular'))")   # 화면은 그대로 (대조)
+    assert tabular_in_photo(pc) == 0
+
+
+@pytest.mark.parametrize('file', PAPER_DOCS)
 def test_doc_photo_on_phone_is_paper_like_pc(pc, phone, repo_url, custom_token, made, tmp_path, file):
     """같은 서류를 PC 와 휴대폰에서 사진으로 — 휴대폰 사진도 PC 와 똑같은 종이(A4) 모양 한 장.
     전에는 휴대폰 폭 그대로 찍혀 세로가 가로의 5배쯤으로 길쭉했고(사장님 2026-10-26), 거래명세서는 PC 폭으로 그려도
