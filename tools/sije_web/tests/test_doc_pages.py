@@ -514,7 +514,8 @@ def test_doc_photo_on_phone_is_paper_like_pc(pc, phone, repo_url, custom_token, 
     a = Image.open(save_photo(pc, tmp_path, 'pc')).convert('RGB')
     open_doc(phone, repo_url, file, doc_id, custom_token(ALLOWED, allowed=True))
     b = Image.open(save_photo(phone, tmp_path, 'phone')).convert('RGB')
-    assert a.height / a.width < 2, a.size                      # PC 사진은 원래 종이 모양 (대조 — 행사견적서는 양식이 길어 1.57)
+    assert a.height / a.width < 2, a.size                      # 종이 모양 (행사견적서는 양식이 길어 조금 더 길다)
+    assert a.width == 1278, a.size                             # 폭 800 으로 그림 = 서류 칸 752 × 1.7배 — 휴대폰에서 글자가 1280 폭(1496)보다 1.2배 크게 (사장님 10-26)
     assert b.size == a.size, (b.size, a.size)
     assert ImageChops.difference(a, b).getbbox() is None, ImageChops.difference(a, b).getbbox()
 
