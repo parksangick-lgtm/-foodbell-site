@@ -1,10 +1,10 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
-import { itemsBySide } from './model.js';
+import { itemsBySide, newViewKey, viewLinkText } from './model.js';
 import { NOTES_KEY, putBundle, eventToStatement } from '../docs/handoff.js';
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
-  initStore, onUser, signIn, signInForTest, watchEvent, updateField, addImage, watchImages,
+  initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages,
 } from './store.js';
 
 const $ = (id) => document.getElementById(id);
@@ -171,6 +171,26 @@ $('image-file').addEventListener('change', async () => {
     toast(e.message);
   }
 });
+$('view-link').addEventListener('click', async () => {
+  if (!ev) return;
+  let key = ev.viewKey;
+  if (!key) {
+    try { key = await ensureViewKey(id, newViewKey); } catch (e) { return toast(`링크를 만들지 못했습니다 (${e.code || e.message})`); }
+    ev.viewKey = key;   // 화면 값에도 넣어 두 번째 누를 때 같은 링크
+  }
+  const text = viewLinkText(ev, `${location.origin}/sije-view.html#${key}`);
+  const warn = ev.status === '확정' ? '' : ' · 확정이 되어야 담당자에게 보여요';
+  if (matchMedia('(pointer: coarse)').matches && navigator.share) {
+    try { await navigator.share({ text }); } catch (e) { if (e.name === 'AbortError') return;
+      // 크롬은 누른 뒤 약 5초 안에만 공유를 허락한다 - 링크 저장을 기다리다 지났으면 키는 이미 저장됐으니 한 번 더 누르면 된다
+      toast(e.name === 'NotAllowedError' ? '링크를 만들었어요 — 한 번 더 눌러 주세요' : `공유하지 못했습니다 (${e.name})`); return; }
+    if (warn) toast('확정이 되어야 담당자에게 보여요');
+    return;
+  }
+  try { await navigator.clipboard.writeText(text); toast('링크를 복사했어요 — 카톡 대화창에 붙여 넣으세요' + warn); }
+  catch (e) { toast(`복사하지 못했습니다 (${e.name})`); }
+});
+
 $('sign-in').addEventListener('click', () => signIn().catch((e) => toast(`로그인하지 못했습니다 (${e.code || e.message})`)));
 
 function fail(e) {

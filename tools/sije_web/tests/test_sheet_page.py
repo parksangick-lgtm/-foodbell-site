@@ -165,3 +165,107 @@ def test_print_is_one_page(pc, tmp_path):
     pc.pdf(path=str(out), format='A4', print_background=True)
     with pymupdf.open(out) as doc:
         assert doc.page_count == 1
+
+
+# ---- 담당자 링크 단추 ----
+
+def _toast_text(page, text, timeout=10_000):
+    page.wait_for_function("(t) => { const e = document.getElementById('toast'); return !e.hidden && e.textContent.includes(t); }",
+                           arg=text, timeout=timeout)
+
+
+def test_view_link_copies_same_link_and_keeps_updated_at(pc, test_db, event_id):
+    ref = test_db.collection('events').document(event_id)
+    before = ref.get().to_dict().get('updatedAt')
+    pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
+    pc.locator('#view-link').click()
+    _toast_text(pc, '링크를 복사했어요')
+    first = pc.evaluate('navigator.clipboard.readText()')
+    pc.locator('#view-link').click()
+    time.sleep(1)
+    second = pc.evaluate('navigator.clipboard.readText()')
+    assert first == second
+    key = wait_db(ref, lambda s: s.to_dict().get('viewKey')).to_dict()['viewKey']
+    assert len(key) == 32
+    assert first.splitlines()[1].endswith('sije-view.html#' + key)
+    assert ref.get().to_dict().get('updatedAt') == before
+
+
+def test_view_link_warns_when_not_confirmed(browser, repo_url, custom_token, test_db):
+    doc_id = 'sheet-' + uuid.uuid4().hex[:8]
+    ref = test_db.collection('events').document(doc_id)
+    ref.set(fake_event(status='미확정'))
+    ctx = None
+    try:
+        ctx, pg = _open(browser, repo_url, custom_token(EMAIL, allowed=True), doc_id, viewport={'width': 1280, 'height': 900})
+        ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+        pg.locator('#view-link').click()
+        _toast_text(pg, '확정이 되어야 담당자에게 보여요')
+    finally:
+        if ctx:
+            ctx.close()
+        ref.delete()
+
+
+def test_view_link_phone_shares_text_only(phone):
+    phone.evaluate("() => { window.__shared = []; navigator.share = (d) => { window.__shared.push(Object.keys(d)); return Promise.resolve(); }; }")
+    phone.locator('#view-link').click()
+    phone.wait_for_function('window.__shared.length > 0', timeout=10_000)
+    assert phone.evaluate('window.__shared') == [['text']]
+
+
+def test_view_link_phone_without_share_copies(phone):
+    phone.context.grant_permissions(['clipboard-read', 'clipboard-write'])
+    phone.evaluate("() => Object.defineProperty(navigator, 'share', { configurable: true, value: undefined })")
+    phone.locator('#view-link').click()
+    _toast_text(phone, '링크를 복사했어요')
+    assert 'sije-view.html#' in phone.evaluate('navigator.clipboard.readText()')
+
+
+def test_ensure_view_key_never_overwrites_existing_key(pc, test_db, event_id):
+    ref = test_db.collection('events').document(event_id)
+    ref.update({'viewKey': 'k' * 32})
+    got = pc.evaluate("(id) => import('./js/sije/store.js').then((m) => m.ensureViewKey(id, () => 'x'.repeat(32)))", event_id)
+    assert got == 'k' * 32
+    assert ref.get().to_dict()['viewKey'] == 'k' * 32
+
+
+# ---- 휴대폰 단추줄이 내용을 가리지 않는다 (마지막 전체 검토 I2) ----
+
+TOOLBAR_CHECK = """() => {
+  window.scrollTo(0, document.documentElement.scrollHeight);
+  const tb = document.querySelector('.toolbar').getBoundingClientRect();
+  const mk = document.getElementById('make-statement').getBoundingClientRect();
+  const t = document.getElementById('toast');
+  t.hidden = false; t.textContent = '시험용 알림 글입니다';
+  const to = t.getBoundingClientRect();
+  const hit = document.elementFromPoint(mk.left + mk.width / 2, mk.bottom - 3);
+  const btns = [...document.querySelectorAll('.toolbar button')].map((b) => {
+    const r = document.createRange(); r.selectNodeContents(b);
+    return { label: b.textContent, h: Math.round(b.getBoundingClientRect().height), lines: new Set([...r.getClientRects()].map((x) => Math.round(x.top))).size };
+  });
+  const rows = new Set([...document.querySelectorAll('.toolbar button')].map((b) => Math.round(b.getBoundingClientRect().top))).size;
+  return { mkBottom: mk.bottom, tbTop: tb.top, toastBottom: to.bottom, hitId: hit && hit.id, btns, rows };
+}"""
+
+
+@pytest.mark.parametrize('width', [360, 390])
+def test_phone_toolbar_does_not_cover_make_statement_or_toast(browser, repo_url, custom_token, event_id, width):
+    ctx, pg = _open(browser, repo_url, custom_token(EMAIL, allowed=True), event_id,
+                    viewport={'width': width, 'height': 800}, is_mobile=True, has_touch=True)
+    try:
+        r = pg.evaluate(TOOLBAR_CHECK)
+        assert r['mkBottom'] <= r['tbTop'], r                 # '거래명세서 만들기' 아래 끝이 단추줄 위
+        assert r['hitId'] == 'make-statement', r              # 그 단추 아래쪽을 눌러도 다른 단추가 눌리지 않는다
+        assert r['toastBottom'] <= r['tbTop'], r              # 알림이 단추줄을 덮지 않는다
+        assert all(b['h'] >= 44 and b['lines'] == 1 for b in r['btns']), r   # 44px 이상, 글자가 두 줄로 접히지 않는다
+    finally:
+        ctx.close()
+
+
+def test_view_link_phone_not_allowed_error_asks_to_press_again(phone):
+    """m3: 링크를 저장하느라 기다린 사이 크롬의 누름 허락(약 5초)이 지나 share 가 NotAllowedError 로 거절되면, 실패가 아니라 '한 번 더' 안내."""
+    phone.evaluate("() => { navigator.share = () => Promise.reject(new DOMException('expired', 'NotAllowedError')); }")
+    phone.locator('#view-link').click()
+    _toast_text(phone, '링크를 만들었어요 — 한 번 더 눌러 주세요')
+    assert '공유하지 못했습니다' not in phone.locator('#toast').inner_text()

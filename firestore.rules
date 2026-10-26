@@ -69,6 +69,11 @@ service cloud.firestore {
         && request.resource.data.entries.size() <= 40;
     }
 
+    // 담당자 보기 (sije-view.html) — 쓰기는 관리 도구만. 암호(= 문서 이름)를 아는 사람이 그 한 장만 읽는다(목록 규칙 없음).
+    match /staffSheets/{key} {
+      allow get: if true;
+    }
+
     // allow/* · viewers/* 는 위에서 자기 메일 문서 하나 읽기(get)만 된다. 그 밖의 모든 곳은 규칙이 없으므로 모두 거부된다.
   }
 }

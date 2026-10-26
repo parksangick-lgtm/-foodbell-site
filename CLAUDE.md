@@ -244,6 +244,9 @@ sije-list.html        시제행사 목록 (2026-10-16 서류 자동화 1단계).
 sije-sheet.html       시제행사 내역서 (?id=…). PC 는 엑셀 모양 칸을 눌러 고침, 휴대폰은 맨 위 날짜·시간·품목 수량. 칸을 떠나면 저장,
                       인터넷이 없어도 한 번 연 화면은 열린다(sw.js 사본 + 파이어베이스 기기 저장).
 sije-print.html       인쇄 전용 — 사무실 PC 의 PDF 프로그램(tools/sije_web/render_pdf.py)이 연다. 파이어베이스 없음.
+sije-view.html        담당자용 내역서 보기 (2026-10-27, 설계 docs/superpowers/specs/2026-10-27-staff-sije-view-link-design.md). 행사마다 링크 하나(#암호 = events.viewKey),
+                      로그인 없이 보기만, 행사 전날 · 당일만. 내역서 화면 [담당자 링크] 가 암호를 만든다(트랜잭션, updatedAt 안 바꿈). 사무실 PC 프로그램이 5분마다
+                      오늘 · 내일 확정 + 암호 있는 행사를 staffSheets/{암호} 로 올리고 지난 것은 지운다(tools/sije_web/staff_sheets.py). share-store.js 를 고치면 이 화면의 import ?v= 를 올린다.
 js/docs/ · css/docs.css   서류 5종(견적서 둘 · 작업지시서 · 거래명세서 · 알바비) 공통 부품 — 서류 자동화 2단계(2026-10-17 밤 office 로 합쳐 올림, 합치기 커밋 d2f704a).
                       구글 로그인 → 종류마다 목록(아이콘을 누르면 목록 먼저) → 서류 한 장씩 웹 저장소(파이어베이스 docs)에, 고치면 저절로 저장 · 지우기.
                       화면은 window.FoodbellDoc 연결 고리(serialize · load · fresh · summary)만 내준다. 옛 브라우저 저장 키(foodbell-sije-quote-v4 등)는

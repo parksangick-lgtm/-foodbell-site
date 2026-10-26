@@ -11,13 +11,23 @@ const [{ initializeApp }, fs] = await Promise.all([
 
 let db;
 
-// cb(entries | null, { fromCache }) — 게시판이 없으면 null (바뀐 옛 링크 · 틀린 링크)
-export function watchShare(key, cb, onError) {
+function openDb() {
   if (!db) {
     db = fs.initializeFirestore(initializeApp(projectConfig(location.hostname)), {
       localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }),
     });
   }
-  return fs.onSnapshot(fs.doc(db, 'share', key), { includeMetadataChanges: true },
+  return db;
+}
+
+// cb(entries | null, { fromCache }) — 게시판이 없으면 null (바뀐 옛 링크 · 틀린 링크)
+export function watchShare(key, cb, onError) {
+  return fs.onSnapshot(fs.doc(openDb(), 'share', key), { includeMetadataChanges: true },
     (snap) => cb(snap.exists() ? (snap.data().entries || {}) : null, { fromCache: snap.metadata.fromCache }), onError);
+}
+
+// 담당자 화면(sije-view.html) - 담당자 보기 한 장 staffSheets/{암호}. cb(sheet | null, { fromCache }) - 없으면 null (지난 행사 · 틀린 링크)
+export function watchSheet(key, cb, onError) {
+  return fs.onSnapshot(fs.doc(openDb(), 'staffSheets', key), { includeMetadataChanges: true },
+    (snap) => cb(snap.exists() ? snap.data() : null, { fromCache: snap.metadata.fromCache }), onError);
 }

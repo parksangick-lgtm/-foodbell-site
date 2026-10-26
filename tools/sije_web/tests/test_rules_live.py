@@ -4,6 +4,9 @@ import uuid
 import pytest
 import requests
 
+from conftest import fake_event as make_fake_event
+from tools.sije_web.staff_sheets import staff_view
+
 ALLOWED = 'rules-allowed@example.com'
 DENIED = 'rules-denied@example.com'
 
@@ -234,6 +237,23 @@ def test_share_config_only_for_owner(base, share_config, id_token):
     assert call('GET', f'{base}/config/share').status_code == 403
     assert call('GET', f'{base}/config/share', id_token(DENIED, allowed=False)).status_code == 403
     assert call('GET', f'{base}/config/share', id_token(ALLOWED, allowed=True)).status_code == 200
+
+
+@pytest.fixture
+def staff_sheet(test_db):
+    """시험용 담당자 내역서 한 장 — 이름(암호)은 시험마다 새로, 끝나면 지운다."""
+    key = 'rules-' + uuid.uuid4().hex[:8]
+    ref = test_db.collection('staffSheets').document(key)
+    ref.set(staff_view(make_fake_event()))
+    yield key
+    ref.delete()
+
+
+def test_staff_sheet_readable_without_login_not_listable_not_writable(base, staff_sheet, id_token):
+    assert call('GET', f'{base}/staffSheets/{staff_sheet}').status_code == 200   # 이름을 알면 로그인 없이 읽고
+    assert call('GET', f'{base}/staffSheets').status_code == 403                # 목록은 못 보고
+    owner = id_token(ALLOWED, allowed=True)
+    assert patch(base, f'staffSheets/{staff_sheet}', owner, 'memo', '몰래').status_code == 403  # 사장님 토큰도 쓰기는 막힌다
 
 
 def test_share_update_only_entries(base, board, id_token):

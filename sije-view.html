@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#6E1E2B">
+<!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 -->
+<meta name="color-scheme" content="only light">
+<title>푸드벨 시제 내역서</title>
+<!-- 담당자용 내역서 한 장 (사장님 2026-10-27, 설계서 docs/superpowers/specs/2026-10-27-staff-sije-view-link-design.md).
+     카톡으로 받은 sije-view.html#암호 를 열면 그 행사 한 건의 내역서(staffSheets/암호)를 보기만 한다. 로그인 없음.
+     행사 전날부터 당일까지만 올라와 있고, 사무실 PC 가 5분마다 고친 것을 올리면 열어 둔 화면도 새로고침 없이 바뀐다.
+     암호는 # 뒤에만 있어 사이트 서버 · 카톡 미리보기로 가지 않는다. 각 행사마다 링크가 달라 암호를 기기에 기억하지 않는다.
+     표를 쓰지 않는다 - 위에서 아래로 쌓고, 긴 글은 줄을 바꾼다(휴대폰 폭 360px 에서도 안 잘림).
+     산속 약한 신호에서도 바로 뜨게 글꼴은 기다리지 않는다(곱은바탕은 받아지면 바뀐다). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" media="print" onload="this.media='all'">
+<style>
+:root{--cream:#F7F2E9; --white:#FFFFFF; --ink:#120C06; --ink-mute:#6B5E48; --primary:#6E1E2B; --gold:#B08D57; --border:#E2D6BF; --band:#F1EADB}
+*{box-sizing:border-box}
+body{margin:0; background:var(--cream); color:var(--ink); font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif; line-height:1.6; font-size:17px}
+main{max-width:560px; margin:0 auto; padding:24px 16px 48px}
+h1{font-family:'Gowun Batang',serif; font-weight:700; font-size:22px; line-height:1.4; margin:0}
+h1::after{content:''; display:block; width:44px; height:2px; background:var(--gold); margin-top:12px}
+#offline{margin:14px 0 0; padding:8px 12px; background:var(--band); border-left:3px solid var(--primary); font-size:15px}
+#status{color:var(--ink-mute); font-size:15px; margin:16px 0; overflow-wrap:anywhere; word-break:keep-all}
+section#sheet{margin-top:16px}
+section#sheet > *{min-width:0}
+.box{background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:0 0 12px}
+.when{margin:0; font-family:'Gowun Batang',serif; font-weight:700; font-size:20px; line-height:1.4; overflow-wrap:anywhere; word-break:keep-all}
+.line{display:flex; align-items:center; gap:10px; margin:8px 0 0; min-width:0}
+.lab{flex:none; width:4.2em; font-size:14px; color:var(--ink-mute)}
+.txt{flex:1; min-width:0; word-break:keep-all; overflow-wrap:anywhere}
+.txt.pre, .pre{white-space:pre-line}
+h2{margin:0 0 6px; font-size:16px; font-weight:700; color:var(--primary)}
+.must{margin:0; white-space:pre-line; word-break:keep-all; overflow-wrap:anywhere}
+.box.warn{border-left:3px solid var(--primary)}
+.grp{margin:10px 0 0}
+.grp b{display:block; font-size:14px; color:var(--ink-mute); font-weight:600}
+.grp p{margin:2px 0 0; word-break:keep-all; overflow-wrap:anywhere}
+.plain{margin:0; white-space:pre-line; word-break:keep-all; overflow-wrap:anywhere}
+a.btn-call, a.btn-map{flex:none; display:inline-flex; align-items:center; justify-content:center; min-height:44px; min-width:44px; padding:6px 14px; border-radius:8px; font-weight:600; text-decoration:none; white-space:nowrap}
+a.btn-call{background:var(--primary); color:#fff}
+a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--primary)}
+</style>
+</head>
+<body>
+<main>
+  <h1>푸드벨 시제 내역서</h1>
+  <p id="offline" hidden>연결 안 됨 — 마지막으로 받은 내용입니다</p>
+  <p id="status">불러오는 중…</p>
+  <section id="sheet" hidden></section>
+</main>
+<script type="module">
+// share-store.js 를 고치면 이 숫자를 올린다 (직원 폰에 남은 옛 저장본이 약한 신호에서 섞이지 않게)
+import { watchSheet } from './js/sije/share-store.js?v=2';
+
+const MISSING = '지금은 볼 수 없는 내역서예요. 행사 전날부터 당일까지 열려요. 링크가 맞는지 사장님께 여쭤 주세요.';
+const WEEK = '일월화수목금토';
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, txt) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt != null) e.textContent = txt;
+  return e;
+};
+
+/* 숫자만 쓴 번호 -> 작대기 넣은 꼴, 전화번호 모양이 아니면 null (today.html 의 telShape 와 같다) */
+function telShape(d) {
+  const m = d.match(/^(02|0\d{2})(\d{3,4})(\d{4})$/) || d.match(/^(1[5-9]\d{2})(\d{4})$/);
+  return m ? m.slice(1).join('-') : null;
+}
+const NUM = /\d[\d-]{6,}\d/g;
+const NAVER = 'https://m.map.naver.com/search2/search.naver?query=';
+const trimSep = (s) => s.replace(/^[\s,·/]+|[\s,·/]+$/g, '');
+
+function status(text) {
+  $('status').textContent = text;
+  $('status').hidden = !text;
+}
+function link(cls, href, text) {
+  const a = el('a', cls, text);
+  a.href = href;
+  return a;
+}
+function line(parent, lab, text, btn) {
+  const p = el('p', 'line');
+  const t = el('span', 'txt', text);
+  p.append(el('span', 'lab', lab), t);
+  if (btn) p.append(btn);
+  parent.append(p);
+  return t;
+}
+/* 글 한 줄 - 비어 있으면 이름표까지 숨긴다 */
+function field(parent, lab, text, cls) {
+  const s = (text ?? '').toString().trim();
+  if (!s) return;
+  const t = line(parent, lab, s);
+  if (cls) t.classList.add(cls);
+}
+/* 칸 글자를 전화번호마다 한 줄로 - 번호 앞 글자(이름 등)는 그 줄에, 번호가 없으면 글자만 한 줄 (today.html 의 phoneLines 와 같다) */
+function phoneLines(parent, lab, head, text) {
+  const found = [...text.matchAll(NUM)].filter((m) => telShape(m[0].replace(/-/g, '')));
+  if (!found.length) {
+    const t = [head, text].filter(Boolean).join(' ');
+    if (t) line(parent, lab, t);
+    return;
+  }
+  let last = 0;
+  found.forEach((m, i) => {
+    const before = trimSep(text.slice(last, m.index));
+    last = m.index + m[0].length;
+    const after = i === found.length - 1 ? trimSep(text.slice(last)) : '';
+    const t = [i === 0 ? head : '', before, m[0], after].filter(Boolean).join(' ');
+    line(parent, lab, t, link('btn-call', 'tel:' + m[0].replace(/-/g, ''), '전화'));
+  });
+}
+
+function dateText(date) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date || '');
+  if (!m) return date || '';
+  const [y, mo, d] = [+m[1], +m[2], +m[3]];
+  return `${mo}월 ${d}일 (${WEEK[new Date(y, mo - 1, d).getDay()]})`;
+}
+
+/* 준비 품목 - 구분마다 한 묶음, "배 5개 · 사과 5개" 로 이어 쓰고 비고는 괄호 */
+function itemGroups(items) {
+  const groups = new Map();
+  for (const it of items) {
+    const key = it.group || '';
+    if (!groups.has(key)) groups.set(key, []);
+    const text = [it.name, it.qty].filter(Boolean).join(' ') + (it.note ? ` (${it.note})` : '');
+    if (text.trim()) groups.get(key).push(text.trim());
+  }
+  return [...groups].filter(([, list]) => list.length);
+}
+
+function render(s) {
+  const root = $('sheet');
+  const parts = [];
+
+  const head = el('div', 'box');
+  const when = [dateText(s.date), s.time].filter(Boolean).join(' ');
+  if (when) head.append(el('p', 'when', when));
+  if (s.place) {
+    // 휴대폰용 네이버 지도 검색 (today.html 과 같은 주소)
+    line(head, '장소', s.place, link('btn-map', NAVER + encodeURIComponent(s.place), '지도'));
+  }
+  field(head, '상차림', s.setting);
+  if (head.childNodes.length) parts.push(head);
+
+  const who = el('div', 'box');
+  field(who, '손님', s.customer);
+  (s.contacts || []).forEach((c) => phoneLines(who, '연락처', '', String(c || '')));
+  field(who, '금액', s.amount);
+  field(who, '금액 내역', s.amountDetail, 'pre');
+  field(who, '담당', s.staffCar);
+  field(who, '출발', s.departTime);
+  field(who, '도착', s.arriveTime);
+  field(who, '산신제', s.sansinje);
+  field(who, '식사', s.meal);
+  field(who, '시제일', s.sijeil);
+  if (who.childNodes.length) parts.push(who);
+
+  if ((s.mustDo || '').trim()) {
+    const box = el('div', 'box warn');
+    box.append(el('h2', null, '꼭 지킬 것'), el('p', 'must', s.mustDo.trim()));
+    parts.push(box);
+  }
+
+  const groups = itemGroups(s.items || []);
+  if (groups.length) {
+    const box = el('div', 'box');
+    const t = (s.templateType || '').trim();   // 종이 내역서와 같은 규칙 (js/sije/sheet-render.js)
+    box.append(el('h2', null, '준비 품목' + (t ? (t.startsWith('(') ? ` ${t}` : ` — ${t}`) : '')));
+    for (const [name, list] of groups) {
+      const g = el('div', 'grp');
+      if (name) g.append(el('b', null, name));
+      g.append(el('p', null, list.join(' · ')));
+      box.append(g);
+    }
+    parts.push(box);
+  }
+
+  for (const [title, text] of [['추가 기입', s.extraItems], ['메모', s.memo]]) {
+    if (!(text || '').trim()) continue;
+    const box = el('div', 'box');
+    box.append(el('h2', null, title), el('p', 'plain', text.trim()));
+    parts.push(box);
+  }
+
+  root.replaceChildren(...parts);
+  root.hidden = false;
+}
+
+function missing() {
+  $('sheet').replaceChildren();
+  $('sheet').hidden = true;
+  status(MISSING);
+}
+
+/* 기기에 남은 것만 보이는 상태가 2초 넘으면 '연결 안 됨' - 처음 열 때 잠깐 기기 것이 먼저 오는 것은 알리지 않는다 */
+let cacheSince = null;
+let offTimer = null;
+function offline(fromCache) {
+  clearTimeout(offTimer);
+  if (!fromCache) {
+    cacheSince = null;
+    $('offline').hidden = true;
+    return;
+  }
+  cacheSince ??= Date.now();
+  offTimer = setTimeout(() => { $('offline').hidden = false; }, Math.max(0, 2000 - (Date.now() - cacheSince)));
+}
+
+/* 카톡 안 브라우저가 두 번째 링크를 같은 탭에서 # 만 바꿔 열어도 그 행사가 보이게 - 다시 불러온다 */
+addEventListener('hashchange', () => location.reload());
+const key = location.hash.slice(1);
+if (!/^[\w-]{8,64}$/.test(key)) missing();
+else {
+  watchSheet(key, (got, meta) => {
+    offline(meta.fromCache);
+    if (got === null) {
+      if (!meta.fromCache) missing();   // 기기에 없을 뿐이면 서버 답을 기다린다 (처음 여는 폰은 늘 '없음'이 먼저 온다)
+      return;
+    }
+    status('');
+    render(got);
+  }, missing);
+}
+</script>
+<script>
+// 한 번 열어 본 화면은 인터넷이 없어도 열리게 (sw.js)
+if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+</script>
+</body>
+</html>

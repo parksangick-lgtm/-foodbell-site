@@ -80,6 +80,19 @@ export function updateField(id, path, value) {
   return fs.updateDoc(fs.doc(db, 'events', id), { [path]: value, updatedAt: fs.serverTimestamp() });
 }
 
+// 담당자 보기 링크의 암호 — 이미 있으면 그대로 돌려주고(덮어쓰지 않음), 없을 때만 새로 만들어 넣는다.
+// updatedAt 은 건드리지 않는다(PDF 를 다시 그리고 인쇄한 확정이 '인쇄 전'으로 가는 걸 막는다).
+export function ensureViewKey(id, makeKey) {
+  const ref = fs.doc(db, 'events', id);
+  return fs.runTransaction(db, async (tx) => {
+    const have = (await tx.get(ref)).data()?.viewKey;
+    if (have) return have;
+    const key = makeKey();
+    tx.update(ref, { viewKey: key });
+    return key;
+  });
+}
+
 export async function listTemplates() {
   const snap = await fs.getDocs(fs.collection(db, 'templates'));
   return snap.docs.map((d) => ({ name: d.data().name ?? d.id, items: d.data().items ?? {}, itemRows: d.data().itemRows ?? 0 }));

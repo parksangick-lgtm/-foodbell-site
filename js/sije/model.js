@@ -11,6 +11,24 @@ export function formatDateText(date, time) {
   return `${y}년 ${m}월 ${d}일 (${day})` + (time ? ` ${time}` : '');
 }
 
+// 담당자 보기 링크의 암호 — 24바이트 난수 → base64url 32글자.
+export function newViewKey() {
+  const bin = String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24)));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// 카톡으로 보내는 세 줄 — '[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 시제 내역서 (보기만)' · 링크 · 안내.
+export function viewLinkText(ev, link) {
+  let when = '';
+  if (ev.date) {
+    const [y, m, d] = ev.date.split('-').map(Number);
+    const day = DAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+    when = `${m}월 ${d}일 (${day})` + (ev.time ? ` ${ev.time}` : '') + ' ';
+  }
+  const place = (ev.titlePlace || '').trim() || (ev.place || '').trim();
+  return `[푸드벨] ${when}${place} 시제 내역서 (보기만)\n${link}\n행사 전날부터 당일까지 열려요.`;
+}
+
 // 맨 위 큰 줄 = 주소 + 행사일 — 날짜를 고치면 이 줄도 따라 바뀐다.
 export function titleLine(ev) {
   return `${(ev.titlePlace || '').trim()} ${formatDateText(ev.date, ev.time)}`.trim();

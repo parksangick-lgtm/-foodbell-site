@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  STATUSES, formatDateText, titleLine, itemKey, itemsBySide, newEventFromTemplate,
+  STATUSES, formatDateText, titleLine, itemKey, itemsBySide, newEventFromTemplate, newViewKey, viewLinkText,
 } from '../../../js/sije/model.js';
 
 test('상태 글자는 세 가지', () => {
@@ -59,4 +59,21 @@ test('빈 양식에 type 이 있으면 머리글 상 종류는 그것 — 수량
 test('새 행사는 빈 양식의 품목표 줄 수를 이어받는다', () => {
   assert.equal(newEventFromTemplate({ name: '60만원상', items: {}, itemRows: 17 }).itemRows, 17);
   assert.equal(newEventFromTemplate({ name: '60만원상', items: {} }).itemRows, 0);
+});
+
+test('담당자 링크 암호는 32글자 base64url 이고 매번 다르다', () => {
+  const a = newViewKey(), b = newViewKey();
+  assert.match(a, /^[A-Za-z0-9_-]{32}$/);
+  assert.notEqual(a, b);
+});
+
+test('담당자 링크 공유 글은 세 줄', () => {
+  const link = 'https://foodbell.kr/sije-view.html#' + 'a'.repeat(32);
+  const ev = { date: '2026-10-31', time: '10시', titlePlace: '가짜동 1-1', place: '가짜동 1-1 뒷산' };
+  assert.equal(viewLinkText(ev, link),
+    `[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 시제 내역서 (보기만)\n${link}\n행사 전날부터 당일까지 열려요.`);
+  assert.equal(viewLinkText({ ...ev, titlePlace: '' }, link).split('\n')[0],
+    '[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 뒷산 시제 내역서 (보기만)');
+  assert.equal(viewLinkText({ ...ev, date: '', time: '' }, link).split('\n')[0],
+    '[푸드벨] 가짜동 1-1 시제 내역서 (보기만)');
 });

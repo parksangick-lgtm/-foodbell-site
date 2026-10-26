@@ -67,16 +67,16 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
   background:var(--ink); color:var(--paper); font-size:15px; padding:12px 16px; border-radius:8px}
 
 @media (max-width:699px){
-  body{padding-bottom:calc(140px + env(safe-area-inset-bottom))}
+  body{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
   .toolbar{position:fixed; left:0; right:0; bottom:0; z-index:40; margin:0; display:grid;
-    grid-template-columns:repeat(3, 1fr); gap:6px; padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+    grid-template-columns:repeat(4, 1fr); gap:6px; padding:8px 8px calc(8px + env(safe-area-inset-bottom));
     background:var(--paper); border-top:1px solid var(--line-strong)}
   .toolbar .sep{display:none}
   .toolbar button{padding:6px 4px; word-break:keep-all}
   .q-when .q-field{flex:1 1 140px}
   .q-head{display:block; margin:16px 0 8px; font-size:15px; font-weight:var(--w-bold); color:var(--seal)}
   .q-items{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px 12px}
-  .toast{bottom:calc(130px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(150px + env(safe-area-inset-bottom))}
 }
 
 /* 인쇄: 내역서 한 장만, 미리 잰 배율로 (js/sije/sheet-page.js 의 measurePrint) */
@@ -113,6 +113,7 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
       <span class="sep"></span>
       <button type="button" id="attach">그림 붙이기</button>
       <button type="button" id="print">인쇄</button>
+      <button type="button" id="view-link">담당자 링크</button>
       <button type="button" onclick="location.href='sije-list.html'">목록</button>
     </div>
     <input type="file" id="image-file" accept="image/*" hidden>
@@ -129,6 +130,6 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
 // 인터넷이 없어도 한 번 열어 본 목록 · 내역서가 열리게 (sw.js)
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
-<script type="module" src="js/sije/sheet-page.js?v=3"></script>
+<script type="module" src="js/sije/sheet-page.js?v=5"></script>
 </body>
 </html>

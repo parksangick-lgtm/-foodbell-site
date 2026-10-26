@@ -85,6 +85,15 @@ def test_calendar_permission_error_is_a_short_warning(tmp_path, caplog):
     assert recs and all(r.levelno == logging.WARNING and not r.exc_info for r in recs)
 
 
+def test_staff_sheets_failure_does_not_stop_pdf_and_backup(tmp_path):
+    class BrokenDb:
+        def collection(self, name):
+            raise ConnectionError('흉내: 끊김')
+    office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
+                           sheets=BrokenDb())
+    assert list((tmp_path / '백업').glob('*시제행사 백업.xlsx'))
+
+
 def test_agent_refuses_missing_work_root(tmp_path):
     """원드라이브 폴더가 없으면(경로가 다른 PC) 동기화 안 되는 곳에 PDF 를 쌓지 않고 멈춘다."""
     assert office_agent.main(['--once', '--work-root', str(tmp_path / '없는 폴더')]) == 2

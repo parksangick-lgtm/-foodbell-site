@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 
-from tools.sije_web import calendar_sync, fsdb, obsidian_copy
+from tools.sije_web import calendar_sync, fsdb, obsidian_copy, staff_sheets
 from tools.sije_web.backup import write_backup
 from tools.sije_web.pdf_sync import STATE_FILE, load_state, save_state, sync_once
 from tools.sije_web.render_pdf import render_pdf, serve_repo
@@ -36,8 +36,9 @@ def setup_log(path: Path) -> logging.Logger:
     return log
 
 
-def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger, calendar=None, vault=None):
-    """PDF · 백업 · 캘린더 · 옵시디언은 따로 감싼다 — 하나가 실패해도 나머지는 돈다.
+def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger, calendar=None, vault=None, sheets=None):
+    """PDF · 백업 · 캘린더 · 옵시디언 · 담당자 내역서는 따로 감싼다 — 하나가 실패해도 나머지는 돈다.
+    sheets 는 Firestore db — None 이면 담당자 내역서 차례를 건너뛴다.
     calendar 는 calendar_sync.CalendarJob — None 이면(캘린더 ID 파일 없는 PC) 건너뛴다.
     vault 는 옵시디언 볼트 — None 이면(푸드벨-업무 볼트를 못 찾은 PC, 시작할 때 기록에 한 줄) 건너뛴다."""
     result = None
@@ -93,6 +94,15 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
             save_state(notes_file, notes)
         except Exception:
             log.exception('옵시디언 차례 실패 (다음 차례에 다시)')
+    if sheets is not None:
+        try:
+            out = staff_sheets.sync_staff_sheets(sheets, datetime.date.today())
+            for d in out['written']:
+                log.info('담당자 내역서 올림: %s', d)
+            for d in out['removed']:
+                log.info('담당자 내역서 지움: %s', d)
+        except Exception:
+            log.exception('담당자 내역서 차례 실패 (다음 차례에 다시)')
     return result
 
 
@@ -126,7 +136,7 @@ def main(argv=None) -> int:
     with serve_repo(ROOT) as url:
         while True:
             try:
-                one_cycle(source, a.work_root, state_file, url, log, calendar, vault)
+                one_cycle(source, a.work_root, state_file, url, log, calendar, vault, sheets=source.db)
             except Exception:       # 인터넷 끊김 등 — 기록하고 다음 차례에
                 log.exception('이번 차례 실패')
                 if a.once:
