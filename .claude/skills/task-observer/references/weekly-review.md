@@ -450,6 +450,8 @@ the staged bundle; any hit fails the audit:
 grep -rn 'for f in \$(find "' "$s" && echo "DRIFT: retired word-splitting loop still present"
 # both files must carry the sweep guard; -L lists the ones that do NOT
 grep -rL 'ARCHIVAL SWEEP BROKEN' "$s/SKILL.md" "$s/references/observation-log.md"
+# both id snippets must read the upstream floor too (retired form: the local .id-floor only)
+grep -rLF 'show "@{u}:${p}archive/.id-floor"' "$s/SKILL.md" "$s/references/observation-log.md"
 ```
 
 Add the retired form to this list in the SAME edit that corrects a

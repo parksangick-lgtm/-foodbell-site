@@ -2,7 +2,8 @@
 
 Load this before writing any test that calls `context.set_offline(...)`,
 waits on `navigator.serviceWorker`, or asserts an "offline" banner or
-offline fallback.
+offline fallback, and before stubbing requests with `page.route` on a
+site that registers a service worker (last section).
 
 Serve the page from `http://localhost` (or https). `navigator.serviceWorker`
 does not exist on `file://` or `data:` pages, so a service-worker test there
@@ -48,3 +49,19 @@ fails with `Cannot read properties of undefined` before it tests anything.
   finds this class of bug on its first run.
 - Give every wait in an offline test a bound. A missing precondition should
   fail fast with a message, not hang the run.
+
+## Routes on a worker-controlled page
+
+`page.route` never sees requests a service worker answers. The worker sits
+in front of the page's network, so a stubbed module keeps coming from the
+worker (network or cache) and the page just waits, which reads as "the stub
+is wrong" or "the page is slow". Any page of the site opened earlier in the
+same context may have registered the worker. Stub in a context created with
+`browser.new_context(service_workers='block')`.
+
+`context.route` does see the worker's own network fetches (Playwright 1.62,
+Chromium). To test a worker's slow-network fallback, keep the worker and
+delay the response in a `context.route` handler.
+
+A route that never fires while `navigator.serviceWorker.controller` is set
+means the worker answered, not that the glob is wrong.

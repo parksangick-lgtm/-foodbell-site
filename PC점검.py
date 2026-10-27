@@ -161,12 +161,14 @@ def claude_tools():
 # ---------------------------------------------------------------- 3. 파이썬 · 열쇠 · 도구
 def python_and_keys():
     mods = ['playwright', 'pytest', 'firebase_admin', 'google.cloud.firestore', 'fitz', 'pandas', 'openpyxl', 'PIL', 'cv2']
-    bad = []
+    optional = {'cv2': 'python -m pip install opencv-python'}   # 시험 · 도구가 안 쓰고 사진 비교 · QR 읽기에만 — 없으면 '확인' (기록장 #81)
+    bad, opt_bad = [], []
     for m in mods:   # 따로 띄워 본다 — 스마트 앱 컨트롤이 막으면 그 부품만 실패한다 (기록장 #76)
         code, _, err = run([sys.executable, '-X', 'utf8', '-c', f'import {m}'], timeout=60)
         if code:
-            bad.append(f'{m}({err.strip().splitlines()[-1][:60] if err.strip() else code})')
-    row('파이썬', '부품', '문제' if bad else '정상', f'안 됨: {"; ".join(bad)}' if bad else f'{len(mods)}개 모두 불러옴')
+            (opt_bad if m in optional else bad).append(f'{m}({err.strip().splitlines()[-1][:60] if err.strip() else code})')
+    detail = '; '.join([f'안 됨: {"; ".join(bad)}'] * bool(bad) + [f'사진 비교용만 없음: {"; ".join(opt_bad)} — 쓸 때 {" · ".join(optional[o.split("(")[0]] for o in opt_bad)}'] * bool(opt_bad))
+    row('파이썬', '부품', '문제' if bad else '확인' if opt_bad else '정상', detail or f'{len(mods)}개 모두 불러옴')
     try:
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\CI\Policy') as k:
             sac = winreg.QueryValueEx(k, 'VerifiedAndReputablePolicyState')[0]

@@ -71,6 +71,20 @@ npx firebase-tools@15.34.0 deploy --only firestore:rules --project default  # �
 실제 프로젝트에 올리는 것은 되돌리기 어려운 행동이다. 계획서·인수인계에 허락이 적혀 있어도 **올리기 직전에 다시 묻는다**
 (`superpowers-extras` 3절).
 
+**실제에 올리기 전에 지금 규칙과 비교한다 — 어느 방법으로 올리든** ✅ 2026-10-21. 올리기는 규칙을 통째로 바꾸므로
+누가 콘솔에서 고친 것도 조용히 되돌린다.
+1. 열쇠로 `GET https://firebaserules.googleapis.com/v1/projects/{프로젝트}/releases/cloud.firestore` → 나온 `rulesetName` 으로
+   한 번 더 GET → 그 ruleset 원문(`source.files[0].content`).
+2. 양쪽에서 `\r` 을 지우고 비교한다. 안 지우면 줄마다 다르게 나온다(받아 적은 파일이 `\r\r\n` 이 됐다).
+3. 기준은 **고치기 전 판**이다. 자동 저장 저장소에서는 `HEAD` 가 이미 새 파일일 수 있으니 `git log -- firestore.rules` 로
+   고치기 직전 커밋을 골라 `git show <커밋>:firestore.rules` 와 비교한다.
+4. 주석 말고 다른 데가 있으면 멈추고 사장님께 보여 준다.
+5. 올린 뒤 다시 받아 새 파일과 같은지 본다.
+
+푸드벨은 `python -X utf8 PC점검.py` 의 '저장소 규칙' 줄이 같은 비교다(2026-10-28 부터) — 실제 · 시험 두 프로젝트의 지금 규칙을
+`HEAD:firestore.rules` 와 줄바꿈만 맞춰 주석까지 통째로 견준다. 기준이 `HEAD` 라서 5번(올린 뒤 확인)에 맞는다.
+올리기 전에는 새 파일과 다르게 나오는 것이 당연하니 3번은 따로 한다.
+
 **관리자 열쇠만 있는 PC** ✅ — Firebase Rules REST API 를 열쇠로 직접 부른다(두 번 다 200 이었다).
 1. `POST https://firebaserules.googleapis.com/v1/projects/{프로젝트}/rulesets` — 본문에 규칙 파일 내용
 2. `PATCH https://firebaserules.googleapis.com/v1/projects/{프로젝트}/releases/cloud.firestore` — 새 `rulesetName` 으로
@@ -90,5 +104,6 @@ npx firebase-tools@15.34.0 deploy --only firestore:rules --project default  # �
 
 - 관리자 열쇠가 저장소 밖에 있고 `git status` 에 안 보이는가
 - 시험용 프로젝트에서 먼저 했는가, 실제는 직전에 물었는가
+- 실제에 올리기 전에 지금 규칙을 고치기 전 판과 비교했는가, 올린 뒤 다시 받아 새 파일과 같았는가
 - 규칙을 올린 뒤 1분 기다리고 시험했는가
 - 사장님이 한 일(콘솔 클릭)과 클로드가 한 일을 나눠서 보고했는가

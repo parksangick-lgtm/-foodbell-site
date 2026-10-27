@@ -180,7 +180,26 @@ was handled without its reference loaded, log an observation.
 
    Output at that moment means earlier sessions' writes never left this
    machine — say so in one line; the other machines are reading a log
-   without them.
+   without them. That check sees only uncommitted files, so check the
+   last hop as well — one fetch, then the commits touching the log on
+   either side:
+
+   ```bash
+   git -C "[ABSOLUTE PATH]/skill-observations" fetch -q 2>/dev/null || echo "fetch failed (offline?) — the counts below are as of the last fetch"
+   git -C "[ABSOLUTE PATH]/skill-observations" rev-list --left-right --count '@{u}...HEAD' -- . 2>/dev/null || echo "no upstream — ahead/behind unknown"
+   ```
+
+   The output is `left right`. Left above zero: other machines' log
+   commits have not arrived here, so this machine's `.id-floor` is stale.
+   Right above zero: log writes are committed but not pushed. Either way,
+   say so in one line. Neither command stops the session: offline or
+   without an upstream, each prints why and the protocol carries on.
+   Under a hook that commits for you, an empty porcelain no longer means
+   synced — a pull that conflicted and aborted leaves the local commits in
+   place, every later session starts with a clean tree, and the stall
+   shows up only here, as ahead/behind. The id snippet under "How to Log"
+   reads the upstream's floor as of this fetch, so a fetch that succeeded
+   also keeps new ids above the ones other machines have pushed.
 2. **Scan.** Read only the frontmatter of each file in `observation-log/`
    — the header block between the first two `---` lines, never the bodies
    — and build awareness from `status`, `skill`, `proposes_skill` and
@@ -189,7 +208,8 @@ was handled without its reference loaded, log an observation.
    format: the scan stays cheap once hundreds of observations exist.
 
    **This scan does not satisfy the per-skill check** (the grep run each
-   time a skill loads — `references/environments.md`, activation block).
+   time a skill loads, and again when the work narrows to a named
+   mechanism — `references/environments.md`, activation block).
    Different scope (every skill vs one), different depth (frontmatter vs
    body), different moment (session start vs the point the skill's rules
    are applied). Both answer "have I looked at the log?", so running this
@@ -479,7 +499,14 @@ values, plus one: the highest numeric prefix in `observation-log/`, the
 highest in `observation-log/archive/`, and the number in
 `observation-log/archive/.id-floor` (the highest id ever issued — update it
 whenever you issue an id above it, so the counter can never restart from 1
-when the active directory is empty). The same command first sweeps stale
+when the active directory is empty). Where the workspace syncs through
+git, the floor is read twice: the local file, and the upstream branch's
+copy as of the last fetch (`git show '@{u}:…'` — no network), so a
+machine whose own floor is stale still issues above the ids the others
+have pushed. The path inside `show` is relative to the repository root,
+so the snippet derives it with `rev-parse --show-prefix` instead of
+assuming where the log sits; outside a repository, or with no upstream,
+that read adds nothing. The same command first sweeps stale
 resolved files into `archive/` — archival is a side effect of deriving the
 id, not a separate duty (see Archival on Write):
 
@@ -503,7 +530,9 @@ seen=$(find "$d" -maxdepth 1 -name '*.md' -print0 | { n=0   # -print0/-d '': nev
       mv "$f" "$d/archive/"
   done; printf %s "$n"; })
 [ "$n_files" -gt 0 ] && [ "${seen:-0}" -eq 0 ] && { echo "ARCHIVAL SWEEP BROKEN — $n_files files present, 0 examined"; exit 1; }
-hi=$( { ls "$d" "$d/archive" 2>/dev/null | grep -oE '^[0-9]+'; cat "$d/archive/.id-floor" 2>/dev/null; } \
+hi=$( { ls "$d" "$d/archive" 2>/dev/null | grep -oE '^[0-9]+'; cat "$d/archive/.id-floor" 2>/dev/null
+        p=$(git -C "$d" rev-parse --show-prefix 2>/dev/null) &&   # synced through git: the upstream floor as of the last fetch, no network; no repo or no upstream adds nothing
+          git -C "$d" show "@{u}:${p}archive/.id-floor" 2>/dev/null; } \
      | sed 's/^0*\([0-9]\)/\1/' | sort -n | tail -1); : "${hi:=0}"
 [ "$hi" -eq 0 ] && [ -n "$(find "$d" -maxdepth 1 -name '*.md')" ] && { echo "ID COMMAND BROKEN — log is non-empty but no ids extracted"; exit 1; }
 next_id=$(( hi + 1 )); echo "$next_id" > "$d/archive/.id-floor"
@@ -859,7 +888,7 @@ outstanding skills in its `skill:` list. Full protocol:
 | Question | Answer |
 |----------|--------|
 | When do I observe? | The whole session, including feedback and reflection phases |
-| How do I log? | Silently, immediately, as one file per observation named `NNNN-slug.md`; id = max(active, archive, `.id-floor`) + 1, derived by running the snippet immediately before each write — an earlier read of the log for any other purpose is not a substitute |
+| How do I log? | Silently, immediately, as one file per observation named `NNNN-slug.md`; id = max(active, archive, `.id-floor` — local and, where the log syncs through git, the upstream's as of the last fetch) + 1, derived by running the snippet immediately before each write — an earlier read of the log for any other purpose is not a substitute |
 | When do I surface? | End of session, or earlier if needed |
 | Status field? | Mandatory `status: open` frontmatter on every new observation; reviews treat a missing status as OPEN, never as nonexistent. Five values: `open`, `actioned`, `declined`, `superseded`, `parked` — `parked` = decided but blocked on an external precondition, so it leaves the queue, requires `parked_until:`, and never archives |
 | Does the target skill have siblings? | Resolve it against `skill-observations/skill-families.md` BEFORE writing; add every sibling the insight applies to to `skill:`, and record the verdict in the mandatory `siblings_checked:` field — including "checked, no propagation" |

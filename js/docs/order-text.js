@@ -6,6 +6,7 @@
    발인 · 화장 = 같은 방법으로 '발인' · '화장' 이 붙은 첫 시각 (화장 회차 '09시50분/4회차' 는 화장) — 2026-10-21 부터 그 칸에 따로.
    연락처 = 휴대폰 번호(010 …, 하이픈 없어도 010-0000-0000 꼴로). 계좌 · 묘역번호 · 번지는 모양이 달라 안 걸린다.
    단가 = '35만(원)' · '15,000원' 같은 값이 하나일 때만 — 줄을 넘어 읽지 않고, 번호 끝자리('…-5678 원하시는')는 값이 아니다.
+          띄어 쓴 숫자 뒤의 '천안' · '만나서' · '원래' 처럼 단위 글자로 시작하는 낱말도 값이 아니다.
    인원은 안 뽑는다(식사 100인분 × 평토상 35만 같은 틀린 곱셈). 메모 = 원문 그대로.
    옛 아이폰(사파리 16.4 전)에서도 열리게 뒤보기(lookbehind) 대신 앞 글자를 잡는 묶음 (^|…) 을 쓴다 */
 import { readNumber } from './amount.js?v=1';
@@ -61,8 +62,14 @@ function findTels(text) {
   return out;
 }
 
+const SPACED = /\d[ \t]+[만천원]/;                            // 숫자와 단위 사이가 띄어져 있다
+
+/* 띄어 쓴 숫자 + 단위 바로 뒤에 한글이 붙으면 값이 아니다 — '3 천안', '2 만나서', '12 원래', '12 천주교' (2026-10-28).
+   '35만에' 처럼 붙여 쓴 것과 '35 만원 부탁' 처럼 단위 뒤가 띄어진 것은 그대로 읽는다 */
+const wordAfterSpacedUnit = (text, m) => SPACED.test(m[2]) && /[가-힣]/.test(text[m.index + m[0].length] || '');
+
 function findPrice(text) {
-  const vals = [...new Set([...text.matchAll(MONEY)].map((m) => readNumber(m[2])).filter(Boolean))];
+  const vals = [...new Set([...text.matchAll(MONEY)].filter((m) => !wordAfterSpacedUnit(text, m)).map((m) => readNumber(m[2])).filter(Boolean))];
   return vals.length === 1 ? vals[0] : null;
 }
 

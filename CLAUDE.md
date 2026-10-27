@@ -91,7 +91,8 @@ superpowers 스킬(`test-driven-development`·`systematic-debugging`)과 겹쳐�
 **저장 위치 한 줄만 고쳤다**(원본은 PC 임시 폴더 → 세 PC 가 함께 보는 비공개 `C:\dev\vibe-study\handoff\`). 원작자가 고쳐도 여기는 안 바뀐다. 새 버전이 필요하면 원본에서
 `SKILL.md` 를 다시 복사해 온다 — 이때 맷 포콕 여섯 개(`grill-me`·`to-spec`·`improve-codebase-architecture`·
 `setup-matt-pocock-skills`·`teach`·`handoff`)는 2026-10-21 에 고친 두 곳을 다시 해 준다: `disable-model-invocation: true`
-줄 지우기, 설명 끝에 한국어 요청 예 붙이기(사장님 요청 — 말로 불러도 돌게). React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
+줄 지우기, 설명 끝에 한국어 요청 예 붙이기(사장님 요청 — 말로 불러도 돌게). `handoff` 는 2026-10-28 에 더한 문단
+("Any command this doc tells the next session to run" — 넘길 명령은 먼저 돌려 본다)도 다시 넣는다. React·Tailwind·임시 사진(picsum) 같은 지시가 들어 있지만
 **이 사이트에서는 위 "화면 만들 때"·"사진" 규칙이 먼저다.**
 
 **스킬을 고쳤으면 이 폴더의 사본도 같이 올린다.** 스킬 원본은

@@ -142,11 +142,19 @@ Loading a skill is not complete until you have queried the observation
 log for OPEN observations naming it and read their bodies:
   grep -l "skill:.*<skill-name>" \
     [ABSOLUTE PATH]/skill-observations/observation-log/*.md
+Read each body whole, never cut to a fixed length: the later paragraphs
+hold the fixes and recurrences. With many matches, read titles and areas
+first, then the full bodies of those that touch the task. Keep only OPEN
+ones (status open, or no status) — the grep alone does not filter status.
 Apply their insights to the current work, even if the skill file hasn't
 been updated yet. Run this at every skill load, however many skills load
 in one session. The session-start scan does not cover it: that is a
 frontmatter sweep over every observation at session start, this is a
 body-level lookup for one skill at the moment its rules are applied.
+When the work narrows to a named mechanism (a library, API, function or
+file), grep the bodies for that name before investigating:
+  grep -l '<name>' \
+    "[ABSOLUTE PATH]/skill-observations/observation-log/"*.md
 
 The task-observer workspace for this project is:
   [ABSOLUTE PATH]
@@ -222,7 +230,7 @@ that every machine reads:
    aggregate review in `weekly-review.md`, qualifying every id with its
    machine.
 
-Three follow-ups make either choice hold:
+Four follow-ups make either choice hold:
 
 - **Retiring the old home is half the move.** On each machine, search the
   default and previously pinned paths for a leftover log. Merge its open
@@ -239,6 +247,27 @@ Three follow-ups make either choice hold:
 - **Expect id collisions.** A sync that runs only at session boundaries
   lets two machines issue the same id between syncs. The review's
   renumbering step is routine here, not an exception.
+- **An auto-commit setup hides "unsynced".** When a hook commits after
+  every answer, an unsynced log is no longer a set of modified files but
+  an ahead/behind state: a pull that conflicted and aborted keeps the
+  local commits, every later session starts with a clean tree, and the
+  porcelain check in SKILL.md Session Start step 1 cannot see it — the
+  fetch and ahead/behind check beside it can. The usual cause is the
+  protocol's own writes: two machines each append to `checkpoints.log`
+  and rewrite `.id-floor`, and the merge conflicts on both. When the
+  workspace syncs through git, ship these two lines in the repository's
+  `.gitattributes` (paths relative to the repository root — adjust them
+  if the workspace is not at the root):
+
+      skill-observations/checkpoints.log merge=union eol=lf
+      skill-observations/observation-log/archive/.id-floor merge=union eol=lf
+
+  `merge=union` keeps both sides' lines instead of conflicting. On
+  `.id-floor` that can leave two numbers, which the id snippet's
+  `sort -n | tail -1` already reads as their maximum; `eol=lf` keeps a
+  carriage return out of the shell arithmetic. (Observed: three machines
+  stalled in three days, each found only by a manual check, each needing
+  ids renumbered by hand.)
 
 **Config detection (once per session):** with filesystem access, check the
 workspace root's CLAUDE.md (or equivalent) for a task-observer activation

@@ -240,7 +240,15 @@ filename prefix in `observation-log/`, the highest in
 `observation-log/archive/.id-floor`. The floor file holds the highest id
 ever issued, so the counter cannot restart from 1 when the active directory
 is empty (every file archived) and nothing else remembers the range. Update
-it whenever you issue an id above it. The archival sweep (see Archival
+it whenever you issue an id above it. Where the workspace syncs through
+git, the floor is also read from the upstream branch as of the last fetch
+(`git show '@{u}:…'`, no network): a machine whose sync has stalled keeps
+a stale local floor, and without this second read it re-issues ids the
+other machines have already pushed (observed three times in three days on
+one three-machine log, each needing a manual renumbering at merge). The
+path inside `show` is relative to the repository root, so it is derived
+with `rev-parse --show-prefix`; outside a repository, or with no
+upstream, the read adds nothing. The archival sweep (see Archival
 below) is folded into this same command: every id derivation first moves
 stale resolved files to `archive/`, so archival happens as a side effect
 of a step no write can skip.
@@ -265,7 +273,9 @@ seen=$(find "$d" -maxdepth 1 -name '*.md' -print0 | { n=0   # -print0/-d '': nev
       mv "$f" "$d/archive/"
   done; printf %s "$n"; })
 [ "$n_files" -gt 0 ] && [ "${seen:-0}" -eq 0 ] && { echo "ARCHIVAL SWEEP BROKEN — $n_files files present, 0 examined"; exit 1; }
-hi=$( { ls "$d" "$d/archive" 2>/dev/null | grep -oE '^[0-9]+'; cat "$d/archive/.id-floor" 2>/dev/null; } \
+hi=$( { ls "$d" "$d/archive" 2>/dev/null | grep -oE '^[0-9]+'; cat "$d/archive/.id-floor" 2>/dev/null
+        p=$(git -C "$d" rev-parse --show-prefix 2>/dev/null) &&   # synced through git: the upstream floor as of the last fetch, no network; no repo or no upstream adds nothing
+          git -C "$d" show "@{u}:${p}archive/.id-floor" 2>/dev/null; } \
      | sed 's/^0*\([0-9]\)/\1/' | sort -n | tail -1); : "${hi:=0}"
 [ "$hi" -eq 0 ] && [ -n "$(find "$d" -maxdepth 1 -name '*.md')" ] && { echo "ID COMMAND BROKEN — log is non-empty but no ids extracted"; exit 1; }
 next_id=$(( hi + 1 )); echo "$next_id" > "$d/archive/.id-floor"

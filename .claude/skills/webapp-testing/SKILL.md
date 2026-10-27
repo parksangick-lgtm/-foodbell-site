@@ -83,6 +83,8 @@ with sync_playwright() as p:
 ❌ **Don't** inspect the DOM before waiting for `networkidle` on dynamic apps
 ✅ **Do** wait for `page.wait_for_load_state('networkidle')` before inspection
 
+⚠ **When the app sets its own ready signal** (a data attribute, a status text), navigate with `page.goto(url, wait_until='domcontentloaded')` and let the wait for that signal carry the timeout. `load` and `networkidle` also wait for third-party scripts and fonts the app does not need, so a slow CDN fails whichever test happens to navigate at that moment.
+
 ## Best Practices
 
 - **Use bundled scripts as black boxes** - To accomplish a task, consider whether one of the scripts available in `scripts/` can help. These scripts handle common, complex workflows reliably without cluttering the context window. Use `--help` to see usage, then invoke directly. 
@@ -90,6 +92,10 @@ with sync_playwright() as p:
 - Always close the browser when done
 - Use descriptive selectors: `text=`, `role=`, CSS selectors, or IDs
 - Add appropriate waits: `page.wait_for_selector()` or `page.wait_for_timeout()`
+- Helpers that take a selector string pass it to Playwright (`page.locator(sel)`), never to `document.querySelector` inside `evaluate`: Playwright-only syntax (`:text-is`, `:has-text`, `>>`) throws there. To run JS on the element, use `page.locator(sel).first.evaluate(fn)`.
+- After an async operation, a negative DOM assertion waits for that operation's own completion signal (a button label coming back, a status attribute), not for a hook that fires midway: `is_hidden()` is false for an element parked off-screen (`left:-9999px`), because it still has a box.
+- After changing a helper shared by many page tests, rerun the whole test file, not a `-k` subset: the subset never runs the other callers.
+- A test that fails only under full-suite load is a timing defect until shown otherwise. Rerun it with a much longer wait: a value that never arrives was lost, not late. Reproduce with CDP `Emulation.setCPUThrottlingRate` (rate 6, Chromium) — `page.context.new_cdp_session(page).send('Emulation.setCPUThrottlingRate', {'rate': 6})` — and keep the throttle in the regression test after the fix.
 
 ## Reference Files
 
@@ -100,6 +106,6 @@ with sync_playwright() as p:
   - `mock_claude_runtime.js` - Fake of a host-injected runtime (claude.ai artifact `db`/`user`), for `page.add_init_script`
 - **references/** - Load when the trigger applies:
   - `host-injected-runtime.md` - Read before testing a page that depends on `window.claude` or another object the host injects
-  - `offline-and-service-worker.md` - Read before any test that uses `set_offline`, waits on a service worker, or checks offline UI
+  - `offline-and-service-worker.md` - Read before any test that uses `set_offline`, waits on a service worker, checks offline UI, or uses `page.route` on a site that registers a service worker
 
-_Local additions (references/, mock_claude_runtime.js, the first branch of the decision tree) were added to this copy and are not part of the upstream skill._
+_Local additions (references/, mock_claude_runtime.js, the first branch of the decision tree; 2026-10-28: the ⚠ ready-signal note under Common Pitfall and the last four Best Practices bullets, from selector strings to timing defects) were added to this copy and are not part of the upstream skill._
