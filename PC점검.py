@@ -137,7 +137,7 @@ def claude_tools():
         return
     _, out, _ = run([exe, 'mcp', 'list'], timeout=240)
     lines = [l for l in out.splitlines() if ' - ' in l]
-    bad = [l.split(':')[0] for l in lines if '✔' not in l]
+    bad = [l.split(': ', 1)[0] for l in lines if not l.rstrip().endswith(' Connected')]   # 표시 글자는 PC 마다 다르다(✔ · √) — 낱말로 본다 (기록장 #81)
     row('클로드', '연결 도구(MCP)', '확인' if bad or not lines else '정상', f'{len(lines) - len(bad)}/{len(lines)} 연결' + (f' · 안 됨: {", ".join(bad)}' if bad else ''))
     script = DEV / 'vibe-study' / 'tools' / 'MCP-설치.ps1'
     if script.exists():
@@ -287,6 +287,7 @@ def office():
 
 def rules():
     try:
+        from tools.sije_web import fsdb  # noqa: F401 — 불러오면 윈도우 인증서를 합친다(백신이 보안 연결을 검사하는 노트북, 기록장 #81)
         from google.auth.transport.requests import AuthorizedSession
         from google.oauth2 import service_account
     except Exception as e:
