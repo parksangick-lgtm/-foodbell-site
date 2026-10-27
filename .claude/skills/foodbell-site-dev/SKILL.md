@@ -44,10 +44,10 @@ git grep -l "sheet-render.js" -- "*.html"     # 바뀐 파일 이름으로 — �
 | 화면이 직접 부르지 않고 **다른 js 가 `import` 하는 파일**(`js/docs/handoff.js` 등) | `?v=` 붙일 곳이 없다. `sw.js` 가 그 폴더를 네트워크 먼저로 받는지 확인만 |
 | `sw.js` 자체 | `sw.js` 의 `CACHE` |
 
-- **자동 알림(`cache-reminder.sh`)은 아직 "css/js 아무거나 바뀜 = index.html 올려라" 로 판단한다.**
-  표의 둘째·셋째 줄에서는 알림이 떠도 맞는 것이다 — 스크립트를 돌리면 손님이 안 바뀐
-  `style.css`·`main.js` 를 다시 받을 뿐 바뀐 화면은 그대로다. 알림을 끄려고 스크립트를 돌리지 않는다.
-  (2026-10-16 `sheet-render.js`, 2026-10-18 `handoff.js` 두 번 겪었다.)
+- **자동 알림(`cache-reminder.sh` → `cache-reminder.py`, 2026-10-28 고침)은 위 표대로 판단한다** — 바뀐 파일을 `?v=` 로
+  부르는 곳(맨 위 html · `js/` 의 js)을 찾아, 그곳 번호가 안 올라갔을 때만 그 이름을 대고 알린다. 알림이 이름 댄 곳만 올린다.
+  번호 없이 import 하는 파일(표 셋째 줄)은 조용하다. 전에는 "css/js 아무거나 바뀜 = index.html 올려라" 로만 봐서
+  헛알림이 떴다(2026-10-16 `sheet-render.js`, 2026-10-18 `handoff.js`, 2026-10-28 `sheet-page.js`). 시험 `tools/sije_web/tests/test_cache_reminder.py`.
 
 **같은 교훈이 작업 노트에 세 번 적혔는데도 또 빠졌다.** 그래서 규칙을 더 크게
 적는 대신 저장 단계에 자동 점검으로 붙였다. 반복해서 빠지는 수동 단계는
@@ -365,6 +365,7 @@ printf '푸드벨.kr   '; curl -s -o /dev/null -w "%{http_code} -> %{redirect_ur
 | `저장전점검.py --notpushed` | 지난번 저장이 GitHub 까지 갔는지 |
 | `사진용량줄이기.py` | 사진 일괄 축소 (이 PC 에 ImageMagick 이 없다 — Pillow 를 쓴다) |
 | `휴대폰캡처.py` | 사이트 + 서류 5종을 390px 로 찍고 폭·넘침 확인 (2절). Playwright 필요 |
+| `PC점검.py` | 이 PC 점검 (8절). 읽기만, 1분쯤. **`python -X utf8` 로 부른다**(한글 출력). `--tests` 면 시험 전체(15분쯤)도 — 서류 시험을 따로 돌리는 중에는 붙이지 않는다(같은 시험 프로젝트를 쓴다) |
 
 **`저장전점검.py` 의 옵션은 한 번에 하나만 먹는다.** `main()` 이 첫 옵션에서 곧바로
 `return` 하므로, 세 개를 묶어 주면 **첫 것만 돌고 나머지는 조용히 건너뛴 채
@@ -565,6 +566,11 @@ git 은 한글 파일 이름을 `"\354\213\234..."` 로 바꿔 내보내 `if exi
 
 ## 8. "이 PC 점검해줘" — 세 PC 공통 순서
 
+**먼저 `python -X utf8 PC점검.py` 를 돌린다** (2026-10-28) — 아래 두 표에 더해 `C:\dev` 의 다른 저장소 · 전역 규칙 · 기억 연결 ·
+스킬 원본 세 곳 · MCP · 플러그인(설치 목록에 없는 것까지) · 파이썬 부품 · 스마트 앱 컨트롤 · 열쇠 · gws · 바탕화면 아이콘 ·
+사이트 배포 대조(저장본 = 서버) · 보안 규칙 · (사무실) PDF = 행사까지 1분에 본다. 손으로 목록을 다시 짜지 않는다 — 일곱 번 그랬다(기록장 #40).
+'확인' · '문제' 줄만 사장님께 풀어서 알린다. 아래 표는 도구가 무엇을 보는지의 설명으로 남긴다.
+
 `c:\galleypark` 에서 위에서부터 차례로 본다. 한글 컴퓨터 이름 때문에 1번은 PowerShell 로 본다.
 
 | # | 볼 것 | 명령 | 정상 |
@@ -573,7 +579,7 @@ git 은 한글 파일 이름을 `"\354\213\234..."` 로 바꿔 내보내 `if exi
 | 2 | 최신인가 | `git fetch -q; git status -sb` 첫 줄 | `ahead`·`behind` 없음 |
 | 3 | 자동 저장 훅 | `~/.claude/settings.json` 에 `git-auto-sync` · `.claude/hooks/auto-save.sh` 있음 | 둘 다 있음 |
 | 4 | 스킬 설치본 = 저장소 | 아래 bash 줄 | 전부 "같음" (다르면 `스킬설치.bat`) |
-| 5 | 시험 도구 | `python -c "import playwright"` | 오류 없음 |
+| 5 | 시험 도구 | `python -X utf8 -c "import playwright, pytest, firebase_admin, fitz, pandas; from google.cloud import firestore"` | 오류 없음 — playwright 하나만 보면 스마트 앱 컨트롤이 grpc · PyMuPDF 를 막아도 통과로 나온다(기록장 #76) |
 | 6 | 사이트 | `curl.exe -s -o NUL -w "%{http_code}" https://foodbell.kr/` | `200` |
 
 ```bash
@@ -586,7 +592,7 @@ for s in .claude/skills/*/; do n=$(basename "$s"); if [ ! -d "$HOME/.claude/skil
 |---|---|---|
 | 살아 있나 | `Get-Item "$env:LOCALAPPDATA\foodbell-sije\state-*.json" \| Select Name, LastWriteTime` | **5분 안쪽**이면 살아 있다 |
 | 언제 켜졌나 | `Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" \| ? CommandLine -like '*office_agent*' \| Select ProcessId, CreationDate` | 아래 줄보다 **나중**이어야 새 코드 |
-| 코드가 언제 바뀌었나 | `git log -1 --format=%ci -- tools/sije_web` | 위보다 늦으면 **옛 코드가 돌고 있다** → 예약 작업 껐다 켜기 |
+| 코드가 언제 바뀌었나 | 그 프로그램이 부르는 파일(`office_agent.py` 의 `from tools.sije_web …` 줄)을 **고친 시각** | 위보다 늦으면 **옛 코드가 돌고 있다** → 예약 작업 껐다 켜기. 저장(커밋) 시각으로 재지 않는다 — 자동 저장은 답이 끝날 때 커밋해서, 고친 뒤 · 답 끝나기 전에 다시 켜면 늘 '옛 코드'로 잘못 나온다(2026-10-23 · 10-28) |
 
 - **작업 스케줄러의 "실행 중" · 결과 `267009` 는 멈춘 게 아니다.** 로그인 때 켜져서 안에서
   계속 도는 설계라 늘 이렇게 보인다. 살아 있는지는 상태 파일 시각으로만 판단한다 —
