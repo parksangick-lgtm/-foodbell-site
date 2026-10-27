@@ -25,7 +25,7 @@ def event_id(test_db):
 def _open(browser, repo_url, token, event_id, **ctx_opts):
     ctx = browser.new_context(**ctx_opts)
     pg = ctx.new_page()
-    pg.goto(f'{repo_url}sije-sheet.html?id={event_id}&testToken={token}')
+    pg.goto(f'{repo_url}sije-sheet.html?id={event_id}&testToken={token}', wait_until='domcontentloaded')   # 'load' 는 바깥 글꼴까지 기다린다 (기록장 #61)
     pg.locator('#sheet td[data-path="items.L01.qty"]').wait_for(timeout=20_000)
     return ctx, pg
 

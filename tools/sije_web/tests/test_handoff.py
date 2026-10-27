@@ -197,7 +197,8 @@ def event_id(test_db, made_events):
 
 
 def open_sheet(pc, repo_url, custom_token, ev_id):
-    pc.goto(f'{repo_url}sije-sheet.html?id={ev_id}&testToken={custom_token(ALLOWED, allowed=True)}')
+    pc.goto(f'{repo_url}sije-sheet.html?id={ev_id}&testToken={custom_token(ALLOWED, allowed=True)}',
+            wait_until='domcontentloaded')                     # 'load' 는 바깥 글꼴까지 기다린다 (기록장 #61)
     pc.locator('#sheet td[data-path="items.L01.qty"]').wait_for(timeout=20_000)
 
 
@@ -286,8 +287,11 @@ def test_back_does_not_create_twice(pc, repo_url, custom_token, test_db, made):
 
 
 def test_sheet_just_edited_amount_goes_to_statement(pc, repo_url, custom_token, test_db, made, event_id):
-    """3단계 검토 I2 — 금액 칸을 고치자마자(칸을 떠나기 전에) 버튼을 눌러도 고친 금액으로 거래명세서를 만든다."""
+    """3단계 검토 I2 — 금액 칸을 고치자마자(칸을 떠나기 전에) 버튼을 눌러도 고친 금액으로 거래명세서를 만든다.
+    내역서에도 고친 금액이 남는다 — 저장을 기다리지 않고 넘어가서, 휴대폰이 바쁘면 내역서의 고친 금액이 사라졌다
+    (2026-10-28 — 시험을 한꺼번에 돌릴 때만 가끔 실패해 헛실패로 보였다. 느린 휴대폰처럼 만들면 매번 실패)."""
     open_sheet(pc, repo_url, custom_token, event_id)
+    pc.context.new_cdp_session(pc).send('Emulation.setCPUThrottlingRate', {'rate': 6})   # 느린 휴대폰처럼
     pc.once('dialog', lambda d: d.accept())
     pc.evaluate("""() => {
         const c = document.querySelector('#sheet [data-path="amount"]');

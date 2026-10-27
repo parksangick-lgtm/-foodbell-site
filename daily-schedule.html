@@ -301,6 +301,7 @@ body.editing table.stmt.day-table td.meet.folded > :not(.btn-open){display:none 
 body.editing table.stmt.day-table [data-f="time"][data-ampm]::after{content:" 오전? 오후?"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
 @media print{ body.editing table.stmt.day-table [data-f="time"][data-ampm]::after{content:none} }
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
+table.stmt.day-table td.crew{word-break:keep-all}   /* 담당 직원 이름은 이름 사이(' · ')에서만 줄바꿈 — 인쇄에서 '가짜 / 사' 처럼 이름이 갈렸다 (2026-10-28) */
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
 table.stmt.day-table .amt:empty{display:none}
 /* 단위 없는 단가('250') 알림 — 화면에서만 보이고 직원 사진(카드 — rowsData 가 뺀다) · 인쇄에는 안 나간다 (2026-10-21) */

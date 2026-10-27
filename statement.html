@@ -95,6 +95,7 @@ section + section{margin-top:34px}
 .prow dd{margin:0; padding:8px 12px; font-size:15.5px; color:var(--ink); display:flex; align-items:center; flex-wrap:wrap; gap:4px; min-height:42px}
 .prow .regno{font-weight:var(--w-bold); font-variant-numeric:tabular-nums; letter-spacing:.02em}
 .prow .honor{color:var(--ink-mute); font-size:14.5px}
+.prow .addr-tail{white-space:nowrap}   /* 길 이름과 번지는 한 줄로 — 사진(폭 800)에서 '…34길 / 31' 로 갈렸다 (2026-10-28) */
 body.editing .prow dd > span[data-edit]{flex:1}   /* 편집할 때 입력 칸을 줄 끝까지 넓게 */
 /* 도장 — (인) 위에 겹쳐 찍는다. html2canvas 가 퍼센트 translate 를 잘못 옮겨서 margin 으로 가운데를 잡는다 */
 .in{position:relative; display:inline-block; margin-left:auto; margin-right:12px; color:var(--ink-mute); font-size:14.5px}
@@ -327,7 +328,7 @@ body:not(.editing) tr.addrow{display:none !important}
           <div class="prow"><dt>대표</dt><dd>박상익<span class="in">(인)<img class="stamp" src="images/stamp.png" alt="박상익출장음식 도장" width="56" height="56"></span></dd></div>
           <div class="prow"><dt>업태</dt><dd>음식점업</dd></div>
           <div class="prow"><dt>종목</dt><dd>출장음식</dd></div>
-          <div class="prow"><dt>주소</dt><dd>서울특별시 송파구 올림픽로34길 31</dd></div>
+          <div class="prow"><dt>주소</dt><dd>서울특별시 송파구 <span class="addr-tail">올림픽로34길 31</span></dd></div>
           <div class="prow"><dt>전화</dt><dd>010-5353-3477</dd></div>
         </dl>
       </div>

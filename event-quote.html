@@ -67,6 +67,7 @@ body{
 .brand-perhead{font-size:14.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
 .brand-perhead .lab{color:var(--ink-mute); margin-right:3px}
 .brand-perhead:has([data-k="perhead"]:empty) .won{display:none}
+body:not(.editing) .brand-perhead:has([data-k="perhead"]:empty){display:none}   /* 금액이 비면 '1인당' 글자도 — 사진 · 인쇄에 '1인당' 만 남았다 (2026-10-28) */
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
 .brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
 .brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}

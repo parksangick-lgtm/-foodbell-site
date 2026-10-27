@@ -4,7 +4,7 @@ import { itemsBySide, newViewKey, viewLinkText } from './model.js';
 import { NOTES_KEY, putBundle, eventToStatement } from '../docs/handoff.js';
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
-  initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages,
+  initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,
 } from './store.js';
 
 const $ = (id) => document.getElementById(id);
@@ -50,6 +50,7 @@ function trackCache(fromCache) {
   if (fromCache) setTimeout(saveState, 2100);
 }
 
+let saving = null;   // 마지막으로 보낸 저장 — '거래명세서 만들기' 가 다른 화면으로 넘어가기 전에 기다린다
 function save(path, value) {
   const m = /^contacts\.(\d+)$/.exec(path);
   if (m) {   // 연락처는 목록 통째로 (저장소는 목록의 한 칸만 고칠 수 없다)
@@ -60,7 +61,8 @@ function save(path, value) {
   }
   // 화면이 들고 있는 행사 값도 바로 고친다 — 저장소 알림은 따로 늦게 와서, 고치자마자 '거래명세서 만들기' 를 누르면 옛 값이 넘어갔다 (3단계 검토 I2)
   if (!path.includes('.')) ev = { ...ev, [path]: value };
-  updateField(id, path, value).catch((e) => toast(`저장하지 못했습니다 (${e.code || e.message})`));
+  saving = updateField(id, path, value);
+  saving.catch((e) => toast(`저장하지 못했습니다 (${e.code || e.message})`));
 }
 
 // 인쇄 배율은 미리 재 두고, 화면은 원래 크기로 둔다 (인쇄 때만 @media print 가 이 배율을 쓴다)
@@ -154,9 +156,11 @@ for (const b of document.querySelectorAll('[data-set-status]')) {
 }
 $('print').addEventListener('click', () => { measurePrint(); print(); });
 // 3단계 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 (꾸러미는 같은 탭 sessionStorage, 주소엔 안 실음)
-$('make-statement').addEventListener('click', () => {
+$('make-statement').addEventListener('click', async () => {
   if (!ev || !confirm('이 내역서 내용으로 새 거래명세서를 만들까요?')) return;
   flush();
+  // 저장을 기다리지 않고 넘어가면 휴대폰이 바쁠 때 고친 칸이 내역서에서 사라졌다 (2026-10-28) — 서류 화면처럼 3초까지만 기다린다
+  if (saving && navigator.onLine) await atMost(saving.catch(() => {}));   // 저장이 실패해도(알림은 이미 뜸) 버튼은 막히지 않게
   putBundle(sessionStorage, 'statement', eventToStatement(ev), Date.now());
   location.href = 'statement.html?make=1';
 });

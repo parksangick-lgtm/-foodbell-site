@@ -93,13 +93,15 @@ def wait_view(page, name, timeout=20_000):
     page.wait_for_function(f'document.body.dataset.docView === {name!r}', timeout=timeout)
 
 
+# 화면 틀(domcontentloaded)까지만 기다리고 나머지는 화면 준비 신호(wait_view)로 — 'load' 는 바깥 글꼴 · cdnjs 까지 기다려서
+# 그쪽이 늦으면 화면은 멀쩡한데 30초 시간 초과로 실패했다 (노트북 10-24 · 사무실 10-27, 기록장 #61)
 def open_list(page, repo_url, file, token):
-    page.goto(f'{repo_url}{file}?testToken={token}')
+    page.goto(f'{repo_url}{file}?testToken={token}', wait_until='domcontentloaded')
     wait_view(page, 'list')
 
 
 def open_doc(page, repo_url, file, doc_id, token=None):
-    page.goto(f'{repo_url}{file}?id={doc_id}' + (f'&testToken={token}' if token else ''))
+    page.goto(f'{repo_url}{file}?id={doc_id}' + (f'&testToken={token}' if token else ''), wait_until='domcontentloaded')
     wait_view(page, 'doc')
 
 
@@ -1746,3 +1748,78 @@ def test_daily_new_asks_when_same_date_exists(pc, repo_url, custom_token, test_d
     made.append(third)
     assert third not in (first, second) and len(asked) == 1        # 확인 → 그래도 새로 만든다
     wait_db(test_db.collection('docs').document(third), lambda s: s.exists)
+
+
+# ---------- 10-28 종합 점검 — 10-26 최종 점검에서 찾고 남겨 둔 작은 결함 4개 ----------
+
+def pdf_words(page):
+    """A4 로 인쇄(PDF)한 글자를 낱말(띄어쓰기 · 줄바꿈 단위)로. 한 낱말이 두 줄로 갈리면 두 낱말로 나온다."""
+    import fitz
+    page.evaluate('document.fonts.ready.then(() => 1)')        # 사람이 누르는 인쇄처럼 글꼴을 다 받은 뒤 — 대신 글꼴이면 글자 폭이 달라 줄바꿈도 다르다
+    data = page.pdf(format='A4', print_background=True, prefer_css_page_size=True)
+    with fitz.open(stream=data, filetype='pdf') as doc:
+        return [w[4] for p in doc for w in p.get_text('words')]
+
+
+def in_photo(page, fn):
+    """'파일로 저장' 사진을 그리는 사본(html2canvas)에서 fn(사본 문서) 의 결과 — 사진에 찍히는 배치 그대로 잰다."""
+    page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
+    page.evaluate("""(src) => { window.__probe = undefined; const fn = new Function('return ' + src)(); const o = window.html2canvas;
+        window.html2canvas = (el, opt) => o(el, { ...opt, onclone: async (d, ref) => { if (opt.onclone) await opt.onclone(d, ref);
+            window.__probe = fn(d); } }); }""", fn)
+    page.once('dialog', lambda d: d.accept())                  # 금액이 비어 있어도 저장
+    with page.expect_download(timeout=60_000):
+        page.click('#btn-save-file')
+    return page.evaluate('window.__probe')
+
+
+def test_daily_print_keeps_each_staff_name_whole(pc, repo_url, custom_token, made):
+    """인쇄에서 담당 직원 이름이 글자 중간에서 줄바꿈되지 않는다 — 노트북 인쇄에서 '가짜일 · 가짜 / 이' 처럼 갈렸다.
+    인쇄 때 이 칸은 104px 쯤이라 두 명이면 PC(글꼴 폭)에 따라 경계에 걸린다 — 네 명으로 어느 PC 에서나 줄이 바뀌게 한다.
+    이름 사이(' · ')에서는 줄을 바꿔도 된다."""
+    names = ['가짜일', '가짜이', '가짜삼', '가짜사']
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-f="staff"]', ' · '.join(names))
+    pc.click('#btn-edit')
+    words = pdf_words(pc)
+    assert all(n in words for n in names), ' '.join(w for w in words if w[:1] == '가' or w in ('짜', '일', '이', '삼', '사', '짜일', '짜이', '짜삼', '짜사'))
+
+
+def test_event_quote_hides_lone_perhead_label(pc, repo_url, custom_token, made):
+    """1인당 금액이 비면 '1인당' 글자도 안 보인다 — 사진 · 인쇄에 '1인당' 만 덩그러니 남았다.
+    금액을 넣으면 그대로 보인다 (대조)."""
+    open_list(pc, repo_url, 'event-quote.html', custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    assert pc.locator('.brand-perhead').is_hidden()
+    assert in_photo(pc, "(d) => d.querySelector('.brand-perhead').getClientRects().length > 0") is False
+    assert '1인당' not in pdf_words(pc)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="perhead"]', '30000')
+    pc.click('#btn-edit')
+    assert pc.locator('.brand-perhead').is_visible()
+    assert '1인당' in pdf_words(pc)
+
+
+def test_sije_quote_qty_unit_written_together(pc, repo_url, custom_token, made):
+    """수량 단위는 붙여 쓴다 — 한 견적서에 '1식' 과 '1 식' 이 섞여 있었다."""
+    open_list(pc, repo_url, QUOTE['file'], custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    qty = pc.eval_on_selector_all('tr.item td.n', 'es => es.map((e) => e.textContent.trim())')
+    assert [q for q in qty if re.search(r'\d\s+식', q)] == [], qty
+    assert qty.count('1식') == 3, qty
+
+
+def test_statement_photo_keeps_address_number_with_street(pc, repo_url, custom_token, made):
+    """사진(폭 800)에서 공급자 주소의 번지 '31' 이 '올림픽로34길' 과 한 줄에 — '…34길 / 31' 로 갈렸다."""
+    open_list(pc, repo_url, 'statement.html', custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    tops = in_photo(pc, """(d) => { const dd = [...d.querySelectorAll('.prow dd')].find((e) => e.textContent.includes('34길'));
+        const w = d.createTreeWalker(dd, 4); const out = []; let n;
+        while ((n = w.nextNode())) for (let i = 0; i < n.length; i++) { const r = d.createRange(); r.setStart(n, i); r.setEnd(n, i + 1);
+            const rc = r.getClientRects()[0]; out.push([n.data[i], rc ? Math.round(rc.top) : null]); }
+        return out; }""")
+    text = ''.join(c for c, _ in tops)
+    i = text.index('34길') + 2
+    j = text.index('31', i)
+    assert tops[i][1] == tops[j][1] == tops[j + 1][1], (text, [t for _, t in tops])

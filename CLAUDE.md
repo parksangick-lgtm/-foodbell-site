@@ -30,6 +30,11 @@
   `cache-reminder.sh` 가 "css/js 를 고쳤는데 `?v=` 를 안 올렸다"고, `index-guard.sh` 가 "`index.html` 에서 검색 확인 태그·사업자 정보가
   빠졌다 / 가격이 들어갔다"고 클로드에게 알린다. 기준은 마지막 저장본이라, 일부러 바꾼 것은 저장되면 경고가 멈춘다.
   **고친 뒤에 알리는 것이라 그 답 안에서 안 고치면 자동 저장이 그대로 올린다.**
+  캐시 번호 알림은 2026-10-28 부터 고친 파일을 `?v=` 로 부르는 곳(맨 위 html · js/ 의 js)을 찾아 **그곳 번호가 안 올라갔을 때만** 알린다
+  (판단은 `cache-reminder.py`, 시험 `tools/sije_web/tests/test_cache_reminder.py`). 번호 없이 import 하는 파일은 조용하다.
+- **이 PC 점검**(2026-10-28): "이 PC 점검해줘" 라고 하면 클로드가 `python -X utf8 PC점검.py` 를 돌린다(읽기만, 1분쯤) — 저장소 전부 · 훅 ·
+  전역 규칙 · 기억 연결 · 스킬 · MCP · 플러그인 · 파이썬 부품 · 스마트 앱 컨트롤 · 열쇠 · gws · 바탕화면 아이콘 · 사이트 주소와 배포 대조 ·
+  (사무실 PC) PDF 프로그램 · n8n · 백업 · PDF = 행사 · 보안 규칙. `--tests` 를 붙이면 시험 전체(15분쯤)도. 결과는 정상 · 확인 · 문제로.
 - **문구 검토 담당**(`.claude/agents/content-reviewer.md`): "내용 검토해줘" 라고 하면 새 문구의 가격·지어낸 사실·한자·개인정보를 따로 본다. 부를 때만 돈다.
 - 새 컴퓨터에서는 `바탕화면-바로가기.bat` 을 더블클릭하면 두 아이콘이 생긴다.
 
@@ -137,7 +142,7 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
      **클로드가 로그인 창을 대신 열면 자동 안전 장치가 막는다** — 클로드는 명령 창을 띄우고 명령을 복사해 두기까지만 하고, 클릭은 사장님이 한다.
      옛날식 파란 파워셸 창은 Ctrl+클릭이 안 된다 — 클로드가 화면에 나온 주소를 클립보드에 넣고, 사장님이 크롬 주소창에 붙여넣는다(노트북, 10-19).
 - **로그인은 이제 저절로 유지된다** — "테스트 중"이던 10-18 까지는 7일마다 풀렸고, 10-19 프로덕션으로 게시한 뒤 다시 로그인했다.
-  구글 안내상 6개월 안 쓰거나 사장님이 직접 끊으면 풀린다 → 그때 같은 명령을 다시. **10-26 이후에도 안 풀렸는지 한 번 확인할 것**(아직 확인 전).
+  구글 안내상 6개월 안 쓰거나 사장님이 직접 끊으면 풀린다 → 그때 같은 명령을 다시. **10-28 사무실에서 확인 — 9일째 유지(드라이브 읽기 성공).**
   "테스트로 돌아가기" 를 누르면 다시 7일마다 풀린다.
 - 확인: `gws auth status`, `gws drive files list --params '{"pageSize": 3}' --format table`
 - 캘린더 자동 맞추기("푸드벨 행사")는 gws 가 아니라 서버용 계정으로 돈다(아래 파일 목록 `tools/sije_web/` 줄) — gws 로그인이 풀려도 캘린더는 계속 맞춰진다.
@@ -258,7 +263,8 @@ css/sije-sheet.css · js/sije/   내역서 A4 모양(지금 엑셀 색 그대로
 firestore.rules · firebase.json · .firebaserc   저장소 보안 규칙 — 허락 목록(allow)에 있는 구글 메일만. 메일 주소는 규칙 파일에 쓰지 않는다.
                       올리기: npx firebase-tools@15.34.0 deploy --only firestore:rules --project test (실제는 default)
 vercel.json           /__/ → foodbell-sije.firebaseapp.com (구글 로그인 창이 foodbell.kr 주소로 열리게). 다른 설정은 넣지 않는다.
-tools/sije_web/       옮기기 · PDF · 백업 · 허락 목록 파이썬 프로그램과 시험(pytest, node --test). 관리자 열쇠는 C:\foodbell-keys\
+tools/sije_web/       옮기기 · PDF · 백업 · 허락 목록 파이썬 프로그램과 시험 — 파이썬 `python -X utf8 -m pytest tools/sije_web/tests -q`,
+                      JS `node --test tools/sije_web/js-tests/*.test.mjs`(폴더 이름만 주면 0개 돌고 '실패 1' 로 나온다, 2026-10-28). 관리자 열쇠는 C:\foodbell-keys\
                       (원드라이브 · 저장소 밖). 노트북 백신(Avast)이 보안 연결을 검사해서 fsdb.py 가 윈도우 인증서를 합쳐 쓴다.
                       2026-10-17 갈아탐 — 시제행사 내역서의 원본은 이제 웹이다(엑셀은 옮기기 전 보관본). 사무실 PC 작업 스케줄러
                       "푸드벨 시제 PDF" 가 5분마다 휴대폰용 PDF, 하루 한 번 백업 엑셀. 옮기기(migrate --write)는 다시 돌리지 않는다 — 웹에서 고친 것이 지워진다.
