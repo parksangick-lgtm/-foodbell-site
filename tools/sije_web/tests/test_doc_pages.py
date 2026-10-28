@@ -1495,21 +1495,16 @@ def test_daily_funeral_cells_fold_until_opened(pc, repo_url, custom_token, test_
     assert 'folded' not in html and 'btn-open' not in html
 
 
-def test_daily_time_without_ampm_gets_hint(pc, repo_url, custom_token, test_db, made):
-    """'11시20분' 은 편집 중 '오전? 오후?' 가 붙고, '오후 1시' · '13:30' 은 안 붙는다. 보기 · 저장 HTML 에는 없다."""
+def test_daily_time_has_no_ampm_hint(pc, repo_url, custom_token, test_db, made):
+    """'11시20분' 처럼 오전 · 오후가 없어도 편집 중 '오전? 오후?' 를 붙이지 않는다 (사장님 2026-10-28 — 10-24 에 넣은 물음을 뺌)."""
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
     t = pc.locator('tr.item [data-f="time"]')
     edit_cell(pc, 'tr.item [data-f="time"]', '11시20분')
-    assert t.get_attribute('data-ampm') is not None
-    assert '오전? 오후?' in pc.evaluate("""getComputedStyle(document.querySelector('tr.item [data-f="time"]'), '::after').content""")
-    for v in ('오후 1시', '13:30'):
-        edit_cell(pc, 'tr.item [data-f="time"]', v)
-        assert t.get_attribute('data-ampm') is None, v
-    edit_cell(pc, 'tr.item [data-f="time"]', '12시')
+    assert t.get_attribute('data-ampm') is None
+    assert '오전? 오후?' not in pc.evaluate("""getComputedStyle(document.querySelector('tr.item [data-f="time"]'), '::after').content""")
     pc.click('#btn-edit')
-    assert '오전? 오후?' not in pc.locator('.sheet').inner_text()
-    html = wait_db(test_db.collection('docs').document(doc_id), lambda s: '12시' in (s.to_dict() or {}).get('html', '')).to_dict()['html']
+    html = wait_db(test_db.collection('docs').document(doc_id), lambda s: '11시20분' in (s.to_dict() or {}).get('html', '')).to_dict()['html']
     assert 'data-ampm' not in html
 
 

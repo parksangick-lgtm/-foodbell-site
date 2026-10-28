@@ -297,9 +297,6 @@ body:not(.editing) table.stmt.day-table .maplink{display:none}
 @media print{ table.stmt.day-table .maplink{display:none} }
 /* 장례 칸 접기 — 편집 중 여섯 칸(상조팀장 · 팀장 전화 · 안내 · 장례식장 · 발인 · 화장)이 다 비면 '장례 칸 펼치기' 단추만 (2026-10-24 검토 반영) */
 body.editing table.stmt.day-table td.meet.folded > :not(.btn-open){display:none !important}
-/* 시간에 오전 · 오후가 없으면 편집 중에만 묻는다 — 사진 · 직원 화면 · 저장에는 없다 (2026-10-24 검토 반영) */
-body.editing table.stmt.day-table [data-f="time"][data-ampm]::after{content:" 오전? 오후?"; color:var(--ink-mute); font-size:.85em; font-weight:var(--w-normal)}
-@media print{ body.editing table.stmt.day-table [data-f="time"][data-ampm]::after{content:none} }
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
 table.stmt.day-table td.crew{word-break:keep-all}   /* 담당 직원 이름은 이름 사이(' · ')에서만 줄바꿈 — 인쇄에서 '가짜 / 사' 처럼 이름이 갈렸다 (2026-10-28) */
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
@@ -468,7 +465,6 @@ import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
 import { parseOrder } from './js/docs/order-text.js?v=4';
-import { needsAmPm } from './js/docs/time-hint.js?v=1';
 import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W, SHOT_H } from './js/docs/cards.js?v=2';
 
 const SITE = 'https://foodbell.kr/';
@@ -602,7 +598,6 @@ function serialize() {
   const c = sheet.cloneNode(true);
   each(c.querySelectorAll('.rowctl, tr.addrow, .btn-open'), (n) => n.remove());
   each(c.querySelectorAll('td.meet.folded'), (n) => n.classList.remove('folded'));
-  each(c.querySelectorAll('[data-ampm]'), (n) => n.removeAttribute('data-ampm'));
   each(c.querySelectorAll('.day-stats'), (n) => { n.textContent = ''; });   // 사장님 한 줄은 그릴 때마다 계산 — 저장 HTML 에는 없다
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
@@ -641,7 +636,6 @@ function addControls() {
 function removeControls() {
   each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove());
   each(sheet.querySelectorAll('td.meet'), unfoldMeet);
-  each(sheet.querySelectorAll('[data-ampm]'), (n) => n.removeAttribute('data-ampm'));
 }
 /* 장례 칸 접기 (2026-10-24 검토 반영) — 편집을 시작할 때와 줄을 새로 더할 때만 접는다. 펼친 줄은 그 편집 동안 펼쳐진 채로 둔다.
    하나라도 적혀 있으면(문자 붙여넣기로 채워진 것 포함) 펼친다. 접힘 표시 · 단추는 저장 HTML 에 넣지 않는다 */
@@ -655,8 +649,6 @@ function foldMeet(tr) {
   td.classList.add('folded');
   if (!td.querySelector('.btn-open')) { const b = el('button', 'btn-mini btn-open', '장례 칸 펼치기'); b.type = 'button'; td.appendChild(b); }
 }
-/* 시간 칸 — 오전 · 오후가 없으면 편집 중에만 '오전? 오후?' (js/docs/time-hint.js) */
-function hintAmPm(t) { if (needsAmPm(t.textContent)) t.setAttribute('data-ampm', ''); else t.removeAttribute('data-ampm'); }
 function setCE(on) { each(sheet.querySelectorAll('[data-edit]'), (e) => { e.contentEditable = on ? 'true' : 'false'; }); }
 /* 전화번호 칸: 보기에서만 번호마다 한 덩어리(.tel1)로 묶어 번호 사이에서만 줄이 바뀌게 — 크롬은 하이픈 뒤에서도 끊는다.
    그 덩어리는 누르면 전화가 걸리는 링크(사장님 2026-10-21 저녁). 편집 · 저장은 글자 그대로 (최종 검토 I4) */
@@ -708,7 +700,6 @@ function setEditing(on) {
   if (on) {
     telsPlain(sheet); placesPlain(sheet); addControls(); setCE(true);
     each(sheet.querySelectorAll('tr.item'), foldMeet);
-    each(sheet.querySelectorAll('[data-f="time"]'), hintAmPm);
   } else { removeControls(); setCE(false); telsWrapped(); placesLinked(); save(); }
 }
 
@@ -716,7 +707,6 @@ function setEditing(on) {
 sheet.addEventListener('input', (e) => {
   const t = e.target.closest?.('[data-edit]');
   if (!t) return;
-  if (t.matches('[data-f="time"]')) hintAmPm(t);
   recalc();
   save();
 });
@@ -784,7 +774,6 @@ function pasteOrder(tr, text) {
   const m = tr.querySelector('[data-f="memo"]');
   if (m && o.memo) m.textContent = [m.textContent.trim(), o.memo].filter(Boolean).join('\n');
   foldMeet(tr);                                   // 발인 · 화장이 채워졌으면 접힌 장례 칸을 편다
-  const t = tr.querySelector('[data-f="time"]'); if (t) hintAmPm(t);
   recalc(); save();
 }
 document.getElementById('paste-ok').addEventListener('click', () => {
