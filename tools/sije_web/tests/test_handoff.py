@@ -241,6 +241,46 @@ def test_sheet_bad_amount_notes_amount(pc, repo_url, custom_token, test_db, made
     assert doc['total'] == ''
 
 
+QUOTE_DONE = '**/sije-quote.html?id=*'
+BRIEF = r"""ds => ds.map((d) => d.textContent.replace(/\s+/g, ' ').trim())"""
+
+
+def test_sheet_to_quote(pc, repo_url, custom_token, test_db, made, event_id):
+    """내역서 → 시제 견적서: 수신 · 봉행 일시 · 장소 · 상차림 · 공급가액이 채워진 새 견적서 (사장님 2026-10-28)."""
+    eref = test_db.collection('events').document(event_id)
+    before = eref.get().to_dict()
+    open_sheet(pc, repo_url, custom_token, event_id)
+    asked = answer_next(pc)
+    pc.click('#make-quote')
+    pc.wait_for_url(QUOTE_DONE, timeout=20_000)
+    wait_view(pc, 'doc')
+    assert asked == ['이 내역서 내용으로 새 견적서를 만들까요?']
+    doc = wait_db(test_db.collection('docs').document(opened_doc_id(pc, made)), lambda s: s.exists).to_dict()
+    assert doc['kind'] == 'sije-quote' and doc['label'] == '가짜 문중'
+    dd = pc.eval_on_selector_all('.brief-row dd', BRIEF)
+    assert dd[0] == '가짜 문중 귀중'
+    assert dd[2:] == ['2026년 11월 13일 (금) 10시', '가짜동 1-1 놀이터 위', '7치 1상']
+    assert pc.locator('[data-k="supply"]').inner_text() == '600,000'
+    assert pc.locator('[data-k="total"]').inner_text() == '660,000'           # 600,000 + 부가세 10%
+    time.sleep(1)
+    assert eref.get().to_dict() == before                                     # 내역서 그대로
+
+
+def test_sheet_to_quote_blank_fields_note(pc, repo_url, custom_token, test_db, made, event_id):
+    """고객 · 날짜 · 금액을 못 읽으면 비워 두고 알린다 — 견적서 예시 글('○○ 김씨 문중…')이 손님에게 나가지 않게."""
+    test_db.collection('events').document(event_id).update({'customer': '', 'date': '', 'amount': '육십만원'})
+    open_sheet(pc, repo_url, custom_token, event_id)
+    answer_next(pc)
+    pc.click('#make-quote')
+    pc.wait_for_url(QUOTE_DONE, timeout=20_000)
+    wait_view(pc, 'doc')
+    pc.locator('.doc-toast', has_text='고객 이름을 읽지 못했습니다').wait_for(timeout=10_000)
+    opened_doc_id(pc, made)
+    dd = pc.eval_on_selector_all('.brief-row dd', BRIEF)
+    assert dd[0] == '귀중' and dd[2] == ''
+    assert pc.locator('[data-k="supply"]').inner_text() == ''
+
+
 def test_print_hides_make_row(pc, repo_url, custom_token, made, event_id):
     open_sheet(pc, repo_url, custom_token, event_id)
     assert pc.locator('#make-statement').is_visible()

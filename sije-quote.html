@@ -934,6 +934,19 @@ body:not(.editing) .tier-switch{display:none !important}
       return { customer: custName(), when: t(2), place: t(3), setting: t(4),
                supply: raw(sheet.querySelector('[data-k="supply"]')), tier: tier ? tier.textContent.trim() : "" };
     },
+    /* 내역서에서 넘어온 칸 (사장님 2026-10-28) — 빈 값은 비워 둔다: 예시 글('○○ 김씨 문중…')이 손님에게 나가지 않게.
+       품목 수량은 안 옮긴다 — 상 종류 단추로 채운다 */
+    prefill: function (f) {
+      var dd = sheet.querySelectorAll(".brief-row dd");
+      var cust = dd[0] && dd[0].querySelector("[data-edit]");
+      if (cust) cust.textContent = f.customer || "";
+      if (dd[2]) dd[2].textContent = f.when || "";
+      if (dd[3]) dd[3].textContent = f.place || "";
+      if (dd[4]) dd[4].textContent = f.setting || "";
+      var s = sheet.querySelector('[data-k="supply"]');
+      if (s) { s.textContent = f.supply ? fmt(f.supply) : ""; s.setAttribute("data-raw", String(f.supply || 0)); }
+      recalc();
+    },
     editing: function () { return body.classList.contains("editing"); },
     onSave: null
   };
@@ -945,7 +958,7 @@ body:not(.editing) .tier-switch{display:none !important}
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=8"></script>
+<script type="module" src="js/docs/doc-page.js?v=9"></script>
 
 </body>
 </html>

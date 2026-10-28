@@ -1,5 +1,6 @@
 // 서류 잇기 (3단계) — 칸 글자 읽기 · 넘길 꾸러미 만들기 · 꾸러미 주고받기. 저장소에 붙지 않는다.
 // 꾸러미는 같은 탭의 sessionStorage 에 잠깐 둔다 — 손님 이름 · 금액을 주소(URL)에 싣지 않으려고(주소는 방문 · 서버 기록에 남는다).
+import { formatDateText } from '../sije/model.js';
 
 const KEY = 'foodbell-handoff';
 export const NOTES_KEY = 'foodbell-handoff-notes';   // 새 서류 화면에 한 번 보여 줄 알림 (못 읽은 날짜 · 금액)
@@ -81,6 +82,24 @@ export function eventToStatement(ev) {
   if (!ev.date) notes.push(NO_DATE);
   if (price === null) notes.push(NO_AMOUNT);
   return { fields: { cust: ev.customer || '', md: monthDay(ev.date), item: ev.setting || '', price }, notes };
+}
+
+// 내역서 → 시제 견적서 (사장님 2026-10-28). 품목 수량은 짝이 안 맞아 안 옮긴다 — 견적서의 상 종류 단추로 채운다.
+// 날짜 · 금액은 그대로 옮긴다(확정 행사 견적서 · 지난 행사로 올해 견적 둘 다 — 고칠 것은 사장님이 고친다)
+export function eventToQuote(ev) {
+  const customer = (ev.customer || '').trim();
+  const supply = parseAmount(ev.amount);
+  const notes = [];
+  if (!customer) notes.push('고객 이름을 읽지 못했습니다 — 직접 넣어 주세요');
+  if (!ev.date) notes.push(NO_DATE);
+  if (supply === null) notes.push(NO_AMOUNT);
+  return {
+    fields: {
+      customer, when: ev.date ? formatDateText(ev.date, ev.time) : '',
+      place: (ev.place || '').trim() || (ev.titlePlace || '').trim(), setting: ev.setting || '', supply,
+    },
+    notes,
+  };
 }
 
 export function putBundle(storage, to, built, now) {

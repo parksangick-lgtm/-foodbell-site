@@ -240,12 +240,14 @@ TOOLBAR_CHECK = """() => {
   t.hidden = false; t.textContent = '시험용 알림 글입니다';
   const to = t.getBoundingClientRect();
   const hit = document.elementFromPoint(mk.left + mk.width / 2, mk.bottom - 3);
+  const mq = document.getElementById('make-quote').getBoundingClientRect();
+  const hitQuote = document.elementFromPoint(mq.left + mq.width / 2, mq.bottom - 3);
   const btns = [...document.querySelectorAll('.toolbar button')].map((b) => {
     const r = document.createRange(); r.selectNodeContents(b);
     return { label: b.textContent, h: Math.round(b.getBoundingClientRect().height), lines: new Set([...r.getClientRects()].map((x) => Math.round(x.top))).size };
   });
   const rows = new Set([...document.querySelectorAll('.toolbar button')].map((b) => Math.round(b.getBoundingClientRect().top))).size;
-  return { mkBottom: mk.bottom, tbTop: tb.top, toastBottom: to.bottom, hitId: hit && hit.id, btns, rows };
+  return { mkBottom: mk.bottom, tbTop: tb.top, toastBottom: to.bottom, hitId: hit && hit.id, hitQuoteId: hitQuote && hitQuote.id, btns, rows };
 }"""
 
 
@@ -257,6 +259,7 @@ def test_phone_toolbar_does_not_cover_make_statement_or_toast(browser, repo_url,
         r = pg.evaluate(TOOLBAR_CHECK)
         assert r['mkBottom'] <= r['tbTop'], r                 # '거래명세서 만들기' 아래 끝이 단추줄 위
         assert r['hitId'] == 'make-statement', r              # 그 단추 아래쪽을 눌러도 다른 단추가 눌리지 않는다
+        assert r['hitQuoteId'] == 'make-quote', r             # 옆 '견적서 만들기'도 (알림이 떠 있어도, 2026-10-28)
         assert r['toastBottom'] <= r['tbTop'], r              # 알림이 단추줄을 덮지 않는다
         assert all(b['h'] >= 44 and b['lines'] == 1 for b in r['btns']), r   # 44px 이상, 글자가 두 줄로 접히지 않는다
     finally:

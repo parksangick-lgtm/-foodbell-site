@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseWhen, parseAmount, monthDay, wonText, pickTemplate,
-  quoteToEvent, quoteToStatement, eventToStatement, putBundle, takeBundle,
+  quoteToEvent, quoteToStatement, eventToStatement, eventToQuote, putBundle, takeBundle,
 } from '../../../js/docs/handoff.js';
 
 const NO_DATE = '날짜를 읽지 못했습니다 — 직접 넣어 주세요';
@@ -116,6 +116,21 @@ test('eventToStatement — 내역서 금액 글자에서 단가', () => {
   assert.equal(bad.fields.md, '');
   assert.equal(bad.fields.price, null);
   assert.deepEqual(bad.notes, [NO_DATE, NO_AMOUNT]);
+});
+
+test('eventToQuote — 내역서 → 시제 견적서 (수신 · 봉행 일시 · 장소 · 상차림 · 공급가액, 사장님 2026-10-28)', () => {
+  const ev = { customer: '가짜 문중', date: '2026-11-13', time: '10시', place: '가짜동 1-1 놀이터 위', titlePlace: '가짜동 1-1',
+    setting: '7치 1상', amount: '600,000원' };
+  assert.deepEqual(eventToQuote(ev), {
+    fields: { customer: '가짜 문중', when: '2026년 11월 13일 (금) 10시', place: '가짜동 1-1 놀이터 위', setting: '7치 1상', supply: 600000 },
+    notes: [],
+  });
+  assert.equal(eventToQuote({ ...ev, amount: '360만 VAT별도' }).fields.supply, 3600000);   // 실제 내역서 꼴
+  assert.equal(eventToQuote({ ...ev, time: '' }).fields.when, '2026년 11월 13일 (금)');
+  assert.equal(eventToQuote({ ...ev, place: '' }).fields.place, '가짜동 1-1');            // 장소가 비면 맨 위 주소
+  const bad = eventToQuote({ ...ev, customer: ' ', date: '', amount: '육십만원' });
+  assert.deepEqual([bad.fields.customer, bad.fields.when, bad.fields.supply], ['', '', null]);
+  assert.deepEqual(bad.notes, ['고객 이름을 읽지 못했습니다 — 직접 넣어 주세요', NO_DATE, NO_AMOUNT]);
 });
 
 function fakeStorage() {

@@ -90,9 +90,9 @@ if (MAKES[D.kind]) {
   }
   delWrap.before(row);
 }
-// 받는 쪽(거래명세서 목록) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
-const incoming = D.kind === 'statement' && !docId
-  ? takeBundle(sessionStorage, 'statement', params.get('make') === '1', Date.now()) : null;
+// 받는 쪽(거래명세서 목록 · 시제 견적서 목록(내역서에서, 2026-10-28)) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
+const incoming = ['statement', 'sije-quote'].includes(D.kind) && !docId
+  ? takeBundle(sessionStorage, D.kind, params.get('make') === '1', Date.now()) : null;
 
 const toastEl = document.createElement('div');
 toastEl.className = 'doc-toast';

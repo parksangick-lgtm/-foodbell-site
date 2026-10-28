@@ -1,7 +1,7 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
 import { itemsBySide, newViewKey, viewLinkText } from './model.js';
-import { NOTES_KEY, putBundle, eventToStatement } from '../docs/handoff.js';
+import { NOTES_KEY, putBundle, eventToStatement, eventToQuote } from '../docs/handoff.js?v=2';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,
@@ -155,15 +155,18 @@ for (const b of document.querySelectorAll('[data-set-status]')) {
   b.addEventListener('click', () => save('status', b.dataset.setStatus));
 }
 $('print').addEventListener('click', () => { measurePrint(); print(); });
-// 3단계 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 (꾸러미는 같은 탭 sessionStorage, 주소엔 안 실음)
-$('make-statement').addEventListener('click', async () => {
-  if (!ev || !confirm('이 내역서 내용으로 새 거래명세서를 만들까요?')) return;
-  flush();
-  // 저장을 기다리지 않고 넘어가면 휴대폰이 바쁠 때 고친 칸이 내역서에서 사라졌다 (2026-10-28) — 서류 화면처럼 3초까지만 기다린다
-  if (saving && navigator.onLine) await atMost(saving.catch(() => {}));   // 저장이 실패해도(알림은 이미 뜸) 버튼은 막히지 않게
-  putBundle(sessionStorage, 'statement', eventToStatement(ev), Date.now());
-  location.href = 'statement.html?make=1';
-});
+// 3단계 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 · 시제 견적서(2026-10-28) (꾸러미는 같은 탭 sessionStorage, 주소엔 안 실음)
+for (const [btn, to, noun, build] of [['make-statement', 'statement', '거래명세서', eventToStatement],
+  ['make-quote', 'sije-quote', '견적서', eventToQuote]]) {
+  $(btn).addEventListener('click', async () => {
+    if (!ev || !confirm(`이 내역서 내용으로 새 ${noun}를 만들까요?`)) return;
+    flush();
+    // 저장을 기다리지 않고 넘어가면 휴대폰이 바쁠 때 고친 칸이 내역서에서 사라졌다 (2026-10-28) — 서류 화면처럼 3초까지만 기다린다
+    if (saving && navigator.onLine) await atMost(saving.catch(() => {}));   // 저장이 실패해도(알림은 이미 뜸) 버튼은 막히지 않게
+    putBundle(sessionStorage, to, build(ev), Date.now());
+    location.href = `${to}.html?make=1`;
+  });
+}
 $('attach').addEventListener('click', () => $('image-file').click());
 $('image-file').addEventListener('change', async () => {
   const file = $('image-file').files[0];

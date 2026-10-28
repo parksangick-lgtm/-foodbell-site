@@ -64,7 +64,8 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
 .doc-make b{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute)}
 .doc-make button{font-size:15px; min-height:44px; color:var(--seal); border-color:var(--seal)}
 .toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:60; max-width:88vw;
-  background:var(--ink); color:var(--paper); font-size:15px; padding:12px 16px; border-radius:8px}
+  background:var(--ink); color:var(--paper); font-size:15px; padding:12px 16px; border-radius:8px;
+  pointer-events:none}   /* 글자만 보이는 알림 — 4초 동안 아래 '…만들기' 단추를 누르는 손을 가로채지 않게 (2026-10-28) */
 
 @media (max-width:699px){
   body{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
@@ -121,7 +122,7 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
     <div id="quick" class="no-print"></div>
     <div class="sheet-scroll"><div id="sheet"></div></div>
     <!-- 3단계 서류 잇기 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 -->
-    <div class="doc-make no-print"><b>이 내역서로</b><button type="button" id="make-statement">거래명세서 만들기</button></div>
+    <div class="doc-make no-print"><b>이 내역서로</b><button type="button" id="make-statement">거래명세서 만들기</button><button type="button" id="make-quote">견적서 만들기</button></div>
   </section>
 </main>
 <div id="toast" class="toast no-print" role="status" hidden></div>
@@ -130,6 +131,6 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
 // 인터넷이 없어도 한 번 열어 본 목록 · 내역서가 열리게 (sw.js)
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
-<script type="module" src="js/sije/sheet-page.js?v=6"></script>
+<script type="module" src="js/sije/sheet-page.js?v=7"></script>
 </body>
 </html>
