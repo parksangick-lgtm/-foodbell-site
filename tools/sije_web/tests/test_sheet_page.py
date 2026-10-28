@@ -87,6 +87,14 @@ def test_phone_date_edit_updates_title_line_on_pc(pc, phone, test_db, event_id):
     wait_text(pc, '#sheet .title-date', '2026년 11월 14일 (토) 10시', test_db.collection('events').document(event_id))
 
 
+def test_title_place_stays_readable_while_editing(pc):
+    # 제목 줄은 남색 바탕 · 흰 글씨 — 누르면 공통 편집 규칙이 바탕을 희게 해서 흰 글씨가 사라졌다(2026-10-29 사장님 캡처)
+    place = pc.locator('#sheet .title-place')
+    place.click()
+    color, bg = place.evaluate('e => { const s = getComputedStyle(e); return [s.color, s.backgroundColor]; }')
+    assert color != bg, f'글자색 {color} 이 바탕색 {bg} 과 같아 안 보인다'
+
+
 def test_phone_date_edit_updates_own_title_while_next_field_focused(phone):
     box = phone.locator('#quick input[data-path="date"]')
     box.fill('2026-11-14')
