@@ -715,6 +715,12 @@ sheet.addEventListener('focusout', (e) => {
   if (!t) return;
   // 글자를 다 지운 칸에는 브라우저가 <br> 을 남긴다 — 그러면 :empty 가 안 맞아 '발인' · '안내' 이름표가 빈 채로 보인다
   if (!t.textContent.trim()) { if (t.innerHTML) { t.textContent = ''; save(); } return; }
+  // 지도 링크 칸: 지도 앱의 공유 글을 통째로 붙여넣어도 https 주소만 남긴다 (사장님 2026-10-28). innerText 라야 줄이 안 붙는다
+  if (t.matches('[data-f="map"]')) {
+    const url = (t.innerText.match(/https?:\/\/[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/) || [])[0];
+    if (url && url !== t.textContent) { t.textContent = url; save(); }
+    return;
+  }
   if (!t.matches('[data-f$="tel"]')) return;
   const v = dashTels(t.textContent);
   if (v !== t.textContent) { t.textContent = v; save(); }

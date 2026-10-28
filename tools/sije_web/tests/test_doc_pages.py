@@ -1457,6 +1457,26 @@ def test_daily_leave_and_map_fields(pc, repo_url, custom_token, test_db, made, s
     assert (rows[0]['leave'], rows[0]['map'], rows[1]['leave'], rows[1]['map']) == ('06:30 가게', 'https://naver.me/abc', '', 'naver.me/abc')
 
 
+def test_daily_map_field_keeps_only_url_from_share_text(pc, repo_url, custom_token, test_db, made, share_key):
+    """지도 링크 칸에 지도 앱의 공유 글을 통째로 붙여넣어도, 칸을 떠나면 https 주소만 남는다 (사장님 2026-10-28).
+    주소 뒤 줄의 글자가 주소에 붙지 않는다. 장소 글자와 직원 게시판도 그 주소를 쓴다."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="place"]', '가짜산소')
+    cell = 'tr.item [data-f="map"]'
+    for text, url in [('[네이버 지도]\n가짜산소\n경기도 가짜시 가짜로 1\nhttps://naver.me/xyz789', 'https://naver.me/xyz789'),
+                      ('카카오맵에서 장소를 확인해보세요.\nhttps://kko.to/AbC123xyz\nSeoul gajja', 'https://kko.to/AbC123xyz')]:
+        pc.click(cell)
+        pc.keyboard.press('Control+A')
+        pc.evaluate("t => document.execCommand('insertText', false, t)", text)   # 붙여넣기처럼 여러 줄을 한 번에
+        pc.keyboard.press('Tab')
+        assert pc.locator(cell).inner_text() == url, text
+    pc.click('#btn-edit')
+    assert pc.get_attribute('tr.item [data-f="place"] a', 'href') == 'https://kko.to/AbC123xyz'
+    snap = wait_db(test_db.collection('share').document(share_key), lambda s: doc_id in (s.to_dict() or {}).get('entries', {}))
+    assert snap.to_dict()['entries'][doc_id]['rows'][0]['map'] == 'https://kko.to/AbC123xyz'
+
+
 def test_daily_copy_text_keeps_memo_lines(pc, repo_url, custom_token, made):
     """복사 글 — 출발은 '/ 출발 …', 여러 줄 메모는 다음 줄부터 세 칸 들여 한 줄씩."""
     pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
