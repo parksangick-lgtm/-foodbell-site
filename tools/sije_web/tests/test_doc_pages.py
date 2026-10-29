@@ -1526,6 +1526,25 @@ def test_daily_leave_field_and_no_map_field(pc, repo_url, custom_token, test_db,
     assert 'data-f="map"' not in pc.evaluate("() => window.FoodbellDoc.serialize()")
 
 
+def test_daily_contacts_button_fills_tel(pc, repo_url, custom_token, made):
+    """'연락처에서' 단추 — 연락처 고르기 창(Contact Picker)이 있는 브라우저(안드로이드 크롬)에서만 줄마다 보이고, 고른 사람의
+    '이름 번호' 를 연락처 칸 끝에 ' / ' 로 이어 넣는다. '+82 10-…' 는 '010-…' 로. 번호는 저장 글(HTML)에 단추 없이 글자로만 (사장님 2026-10-30, 갤럭시)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    assert pc.locator('tr.item .btn-contacts').count() == 0            # 이 PC 크롬에는 창이 없다 — 단추도 없어야 한다(음성 대조군)
+    pc.add_init_script("""navigator.contacts = { select: async () => [
+        { name: ['가짜상주'], tel: ['+82 10-0000-1234'] }, { name: [], tel: ['01000005678'] }, { name: ['번호없음'], tel: [] } ] }""")
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="tel"]', '010-0000-9999')
+    assert pc.locator('tr.item .btn-contacts').count() == 1
+    pc.click('tr.item .btn-contacts')
+    pc.wait_for_function("document.querySelector('tr.item [data-f=\"tel\"]').textContent.includes('가짜상주')", timeout=5000)
+    assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999 / 가짜상주 010-0000-1234 / 010-0000-5678'   # 번호 없는 사람은 안 들어간다
+    html = pc.evaluate("() => window.FoodbellDoc.serialize()")
+    assert 'btn-contacts' not in html and '가짜상주 010-0000-1234' in html
+
+
 def test_daily_copy_text_keeps_memo_lines(pc, repo_url, custom_token, made):
     """복사 글 — 출발은 '/ 출발 …', 여러 줄 메모는 다음 줄부터 세 칸 들여 한 줄씩."""
     pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])

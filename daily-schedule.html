@@ -619,7 +619,10 @@ function addControls() {
     });
     const p = el('button', 'btn-mini btn-paste', '문자 붙여넣기'); p.type = 'button';
     const d = el('button', 'btn-mini btn-del', '✕ 줄 삭제'); d.type = 'button';
-    box.append(...marks, p, d);
+    box.append(...marks, p);
+    // 연락처에서 고르기 — 휴대폰 연락처 고르기 창이 있는 브라우저(안드로이드 크롬)에서만 단추가 보인다 (사장님 2026-10-30, 갤럭시)
+    if (hasContacts()) { const c = el('button', 'btn-mini btn-contacts', '연락처에서'); c.type = 'button'; box.append(c); }
+    box.append(d);
     tr.querySelector('td.memo-cell').appendChild(box);
   });
   if (!tb.querySelector('tr.addrow')) {
@@ -734,6 +737,7 @@ sheet.addEventListener('click', (e) => {
     pasteText.focus();
     return;
   }
+  if (b.classList.contains('btn-contacts')) { pickContacts(b.closest('tr.item')); return; }
   if (b.classList.contains('btn-state')) {
     const tr = b.closest('tr.item');
     if (tr.dataset.state === b.dataset.set) delete tr.dataset.state; else tr.dataset.state = b.dataset.set;
@@ -774,6 +778,23 @@ document.getElementById('paste-ok').addEventListener('click', () => {
   pasteDlg.close();
 });
 document.getElementById('paste-cancel').addEventListener('click', () => pasteDlg.close());
+
+/* ---------- 연락처에서 고르기 (편집 중, 줄마다) — 안드로이드 크롬의 연락처 고르기 창(Contact Picker). 고른 사람마다 '이름 010-…' 를
+   연락처 칸 끝에 더한다(이미 적힌 것이 있으면 ' / ' 로 이어서). 번호는 우리 쪽에 저장하지 않는다 — 고른 것만 칸에 들어간다.
+   아이폰 · PC 크롬 · 카톡 안 브라우저에는 이 창이 없어 단추도 없다 (사장님 2026-10-30, 갤럭시) ---------- */
+const hasContacts = () => !!(navigator.contacts && navigator.contacts.select);
+const localTel = (t) => dashTels(String(t || '').replace(/^\+82[\s-]?/, '0').replace(/\D/g, ''));   // '+82 10-…' → '010-…'
+async function pickContacts(tr) {
+  let list;
+  try { list = await navigator.contacts.select(['name', 'tel'], { multiple: true }); }
+  catch { toast('연락처를 가져오지 못했습니다'); return; }   // 권한을 안 줬거나 이 브라우저가 못 여는 경우 (고르기를 취소하면 빈 목록이 온다)
+  // 번호 없는 사람은 건너뛴다 — 이름만 들어가면 전화 단추가 안 생긴다
+  const parts = (list || []).map((c) => { const t = localTel((c.tel || [])[0]); return t ? [clean((c.name || [])[0]), t].filter(Boolean).join(' ') : ''; }).filter(Boolean);
+  if (!parts.length || !tr || !tr.isConnected) return;
+  const e = tr.querySelector('[data-f="tel"]');
+  e.textContent = [clean(e.textContent), ...parts].filter(Boolean).join(' / ');
+  recalc(); save();
+}
 
 /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
 const toastEl = document.getElementById('toast');
