@@ -1,7 +1,7 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
 import { itemsBySide, newViewKey, viewLinkText } from './model.js';
-import { NOTES_KEY, putBundle, eventToStatement, eventToQuote } from '../docs/handoff.js?v=2';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
+import { NOTES_KEY, putBundle, eventToStatement, eventToQuote } from '../docs/handoff.js?v=3';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,
@@ -52,12 +52,8 @@ function trackCache(fromCache) {
 
 let saving = null;   // 마지막으로 보낸 저장 — '거래명세서 만들기' 가 다른 화면으로 넘어가기 전에 기다린다
 function save(path, value) {
-  const m = /^contacts\.(\d+)$/.exec(path);
-  if (m) {   // 연락처는 목록 통째로 (저장소는 목록의 한 칸만 고칠 수 없다)
-    const list = [...(ev.contacts || [])];
-    list[Number(m[1])] = value;
-    path = 'contacts';
-    value = list;
+  if (path === 'contacts') {   // 연락처는 한 칸에 ' / ' 로 이어 적고, 저장은 '/' 로 나눈 목록으로 (2026-10-29)
+    value = value.split('/').map((s) => s.trim()).filter(Boolean);
   }
   // 화면이 들고 있는 행사 값도 바로 고친다 — 저장소 알림은 따로 늦게 와서, 고치자마자 '거래명세서 만들기' 를 누르면 옛 값이 넘어갔다 (3단계 검토 I2)
   if (!path.includes('.')) ev = { ...ev, [path]: value };

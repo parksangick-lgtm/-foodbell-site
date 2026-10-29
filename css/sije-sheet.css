@@ -59,8 +59,7 @@
 }
 
 .sije-sheet .lab { background: var(--xl-label); font-size: 11pt; text-align: center; }
-.sije-sheet .val { padding-left: 6pt; }
-.sije-sheet .blank { background: var(--xl-yellow); }
+.sije-sheet .val { padding-left: 6pt; background: var(--xl-yellow); }
 .sije-sheet .must td { padding-left: 6pt; background: var(--xl-yellow); color: var(--xl-red); }
 
 .sije-sheet .ihead td {

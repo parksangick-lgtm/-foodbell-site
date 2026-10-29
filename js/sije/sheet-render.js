@@ -50,10 +50,7 @@ export function renderSheet(root, ev, images, opts = {}) {
   };
   const gap = () => cell(row('gap-row'), '', '', { span: 13 });
   const section = (title) => cell(row('sec'), '', title, { span: 13 });
-  const value = (path) => {
-    const m = /^contacts\.(\d+)$/.exec(path || '');
-    return (m ? (ev.contacts || [])[Number(m[1])] : ev[path]) ?? '';
-  };
+  const value = (path) => (path === 'contacts' ? (ev.contacts || []).join(' / ') : ev[path]) ?? '';
 
   // 맨 위 큰 줄: 주소(첫 줄) + 행사일(둘째 줄)
   const dateText = ev.date ? formatDateText(ev.date, ev.time) : '';
@@ -68,31 +65,27 @@ export function renderSheet(root, ev, images, opts = {}) {
   gap();
 
   // ■ 행사 정보 — 행사일 줄 · 장소 · 시제일 칸은 뺐다 (맨 위 큰 줄과 겹침, 시제일은 메모로. 사장님 2026-10-29)
+  // 저녁에 더 뺌: 연락처 2 · 3 줄(연락처 한 칸에 ' / ' 로) · 금액 내역(금액 한 줄로) · 출발 · 도착 시간. 값 칸은 전부 노랑
   section('■ 행사 정보');
   let tr;
-  const contacts = ev.contacts?.length ? ev.contacts : [''];
-  const pairs = [['상차림', 'setting', '산신제', 'sansinje'],
-    ['고객', 'customer', '연락처', 'contacts.0']];
-  for (let i = 1; i < contacts.length; i += 2) {
-    pairs.push([`연락처 ${i + 1}`, `contacts.${i}`,
-      ...(i + 1 < contacts.length ? [`연락처 ${i + 2}`, `contacts.${i + 1}`] : ['', null])]);
-  }
-  pairs.push(['담당·차량', 'staffCar', '식사', 'meal'], ['금액', 'amount', '금액 내역', 'amountDetail'],
-    ['출발 시간', 'departTime', '도착 시간', 'arriveTime']);
+  const pairs = [['상차림', 'setting', '산신제', 'sansinje'], ['고객', 'customer', '연락처', 'contacts'],
+    ['담당·차량', 'staffCar', '식사', 'meal'], ['금액', 'amount']];
   for (const [la, pa, lb, pb] of pairs) {
     tr = row();
-    for (const [label, path, ls, vs] of [[la, pa, 2, 4], [lb, pb, 3, 4]]) {
+    const cols = pb == null ? [[la, pa, 2, 11]] : [[la, pa, 2, 4], [lb, pb, 3, 4]];   // 한 쌍짜리 줄은 값 칸이 줄 끝까지
+    for (const [label, path, ls, vs] of cols) {
       cell(tr, 'lab', label, { span: ls });
-      const v = path ? value(path) : '';
-      cell(tr, 'val' + (v || !path ? '' : ' blank'), v, { span: vs, path });
+      cell(tr, 'val', value(path), { span: vs, path });
     }
   }
   gap();
 
-  // ■ 꼭 지킬 것 (줄마다 한 칸 — 인쇄에서 비어 있으면 구역째 뺀다, 엑셀과 같게)
+  // ■ 꼭 지킬 것 (줄마다 한 칸, 최소 5줄 — 인쇄에서 비어 있으면 구역째 뺀다, 엑셀과 같게)
   if (ev.mustDo || editable) {
     section('■ 꼭 지킬 것');
-    for (const line of (ev.mustDo || '').split('\n')) cell(row('must'), '', line, { span: 13, path: 'mustDo' });
+    const lines = (ev.mustDo || '').split('\n');
+    while (lines.length < 5) lines.push('');   // 손으로 적을 빈 줄 (사장님 2026-10-29)
+    for (const line of lines) cell(row('must'), '', line, { span: 13, path: 'mustDo' });
     gap();
   }
 
@@ -179,7 +172,7 @@ export function renderSheet(root, ev, images, opts = {}) {
       dashTelsIn(td);   // 숫자만 친 전화번호에 작대기 (사장님 2026-10-29) — 수량 칸은 8자리 넘는 숫자가 없어 그대로
       const read = (x) => x.innerText.replace(/\n+$/, '');
       const v = path === 'mustDo'
-        ? [...root.querySelectorAll('[data-path="mustDo"]')].map(read).join('\n')
+        ? [...root.querySelectorAll('[data-path="mustDo"]')].map(read).join('\n').replace(/\n+$/, '')   // 끝의 빈 줄(5줄 틀)은 저장하지 않는다
         : read(td);
       if (read(td) === td.dataset.orig) return;
       td.dataset.orig = read(td);

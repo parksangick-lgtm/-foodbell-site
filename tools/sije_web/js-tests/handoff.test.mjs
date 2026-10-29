@@ -48,6 +48,17 @@ test('parseAmount — 만 단위 · 메모 · 점 (실제 내역서 금액 칸�
   for (const [t, n] of Object.entries(cases)) assert.equal(parseAmount(t), n, t);
 });
 
+test('parseAmount — 금액 내역을 금액 칸에 "·" 로 이어 붙인 글은 맨 앞 조각만 읽는다 (금액 내역 칸을 뺌, 2026-10-29)', () => {
+  const cases = {
+    '70만원 · 시제상1상 60만  ·  산신제 15만': 700000,
+    '360만 VAT별도 · 산신제15만  ·  제물추가20만': 3600000,
+    '2.400,000원 · 상90만 · 식사 135만 + 추가 15만': 2400000,
+    '1,200,000 · 1,950.000': 1200000,
+    '285만 · 1자1상 120만원': 2850000,
+  };
+  for (const [t, n] of Object.entries(cases)) assert.equal(parseAmount(t), n, t);
+});
+
 test('parseAmount — 못 읽으면 null', () => {
   for (const t of ['', '육십만원', '600,00원', '0', '0만원', '1.5만', '360만 VAT포함', '60만원 정도', undefined]) {
     assert.equal(parseAmount(t), null, String(t));

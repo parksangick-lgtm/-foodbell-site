@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-title" content="시제행사 목록">
 <!-- 글꼴은 화면을 막지 않게 받는다 — 신호가 약해 글꼴이 안 와도 화면 · 스크립트는 돈다 (그동안 맑은 고딕 등) -->
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="css/sije-sheet.css?v=3">
+<link rel="stylesheet" href="css/sije-sheet.css?v=4">
 <style>
 @media (prefers-color-scheme: dark){ :root{ color-scheme: only light; } }
 :root{
@@ -131,6 +131,6 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
 // 인터넷이 없어도 한 번 열어 본 목록 · 내역서가 열리게 (sw.js)
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
-<script type="module" src="js/sije/sheet-page.js?v=9"></script>
+<script type="module" src="js/sije/sheet-page.js?v=10"></script>
 </body>
 </html>

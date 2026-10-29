@@ -117,6 +117,56 @@ def test_event_info_has_no_date_row_place_or_sijeil(pc, phone):
     assert '행사일' not in phone.locator('#sheet td.lab').all_inner_texts()
 
 
+YELLOW = 'rgb(255, 242, 204)'   # css/sije-sheet.css 의 --xl-yellow #FFF2CC
+
+
+def test_event_info_one_contact_cell_one_amount_cell_no_times(pc, phone):
+    # 연락처 2 · 3 줄, 금액 내역, 출발 · 도착 시간을 뺐다 — 연락처는 한 칸에, 금액은 한 줄 통째로, 값 칸은 전부 노랑 (사장님 2026-10-29 저녁)
+    bg = 'els => els.map((e) => getComputedStyle(e).backgroundColor)'
+    for page in (pc, phone):
+        for gone in ('departTime', 'arriveTime', 'amountDetail', 'contacts.0'):
+            assert page.locator(f'#sheet td[data-path="{gone}"]').count() == 0, gone
+        assert page.locator('#sheet td[data-path="contacts"]').count() == 1
+        assert page.locator('#sheet td[data-path="amount"]').evaluate('e => e.colSpan') == 11
+        labels = page.locator('#sheet td.lab').all_inner_texts()
+        for gone in ('연락처 2', '금액 내역', '출발 시간', '도착 시간'):
+            assert gone not in labels, labels
+        for kept in ('연락처', '금액'):
+            assert kept in labels, labels
+        vals = page.locator('#sheet td.val').evaluate_all(bg)
+        assert vals and all(c == YELLOW for c in vals), vals
+        assert YELLOW not in page.locator('#sheet td.lab').evaluate_all(bg)
+
+
+def test_contacts_cell_joins_numbers_with_slash_and_saves_list(pc, test_db, event_id):
+    cell = pc.locator('#sheet td[data-path="contacts"]')
+    cell.click()
+    pc.keyboard.press('Control+A')
+    pc.keyboard.type('총무 01011112222 / 01033334444')
+    pc.keyboard.press('Tab')
+    wait_text(pc, '#sheet td[data-path="contacts"]', '총무 010-1111-2222 / 010-3333-4444')   # 번호마다 작대기
+    wait_db(test_db.collection('events').document(event_id),
+            lambda s: s.get('contacts') == ['총무 010-1111-2222', '010-3333-4444'])              # '/' 로 나눠 목록으로
+    pc.reload(wait_until='domcontentloaded')
+    pc.locator('#sheet td[data-path="contacts"]').wait_for(timeout=20_000)
+    wait_text(pc, '#sheet td[data-path="contacts"]', '총무 010-1111-2222 / 010-3333-4444')
+
+
+def test_must_do_has_at_least_five_rows_and_drops_trailing_blank_rows(pc, phone, test_db, event_id):
+    # ■ 꼭 지킬 것은 최소 5줄 — 글이 2줄이어도 빈 칸 3줄이 보이고, 빈 끝 줄은 저장되지 않는다. 5줄 넘으면 그만큼
+    for page in (pc, phone):
+        assert page.locator('#sheet tr.must').count() == 5
+    third = pc.locator('#sheet tr.must td').nth(2)
+    third.click()
+    pc.keyboard.type('가짜 셋째')
+    pc.evaluate('document.activeElement.blur()')
+    ref = test_db.collection('events').document(event_id)
+    wait_db(ref, lambda s: s.get('mustDo') == '산신제 상은 따로 차린다\n도착하면 먼저 전화\n가짜 셋째')
+    ref.update({'mustDo': '\n'.join(f'가짜 지킬 것 {i}' for i in range(1, 8))})
+    for page in (pc, phone):
+        page.wait_for_function("document.querySelectorAll('#sheet tr.must').length === 7", timeout=20_000)
+
+
 def test_title_place_edit_also_saves_place(pc, test_db, event_id):
     # 장소 칸이 없어져도 PDF 이름 · 목록 · 캘린더 · 담당자 지도 링크는 place 를 쓴다 — 맨 위 주소를 고치면 place 도 같은 값
     place = pc.locator('#sheet .title-place')
@@ -129,12 +179,12 @@ def test_title_place_edit_also_saves_place(pc, test_db, event_id):
 
 
 def test_digits_only_contact_gets_dashes_on_leave(pc):
-    cell = pc.locator('#sheet td[data-path="contacts.0"]')
+    cell = pc.locator('#sheet td[data-path="contacts"]')
     cell.click()
     pc.keyboard.press('Control+A')
-    pc.keyboard.type('총무 01087455865')
+    pc.keyboard.type('총무 01011112222')
     pc.keyboard.press('Tab')
-    wait_text(pc, '#sheet td[data-path="contacts.0"]', '총무 010-8745-5865')
+    wait_text(pc, '#sheet td[data-path="contacts"]', '총무 010-1111-2222')
 
 
 def test_phone_date_edit_updates_own_title_while_next_field_focused(phone):

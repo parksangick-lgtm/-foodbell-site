@@ -153,10 +153,7 @@ function render(s) {
   field(who, '손님', s.customer);
   (s.contacts || []).forEach((c) => phoneLines(who, '연락처', '', String(c || '')));
   field(who, '금액', s.amount);
-  field(who, '금액 내역', s.amountDetail, 'pre');
   field(who, '담당', s.staffCar);
-  field(who, '출발', s.departTime);
-  field(who, '도착', s.arriveTime);
   field(who, '산신제', s.sansinje);
   field(who, '식사', s.meal);
   if (who.childNodes.length) parts.push(who);

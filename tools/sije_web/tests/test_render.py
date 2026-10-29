@@ -25,6 +25,16 @@ def test_pdf_contains_key_values(tmp_path, repo_url):
                  '010-0000-0000', '600,000원', '주차는가짜마을회관앞', '■준비품목—60만원상']:
         assert want in text, want
     assert '시제일' not in text and '행사일' not in text   # 행사일 줄 · 장소 · 시제일 칸을 뺐다 (2026-10-29)
+    for gone in ('금액내역', '출발시간', '연락처2', '상차림60만'):   # 금액 내역 · 출발 · 도착 시간 · 연락처 2 줄도 뺐다 (2026-10-29 저녁)
+        assert gone not in text, gone
+
+
+def test_pdf_joins_contacts_in_one_cell(tmp_path, repo_url):
+    out = tmp_path / 'contacts.pdf'
+    render_pdf(fake_event(contacts=['010-0000-0001', '010-0000-0002']), [], out, repo_url)
+    text = pdf_text(out)
+    assert '010-0000-0001/010-0000-0002' in text   # 번호 여럿은 한 칸에 ' / ' 로
+    assert '연락처2' not in text
 
 
 def test_long_text_event_still_fits_one_page(tmp_path, repo_url):

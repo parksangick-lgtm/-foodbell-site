@@ -65,13 +65,17 @@ def test_view_shows_sheet(phone, repo_url, sheets):
     open_view(phone, repo_url, key)
     text = phone.locator('#sheet').inner_text()
     for s in ('11월 13일 (금)', '10시', '가짜동 1-1 놀이터 위', '7치 1상', '가짜 문중', '010-0000-0000', '600,000원',
-              '상차림 60만', '산신제 상은 따로 차린다', '도착하면 먼저 전화', '준비 품목 — 60만원상', '배 5개', '주차는 가짜 마을회관 앞',
+              '산신제 상은 따로 차린다', '도착하면 먼저 전화', '준비 품목 — 60만원상', '배 5개', '주차는 가짜 마을회관 앞',
               '가짜 추가 기입'):
         assert s in text, s
     assert hrefs(phone, 'a.btn-map') == [naver('가짜동 1-1 놀이터 위')]
     assert phone.locator('img, canvas').count() == 0
     assert '예상' not in text
     assert '시제일' not in text   # 내역서에서 시제일 칸을 뺐다 (2026-10-29)
+    assert '상차림 60만' not in text   # 금액 내역 · 출발 · 도착 칸도 뺐다 (2026-10-29 저녁) — 이름표만 본다(본문 '도착하면 먼저 전화' 와 섞이지 않게)
+    labels = phone.locator('#sheet .lab').all_inner_texts()
+    for gone in ('금액 내역', '출발', '도착'):
+        assert gone not in labels, labels
     assert phone.locator('#status').is_hidden()
     assert phone.locator('table').count() == 0
 
@@ -152,7 +156,7 @@ def long_sheet():
                            'note': '가짜비고' * 10 if i == 3 else ''} for i in range(1, 31)}
     return dict(place=long * 2, titlePlace=long, mustDo='\n'.join(f'가짜 지킬 것 {i} ' + long for i in range(1, 6)),
                 contacts=[f'가짜담당{i} 010-0000-000{i}' for i in range(5)], memo='가짜메모' * 10, items=items,
-                amountDetail='가짜금액' + '1234567890' * 5)
+                amount='가짜금액' + '1234567890' * 5)
 
 
 OVERFLOW = """() => [...document.querySelectorAll('body *')]

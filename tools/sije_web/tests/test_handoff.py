@@ -219,7 +219,7 @@ def test_sheet_to_statement(pc, repo_url, custom_token, test_db, made, event_id)
 
 
 def test_sheet_man_amount_to_statement(pc, repo_url, custom_token, test_db, made, event_id):
-    test_db.collection('events').document(event_id).update({'amount': '360만 VAT별도'})   # 실제 내역서 꼴 — 단가가 비던 신고 (2026-10-18)
+    test_db.collection('events').document(event_id).update({'amount': '360만 VAT별도 · 산신제15만  ·  제물추가20만'})   # 실제 내역서 꼴 — 단가가 비던 신고 (2026-10-18) · 금액 내역을 이어 붙인 꼴 (2026-10-29)
     open_sheet(pc, repo_url, custom_token, event_id)
     answer_next(pc)
     pc.click('#make-statement')
