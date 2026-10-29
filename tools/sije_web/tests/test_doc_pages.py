@@ -1294,10 +1294,10 @@ def test_daily_board_gets_filled_rows(pc, repo_url, custom_token, test_db, made,
     assert (e['date'], e['label']) == (today.isoformat(), day_label(today))
     assert e['lunar'].startswith('음력 ') and (e['order'], e['memo']) == ('가짜1 · 가짜2', '가짜 전달 메모')
     r1, r3 = e['rows']
-    assert r1 == {'no': 1, 'staff': '가짜직원', 'car': '1톤', 'leave': '', 'time': '06:30', 'place': '가짜추모공원', 'map': '',
+    assert r1 == {'no': 1, 'staff': '가짜직원', 'car': '1톤', 'leave': '', 'time': '06:30', 'place': '가짜추모공원',
                   'tel': '010-0000-1234', 'work': '가짜동 상차림', 'amt': '60명 × 15,000원 = 900,000원', 'lead': '가짜팀장',
                   'leadTel': '010-0000-2000', 'guideTel': '', 'hall': '', 'depart': '', 'cremate': '', 'memo': '가짜 메모',
-                  'state': ''}   # leave · map: 10-24 검토 반영, state(연기 · 취소): 10-24 저녁
+                  'state': ''}   # leave: 10-24 검토 반영, state(연기 · 취소): 10-24 저녁, map 은 10-30 뺌
     assert (r3['work'], r3['amt']) == ('가짜동 제사상', '')
 
 
@@ -1474,49 +1474,34 @@ def test_daily_login_and_denied_point_staff_to_notice(pc, repo_url, custom_token
 
 # ---------- 10-24 검토 반영 (설계 docs/superpowers/specs/2026-10-24-daily-schedule-review-fixes-design.md) ----------
 
-def test_daily_leave_and_map_fields(pc, repo_url, custom_token, test_db, made, share_key):
-    """출발 · 지도 링크 칸 — 보기에서 출발이 보이고, 게시판 한 장에 leave · map 이 들어가며, 지도 링크가 있으면 장소 글자가 그 주소를 연다.
-    http 없는 지도 링크는 무시(검색). 전화 칸은 숫자 자판."""
+def test_daily_leave_field_and_no_map_field(pc, repo_url, custom_token, test_db, made, share_key):
+    """출발 칸 — 보기에서 출발이 보이고, 게시판 한 장에 leave 가 들어간다. 전화 칸은 숫자 자판.
+    지도 링크 칸(map)은 2026-10-30 뺐다(사장님 — 장소 글자가 이미 지도 검색을 연다): 편집에도 칸이 없고, 게시판 한 장에도 map 이 없다.
+    그 전에 저장된 일정표에 남은 지도 링크 칸은 불러올 때 지우고, 장소 글자는 늘 검색 주소를 연다."""
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     assert pc.get_attribute('tr.item [data-f="tel"]', 'inputmode') == 'tel'
     assert pc.get_attribute('tr.item [data-f="lead-tel"]', 'inputmode') == 'tel'
     assert pc.get_attribute('tr.item [data-f="guide-tel"]', 'inputmode') == 'tel'
     assert '상주 010' in pc.get_attribute('tr.item [data-f="tel"]', 'data-ph')
     pc.click('#btn-edit')
-    assert pc.locator('tr.item [data-f="map"]').is_visible()
-    for f, t in [('staff', '가짜직원'), ('leave', '06:30 가게'), ('place', '가짜추모공원'), ('map', 'https://naver.me/abc'), ('work', '가짜 상차림')]:
+    assert pc.locator('tr.item [data-f="map"]').count() == 0
+    for f, t in [('staff', '가짜직원'), ('leave', '06:30 가게'), ('place', '가짜추모공원'), ('work', '가짜 상차림')]:
         edit_cell(pc, f'tr.item [data-f="{f}"]', t)
-    pc.click('tr.addrow button')
-    for f, t in [('place', '가짜공원'), ('map', 'naver.me/abc'), ('work', '둘째')]:
-        edit_cell(pc, f'tr.item:nth-child(2) [data-f="{f}"]', t)
     pc.click('#btn-edit')
-    assert pc.locator('tr.item [data-f="map"]').first.is_hidden()
-    assert pc.get_attribute('tr.item:nth-child(1) [data-f="place"] a', 'href') == 'https://naver.me/abc'
-    assert pc.get_attribute('tr.item:nth-child(2) [data-f="place"] a', 'href').startswith('https://m.map.naver.com/search2/search.naver?query=')
+    assert pc.get_attribute('tr.item:nth-child(1) [data-f="place"] a', 'href') == 'https://m.map.naver.com/search2/search.naver?query=' + urllib.parse.quote('가짜추모공원', safe='')
     assert '06:30 가게' in pc.locator('tr.item:nth-child(1)').inner_text()
     snap = wait_db(test_db.collection('share').document(share_key), lambda s: doc_id in (s.to_dict() or {}).get('entries', {}))
     rows = snap.to_dict()['entries'][doc_id]['rows']
-    assert (rows[0]['leave'], rows[0]['map'], rows[1]['leave'], rows[1]['map']) == ('06:30 가게', 'https://naver.me/abc', '', 'naver.me/abc')
-
-
-def test_daily_map_field_keeps_only_url_from_share_text(pc, repo_url, custom_token, test_db, made, share_key):
-    """지도 링크 칸에 지도 앱의 공유 글을 통째로 붙여넣어도, 칸을 떠나면 https 주소만 남는다 (사장님 2026-10-28).
-    주소 뒤 줄의 글자가 주소에 붙지 않는다. 장소 글자와 직원 게시판도 그 주소를 쓴다."""
-    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
-    pc.click('#btn-edit')
-    edit_cell(pc, 'tr.item [data-f="place"]', '가짜산소')
-    cell = 'tr.item [data-f="map"]'
-    for text, url in [('[네이버 지도]\n가짜산소\n경기도 가짜시 가짜로 1\nhttps://naver.me/xyz789', 'https://naver.me/xyz789'),
-                      ('카카오맵에서 장소를 확인해보세요.\nhttps://kko.to/AbC123xyz\nSeoul gajja', 'https://kko.to/AbC123xyz')]:
-        pc.click(cell)
-        pc.keyboard.press('Control+A')
-        pc.evaluate("t => document.execCommand('insertText', false, t)", text)   # 붙여넣기처럼 여러 줄을 한 번에
-        pc.keyboard.press('Tab')
-        assert pc.locator(cell).inner_text() == url, text
-    pc.click('#btn-edit')
-    assert pc.get_attribute('tr.item [data-f="place"] a', 'href') == 'https://kko.to/AbC123xyz'
-    snap = wait_db(test_db.collection('share').document(share_key), lambda s: doc_id in (s.to_dict() or {}).get('entries', {}))
-    assert snap.to_dict()['entries'][doc_id]['rows'][0]['map'] == 'https://kko.to/AbC123xyz'
+    assert rows[0]['leave'] == '06:30 가게' and 'map' not in rows[0]
+    # 10-30 전에 저장된 일정표 — 지도 링크 칸이 든 저장본을 불러오면 그 칸이 사라지고, 장소는 검색 주소
+    old = pc.evaluate("() => window.FoodbellDoc.serialize()")
+    old = old.replace('data-f="place" data-ph="장소">가짜추모공원</span>',
+                      'data-f="place" data-ph="장소">가짜추모공원</span><span class="sub maplink" data-edit data-t="text" data-f="map">https://naver.me/abc</span>')
+    assert 'data-f="map"' in old                                   # 바꿔 넣은 것이 실제로 들어갔는지(양성 대조군)
+    pc.evaluate("h => window.FoodbellDoc.load(h)", old)
+    assert pc.locator('tr.item [data-f="map"]').count() == 0
+    assert pc.get_attribute('tr.item:nth-child(1) [data-f="place"] a', 'href').startswith('https://m.map.naver.com/search2/search.naver?query=')
+    assert 'data-f="map"' not in pc.evaluate("() => window.FoodbellDoc.serialize()")
 
 
 def test_daily_copy_text_keeps_memo_lines(pc, repo_url, custom_token, made):

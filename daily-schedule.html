@@ -292,9 +292,6 @@ table.stmt.day-table .tel1{white-space:nowrap}   /* 전화번호 하나는 한 �
 table.stmt.day-table a.tel1, table.stmt.day-table a.map1{color:inherit; text-decoration:underline; text-decoration-color:var(--gold); text-underline-offset:3px}
 @media print{ table.stmt.day-table a.tel1, table.stmt.day-table a.map1{text-decoration:none} }
 table.stmt.day-table [data-f="memo"]{white-space:pre-line}   /* 붙여넣은 주문 글은 줄을 바꿔 그대로 (문자 붙여넣기) */
-/* 지도 링크 칸 — 편집할 때만 보인다. 보기에서는 장소 글자가 그 주소를 연다 (2026-10-24 검토 반영) */
-body:not(.editing) table.stmt.day-table .maplink{display:none}
-@media print{ table.stmt.day-table .maplink{display:none} }
 /* 장례 칸 접기 — 편집 중 여섯 칸(상조팀장 · 팀장 전화 · 안내 · 장례식장 · 발인 · 화장)이 다 비면 '장례 칸 펼치기' 단추만 (2026-10-24 검토 반영) */
 body.editing table.stmt.day-table td.meet.folded > :not(.btn-open){display:none !important}
 table.stmt.day-table td.when b, table.stmt.day-table td.crew b, table.stmt.day-table td.meet b{display:block; font-weight:var(--w-bold)}
@@ -444,7 +441,7 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
           <tr class="item">
             <td class="c" data-label="번호" data-k="no"></td>
             <td class="crew" data-label="담당 직원 · 차량 · 출발"><b data-edit data-t="text" data-f="staff" data-ph="담당 직원"></b><span class="sub" data-edit data-t="text" data-f="car" data-ph="차량"></span><span class="sub" data-edit data-t="text" data-f="leave" data-ph="출발 (예: 06:30 가게)"></span></td>
-            <td class="when" data-label="시간 · 장소 · 연락처"><b data-edit data-t="text" data-f="time" data-ph="시간"></b><span class="sub" data-edit data-t="text" data-f="place" data-ph="장소"></span><span class="sub maplink" data-edit data-t="text" data-f="map" data-ph="지도 링크 (선택 — 네이버 지도 공유)"></span><span class="sub" data-edit data-t="text" data-f="tel" data-ph="연락처 (예: 상주 010-… / 자녀 010-…)" inputmode="tel"></span></td>
+            <td class="when" data-label="시간 · 장소 · 연락처"><b data-edit data-t="text" data-f="time" data-ph="시간"></b><span class="sub" data-edit data-t="text" data-f="place" data-ph="장소"></span><span class="sub" data-edit data-t="text" data-f="tel" data-ph="연락처 (예: 상주 010-… / 자녀 010-…)" inputmode="tel"></span></td>
             <td class="work" data-label="행사 내용 · 인원 · 금액"><span data-edit data-t="text" data-f="work" data-ph="행사 내용"></span><span class="qty"><span data-edit data-t="text" data-f="people" data-ph="인원"></span>×<span data-edit data-t="text" data-f="price" data-ph="단가"></span></span><span class="amt" data-k="amt"></span></td>
             <td class="meet" data-label="상조팀장 · 현지 안내인"><b data-edit data-t="text" data-f="lead" data-ph="상조팀장"></b><span class="sub" data-edit data-t="text" data-f="lead-tel" data-ph="팀장 전화" inputmode="tel"></span><span class="sub guide">안내 <span data-edit data-t="text" data-f="guide-tel" data-ph="현지 안내인 전화" inputmode="tel"></span></span><span class="sub" data-edit data-t="text" data-f="hall" data-ph="장례식장 · 화장장"></span><span class="sub rites"><span class="rite">발인 <span data-edit data-t="text" data-f="depart" data-ph="발인 시간"></span></span><span class="rite">화장 <span data-edit data-t="text" data-f="cremate" data-ph="화장 시간"></span></span></span></td>
             <td class="memo-cell" data-label="메모"><span data-edit data-t="text" data-f="memo" data-ph="메모 (예: 연기)"></span></td>
@@ -472,7 +469,6 @@ const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
 const WEEK = '일월화수목금토';
 // 이어받을 일정표가 하나도 없을 때(맨 처음)의 전달 메모 — 사장님 결정 2026-10-20
 const FIRST_MEMO = '추모공원(협력업체)은 회사에서 출발 전에 전화 · 화장은 시작 5분 후 전화 · 매장은 발인 5분 전에 팀장에게 전화 · 상주(직접주문)에게는 가게 출발 전에 전화';
-// 지도 링크(map)는 일부러 뺐다 — 링크만 적힌 줄은 "채운 줄"이 아니다 (2026-10-24)
 const FIELDS = ['staff', 'car', 'leave', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'guide-tel', 'hall', 'depart', 'cremate', 'memo'];
 
 const sheet = document.querySelector('.sheet');
@@ -555,7 +551,7 @@ function rowsData() {
     if (!filled(tr)) return;
     rows.push({
       no: i + 1, staff: field(tr, 'staff'), car: field(tr, 'car'), leave: field(tr, 'leave'), time: field(tr, 'time'),
-      place: field(tr, 'place'), map: field(tr, 'map'), tel: field(tr, 'tel'), work: field(tr, 'work'),
+      place: field(tr, 'place'), tel: field(tr, 'tel'), work: field(tr, 'work'),
       amt: clean(tr.querySelector('[data-k="amt"]:not(.warn)')?.textContent),
       lead: field(tr, 'lead'), leadTel: field(tr, 'lead-tel'), guideTel: field(tr, 'guide-tel'), hall: field(tr, 'hall'),
       depart: field(tr, 'depart'), cremate: field(tr, 'cremate'), memo: memoLines(tr).join('\n'),
@@ -669,14 +665,11 @@ function telsWrapped() {
    (사장님 2026-10-21 저녁 — 일정표 화면에서 장소를 눌러도 지도가 안 나왔다) */
 const MAP = 'https://m.map.naver.com/search2/search.naver?query=';
 function placesPlain(root) { each(root.querySelectorAll('[data-f="place"]'), (n) => { if (n.children.length) n.textContent = n.textContent; }); }
-const isUrl = (s) => /^https?:\/\//.test(s || '');
 function placesLinked() {
   each(sheet.querySelectorAll('[data-f="place"]'), (n) => {
     if (n.children.length || !clean(n.textContent)) return;
     const a = el('a', 'map1', n.textContent);
-    // 같은 줄에 지도 링크(네이버 지도 공유 주소)를 적어 두었으면 검색 대신 그 주소 (2026-10-24 검토 반영)
-    const map = clean(n.closest('tr')?.querySelector('[data-f="map"]')?.textContent);
-    a.href = isUrl(map) ? map : MAP + encodeURIComponent(clean(n.textContent));
+    a.href = MAP + encodeURIComponent(clean(n.textContent));
     a.target = '_blank';
     a.rel = 'noopener';
     n.replaceChildren(a);
@@ -715,12 +708,6 @@ sheet.addEventListener('focusout', (e) => {
   if (!t) return;
   // 글자를 다 지운 칸에는 브라우저가 <br> 을 남긴다 — 그러면 :empty 가 안 맞아 '발인' · '안내' 이름표가 빈 채로 보인다
   if (!t.textContent.trim()) { if (t.innerHTML) { t.textContent = ''; save(); } return; }
-  // 지도 링크 칸: 지도 앱의 공유 글을 통째로 붙여넣어도 https 주소만 남긴다 (사장님 2026-10-28). innerText 라야 줄이 안 붙는다
-  if (t.matches('[data-f="map"]')) {
-    const url = (t.innerText.match(/https?:\/\/[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/) || [])[0];
-    if (url && url !== t.textContent) { t.textContent = url; save(); }
-    return;
-  }
   if (!t.matches('[data-f$="tel"]')) return;
   const v = dashTels(t.textContent);
   if (v !== t.textContent) { t.textContent = v; save(); }
@@ -980,7 +967,10 @@ window.FoodbellDoc = {
   kind: 'daily-schedule',
   serialize,
   load(html) {
-    sheet.innerHTML = html; recalc();
+    sheet.innerHTML = html;
+    // 지도 링크 칸(map)은 2026-10-30 뺐다(사장님 — 장소 글자가 이미 지도를 연다). 그 전에 저장된 일정표에 남은 칸은 지운다
+    each(sheet.querySelectorAll('[data-f="map"]'), (n) => n.remove());
+    recalc();
     if (body.classList.contains('editing')) { addControls(); setCE(true); }   /* 편집 중에 다른 기기 고침이 와도 고칠 수 있게 */
     else { telsWrapped(); placesLinked(); }
   },
