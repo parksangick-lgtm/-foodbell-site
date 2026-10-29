@@ -510,6 +510,28 @@ def test_supply_updates_total_summary(pc, repo_url, custom_token, test_db, made)
     wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('total') == '1,100,000')
 
 
+@pytest.mark.parametrize('file, sel, typed, shown', [
+    ('staff-pay.html', 'tr.item [data-k="pay"]', '15만', '150,000'),
+    ('statement.html', 'tr.item [data-k="price"]', '1만5천', '15,000'),
+    ('sije-quote.html', '[data-k="supply"]', '35만', '350,000'),
+    ('event-quote.html', '[data-k="supply"]', '120만', '1,200,000'),
+    ('sije-quote.html', '[data-k="supply"]', '350,000', '350,000'),    # 쉼표 숫자는 그대로 — 바뀌면 안 되는 쪽(음성 대조군)
+    ('staff-pay.html', 'tr.item [data-k="pay"]', '150000', '150,000'),
+])
+def test_num_cell_reads_man_unit_like_daily_schedule(pc, repo_url, custom_token, made, file, sel, typed, shown):
+    """금액 칸에 '15만' · '1만5천' 을 치면 칸을 떠날 때 150,000 · 15,000 — 일정표 단가 읽기(js/docs/amount.js)와 같게 (사장님 2026-10-30).
+    전에는 숫자만 남겨 '15만' 이 15 가 됐다. 알바비는 총 지급액도 그 값."""
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    set_text(pc, sel, typed)
+    pc.keyboard.press('Tab')
+    assert text_of(pc, sel) == shown
+    assert pc.get_attribute(sel, 'data-raw') == shown.replace(',', '')
+    if file == 'staff-pay.html':
+        assert text_of(pc, '[data-k="total"]') == shown
+
+
 def save_photo(page, tmp_path, where):
     """'파일로 저장' 사진을 tmp_path/<where>.png 로 받아 그 경로."""
     page.wait_for_function("typeof html2canvas === 'function'", timeout=20_000)
