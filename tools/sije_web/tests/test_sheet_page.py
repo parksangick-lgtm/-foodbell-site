@@ -97,11 +97,35 @@ def test_title_place_stays_readable_while_editing(pc):
 
 def test_focused_cells_keep_their_background(pc):
     # 누르면 바탕색이 바뀌지 않고 테두리만 — 제목 줄(남색)도 보통 칸(흰색)도 (사장님 2026-10-29 "어느 칸이든")
-    for sel in ['#sheet .title-place', '#sheet td[data-path="place"]']:
+    for sel in ['#sheet .title-place', '#sheet td[data-path="setting"]']:
         before = pc.locator(sel).evaluate('e => getComputedStyle(e).backgroundColor')
         pc.click(sel)
         after = pc.locator(sel).evaluate('e => getComputedStyle(e).backgroundColor')
         assert after == before, f'{sel}: 누르니 바탕색이 {before} → {after}'
+
+
+def test_event_info_has_no_date_row_place_or_sijeil(pc, phone):
+    # 행사일 줄 · 장소 · 시제일 칸을 뺐다 (사장님 2026-10-29 — 맨 위 큰 줄의 주소 · 행사일과 겹침, 시제일은 메모로)
+    for page in (pc, phone):
+        assert page.locator('#sheet td[data-path="place"]').count() == 0
+        assert page.locator('#sheet td[data-path="sijeil"]').count() == 0
+    labels = pc.locator('#sheet td.lab').all_inner_texts()
+    for gone in ('행사일', '장소', '시제일'):
+        assert gone not in labels, labels
+    for kept in ('상차림', '고객', '담당·차량'):
+        assert kept in labels, labels
+    assert '행사일' not in phone.locator('#sheet td.lab').all_inner_texts()
+
+
+def test_title_place_edit_also_saves_place(pc, test_db, event_id):
+    # 장소 칸이 없어져도 PDF 이름 · 목록 · 캘린더 · 담당자 지도 링크는 place 를 쓴다 — 맨 위 주소를 고치면 place 도 같은 값
+    place = pc.locator('#sheet .title-place')
+    place.click()
+    pc.keyboard.press('Control+A')
+    pc.keyboard.type('가짜동 5-5 새 주소')
+    pc.evaluate('document.activeElement.blur()')
+    wait_db(test_db.collection('events').document(event_id),
+            lambda s: s.get('place') == '가짜동 5-5 새 주소' and s.get('titlePlace') == '가짜동 5-5 새 주소')
 
 
 def test_digits_only_contact_gets_dashes_on_leave(pc):

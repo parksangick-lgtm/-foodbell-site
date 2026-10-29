@@ -71,6 +71,7 @@ def test_view_shows_sheet(phone, repo_url, sheets):
     assert hrefs(phone, 'a.btn-map') == [naver('가짜동 1-1 놀이터 위')]
     assert phone.locator('img, canvas').count() == 0
     assert '예상' not in text
+    assert '시제일' not in text   # 내역서에서 시제일 칸을 뺐다 (2026-10-29)
     assert phone.locator('#status').is_hidden()
     assert phone.locator('table').count() == 0
 

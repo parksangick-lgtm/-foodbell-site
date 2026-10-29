@@ -24,6 +24,7 @@ def test_pdf_contains_key_values(tmp_path, repo_url):
     for want in ['가짜동1-1', '2026년11월13일(금)10시', '배', '5개', '산신제상은따로차린다', '도착하면먼저전화',
                  '010-0000-0000', '600,000원', '주차는가짜마을회관앞', '■준비품목—60만원상']:
         assert want in text, want
+    assert '시제일' not in text and '행사일' not in text   # 행사일 줄 · 장소 · 시제일 칸을 뺐다 (2026-10-29)
 
 
 def test_long_text_event_still_fits_one_page(tmp_path, repo_url):

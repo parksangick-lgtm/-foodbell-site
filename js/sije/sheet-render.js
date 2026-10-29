@@ -67,13 +67,11 @@ export function renderSheet(root, ev, images, opts = {}) {
   title.append(el('div', 'title-date', dateText));
   gap();
 
-  // ■ 행사 정보
+  // ■ 행사 정보 — 행사일 줄 · 장소 · 시제일 칸은 뺐다 (맨 위 큰 줄과 겹침, 시제일은 메모로. 사장님 2026-10-29)
   section('■ 행사 정보');
-  let tr = row();
-  cell(tr, 'lab', '행사일', { span: 2 });
-  cell(tr, 'val' + (dateText ? '' : ' blank'), dateText, { span: 11 });
+  let tr;
   const contacts = ev.contacts?.length ? ev.contacts : [''];
-  const pairs = [['장소', 'place', '시제일', 'sijeil'], ['상차림', 'setting', '산신제', 'sansinje'],
+  const pairs = [['상차림', 'setting', '산신제', 'sansinje'],
     ['고객', 'customer', '연락처', 'contacts.0']];
   for (let i = 1; i < contacts.length; i += 2) {
     pairs.push([`연락처 ${i + 1}`, `contacts.${i}`,

@@ -62,6 +62,10 @@ function save(path, value) {
   // 화면이 들고 있는 행사 값도 바로 고친다 — 저장소 알림은 따로 늦게 와서, 고치자마자 '거래명세서 만들기' 를 누르면 옛 값이 넘어갔다 (3단계 검토 I2)
   if (!path.includes('.')) ev = { ...ev, [path]: value };
   saving = updateField(id, path, value);
+  if (path === 'titlePlace') {   // 장소 칸을 뺐다(2026-10-29) — PDF 이름 · 목록 · 캘린더 · 담당자 지도 링크는 place 를 쓰므로 같은 값을 place 에도
+    ev = { ...ev, place: value };
+    saving = Promise.all([saving, updateField(id, 'place', value)]);
+  }
   saving.catch((e) => toast(`저장하지 못했습니다 (${e.code || e.message})`));
 }
 
