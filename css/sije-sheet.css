@@ -109,7 +109,7 @@
 .sije-sheet .memo-imgs { display: flex; flex-direction: column; gap: 6pt; align-items: flex-end; padding: 6pt; }
 .sije-sheet .memo-imgs img { display: block; max-width: 260pt; max-height: 200pt; object-fit: contain; }
 
-.sije-sheet [contenteditable]:focus { outline: 2pt solid var(--xl-navy); outline-offset: -2pt; background: #FFFFFF; }
-.sije-sheet .title [contenteditable]:focus { color: var(--xl-navy); }   /* 제목 줄은 흰 글씨라 흰 바탕에서 사라진다 (2026-10-29) */
+.sije-sheet [contenteditable]:focus { outline: 2pt solid var(--xl-navy); outline-offset: -2pt; }   /* 바탕색은 그대로 — 누르면 테두리만 (사장님 2026-10-29; 제목 줄은 흰 글씨라 흰 바탕에서 사라졌다) */
+.sije-sheet .title [contenteditable]:focus { outline-color: #FFFFFF; }
 
 @page { size: A4; margin: 0.3in 0.25in; }

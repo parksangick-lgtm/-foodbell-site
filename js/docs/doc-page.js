@@ -3,6 +3,7 @@
 // 주소에 ?id= 가 없으면 그 종류의 목록, 있으면 그 서류.
 import { KINDS, sortDocs, editedText, rowCells } from './doc-model.js';
 import { putBundle, takeBundle, quoteToEvent, quoteToStatement, NOTES_KEY as NOTES } from './handoff.js';
+import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
 } from '../sije/store.js';
@@ -10,6 +11,14 @@ import {
 const D = window.FoodbellDoc;
 const { title, noun } = KINDS[D.kind];
 const params = new URLSearchParams(location.search);
+
+// 글자 칸을 떠날 때 숫자만 친 전화번호에 작대기 — 어느 서류든 (사장님 2026-10-29 "전체 다"). 금액 칸 · 계좌번호 칸은 뺀다.
+// 바뀌면 input 을 띄워 그 화면의 저장이 돌게 한다(화면마다 input 에서 save).
+document.addEventListener('focusout', (e) => {
+  const t = e.target.closest?.('[data-edit]');
+  if (!t || t.dataset.t === 'num' || /acct|계좌/.test(t.dataset.f || t.dataset.k || '')) return;
+  if (dashTelsIn(t)) t.dispatchEvent(new Event('input', { bubbles: true }));
+});
 const docId = params.get('id');
 const listUrl = location.pathname;
 const $ = (id) => document.getElementById(id);

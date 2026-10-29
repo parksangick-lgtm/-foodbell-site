@@ -2,6 +2,7 @@
 // 웹 화면(편집) · 웹 인쇄 · 사무실 PC 의 PDF 가 모두 이 그리기를 쓴다 — 그래서 셋이 똑같이 나온다.
 // 칸 배치 · 너비 · 글자 크기는 지금 엑셀 내역서(_만들기 프로그램\jobsheet.py)와 같다.
 import { formatDateText } from './model.js';
+import { dashTelsIn } from '../docs/phone.js';
 
 // 엑셀 열 너비(pt): 구분 · 번호 · 품목 · 수량 · 비고 · 준비 | 가운데 틈 | 오른쪽 같은 6칸
 const COLS = [57, 28.5, 78, 47, 112, 28.5, 4.5, 57, 28.5, 78, 47, 112, 28.5];
@@ -177,6 +178,7 @@ export function renderSheet(root, ev, images, opts = {}) {
       const td = e.target.closest?.('[data-path]');
       if (!td || !root.contains(td) || !root.sijeOnEdit) return;
       const path = td.dataset.path;
+      dashTelsIn(td);   // 숫자만 친 전화번호에 작대기 (사장님 2026-10-29) — 수량 칸은 8자리 넘는 숫자가 없어 그대로
       const read = (x) => x.innerText.replace(/\n+$/, '');
       const v = path === 'mustDo'
         ? [...root.querySelectorAll('[data-path="mustDo"]')].map(read).join('\n')

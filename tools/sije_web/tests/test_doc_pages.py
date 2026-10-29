@@ -146,6 +146,48 @@ def set_text(page, selector, text):
     page.keyboard.type(text)
 
 
+def _bg(page, selector):
+    return page.locator(selector).first.evaluate('e => getComputedStyle(e).backgroundColor')
+
+
+@pytest.mark.parametrize(PAGE_ARGS, PAGES)
+def test_focused_cell_keeps_its_background(pc, repo_url, custom_token, made, kind, file, noun, title, send, label, edit_sel):
+    # 누르면 바탕색이 바뀌지 않고 테두리만 — 사장님 2026-10-29 "어느 칸이든 · 전체 다"
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    unfold_if_folded(pc, edit_sel)
+    before = _bg(pc, edit_sel)
+    pc.click(edit_sel)
+    assert _bg(pc, edit_sel) == before, f'누르니 바탕색이 {before} → {_bg(pc, edit_sel)}'
+
+
+@pytest.mark.parametrize(PAGE_ARGS, PAGES)
+def test_digits_only_phone_gets_dashes_on_leave(pc, repo_url, custom_token, made, kind, file, noun, title, send, label, edit_sel):
+    # 숫자만 친 전화번호는 칸을 떠날 때 010-1234-5678 로 — 어느 서류의 어느 글자 칸이든 (사장님 2026-10-29 "전체 다")
+    open_list(pc, repo_url, file, custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    set_text(pc, edit_sel, '담당 01012345678')
+    pc.keyboard.press('Tab')
+    cell = pc.locator(edit_sel).first   # Playwright 선택자(:text-is)는 querySelector 에서 깨진다 — locator 로만 (기록장 #54)
+    deadline = time.time() + 3
+    while '010-1234-5678' not in cell.text_content() and time.time() < deadline:
+        time.sleep(0.2)
+    assert '010-1234-5678' in cell.text_content(), f'작대기가 안 붙음: {cell.text_content()!r}'
+
+
+def test_account_number_is_not_dashed(pc, repo_url, custom_token, made):
+    # 알바비 계좌번호는 전화 모양(0 으로 시작하는 10~11자리)이어도 작대기를 안 붙인다
+    open_list(pc, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    set_text(pc, '[data-f="acct"]', '01012345678')
+    pc.keyboard.press('Tab')
+    pc.wait_for_timeout(500)
+    assert pc.locator('[data-f="acct"]').first.text_content() == '01012345678'
+
+
 # ---------- 다섯 종류 공통 ----------
 
 @pytest.mark.parametrize(PAGE_ARGS, PAGES)
@@ -912,8 +954,8 @@ def test_daily_phone_numbers_get_dashes(pc, repo_url, custom_token, made):
     for f in ('lead-tel', 'guide-tel'):
         edit_cell(pc, f'tr.item [data-f="{f}"]', '01000002000')
         assert text_of(pc, f'tr.item [data-f="{f}"]') == '010-0000-2000', f
-    edit_cell(pc, 'tr.item [data-f="place"]', '01000003000')      # 전화번호 칸이 아니면 그대로
-    assert text_of(pc, 'tr.item [data-f="place"]') == '01000003000'
+    edit_cell(pc, 'tr.item [data-f="place"]', '01000003000')      # 전화번호 칸이 아니어도 전화 모양이면 작대기 (사장님 2026-10-29 "전체 다" — 10-21 의 '칸만' 규칙을 넓힘)
+    assert text_of(pc, 'tr.item [data-f="place"]') == '010-0000-3000'
     set_text(pc, 'tr.item [data-f="tel"]', '01000009999')        # 칸을 안 떠나고 바로 '편집 완료'
     pc.click('#btn-edit')
     assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999'

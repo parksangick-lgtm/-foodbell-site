@@ -201,7 +201,7 @@ body.editing [data-edit]{
   box-shadow:inset 0 -1px 0 0 var(--gold-deep);
   cursor:text;
 }
-body.editing [data-edit]:focus{background:rgba(110,30,43,.09); box-shadow:inset 0 -2px 0 0 var(--seal)}
+body.editing [data-edit]:focus{box-shadow:inset 0 -2px 0 0 var(--seal)}
 body.editing span[data-edit]:empty{display:inline-block; min-width:2.6em}
 body.editing td[data-edit]:empty::before{content:"입력"; color:var(--ink-mute); font-size:.85em}
 :focus-visible{outline:2px solid var(--seal); outline-offset:2px}
@@ -912,7 +912,7 @@ body:not(.editing) .addjrow{display:none !important}
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=9"></script>
+<script type="module" src="js/docs/doc-page.js?v=10"></script>
 
 </body>
 </html>

@@ -95,6 +95,24 @@ def test_title_place_stays_readable_while_editing(pc):
     assert color != bg, f'글자색 {color} 이 바탕색 {bg} 과 같아 안 보인다'
 
 
+def test_focused_cells_keep_their_background(pc):
+    # 누르면 바탕색이 바뀌지 않고 테두리만 — 제목 줄(남색)도 보통 칸(흰색)도 (사장님 2026-10-29 "어느 칸이든")
+    for sel in ['#sheet .title-place', '#sheet td[data-path="place"]']:
+        before = pc.locator(sel).evaluate('e => getComputedStyle(e).backgroundColor')
+        pc.click(sel)
+        after = pc.locator(sel).evaluate('e => getComputedStyle(e).backgroundColor')
+        assert after == before, f'{sel}: 누르니 바탕색이 {before} → {after}'
+
+
+def test_digits_only_contact_gets_dashes_on_leave(pc):
+    cell = pc.locator('#sheet td[data-path="contacts.0"]')
+    cell.click()
+    pc.keyboard.press('Control+A')
+    pc.keyboard.type('총무 01087455865')
+    pc.keyboard.press('Tab')
+    wait_text(pc, '#sheet td[data-path="contacts.0"]', '총무 010-8745-5865')
+
+
 def test_phone_date_edit_updates_own_title_while_next_field_focused(phone):
     box = phone.locator('#quick input[data-path="date"]')
     box.fill('2026-11-14')
