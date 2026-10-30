@@ -786,7 +786,9 @@ const hasContacts = () => !!(navigator.contacts && navigator.contacts.select);
 const localTel = (t) => dashTels(String(t || '').replace(/^\+82[\s-]?/, '0').replace(/\D/g, ''));   // '+82 10-…' → '010-…'
 async function pickContacts(tr) {
   let list;
-  try { list = await navigator.contacts.select(['name', 'tel'], { multiple: true }); }
+  // 한 명씩 — 여러 명 고르기(multiple)로 하면 이름을 눌러도 체크만 되고 위의 '완료' 를 눌러야 넘어와서, 사장님 폰에서 '이동이 안 된다' 로 보였다(10-30).
+  // 한 명 고르기면 이름을 누르는 순간 바로 들어온다. 두 사람이면 단추를 한 번 더 누른다(' / ' 로 이어짐)
+  try { list = await navigator.contacts.select(['name', 'tel'], { multiple: false }); }
   catch (err) { toast('연락처를 가져오지 못했습니다 (' + ((err && err.name) || '알 수 없음') + ')'); return; }   // 권한을 안 줬거나 창을 못 연 경우
   // 멈춘 자리마다 알림 — 사장님 폰에서 번호가 안 들어갔는데 어디서 멈췄는지 알 수 없었다 (2026-10-30)
   if (!list || !list.length) { toast('고른 연락처가 없습니다'); return; }   // 고르기를 취소하면 빈 목록이 온다

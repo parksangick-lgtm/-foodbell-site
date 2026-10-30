@@ -1532,8 +1532,8 @@ def test_daily_contacts_button_fills_tel(pc, repo_url, custom_token, made):
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
     assert pc.locator('tr.item .btn-contacts').count() == 0            # 이 PC 크롬에는 창이 없다 — 단추도 없어야 한다(음성 대조군)
-    pc.add_init_script("""navigator.contacts = { select: async () => [
-        { name: ['가짜상주'], tel: ['+82 10-0000-1234'] }, { name: [], tel: ['01000005678'] }, { name: ['번호없음'], tel: [] } ] }""")
+    pc.add_init_script("""navigator.contacts = { select: async (props, opts) => { window.__pickOpts = opts; return [
+        { name: ['가짜상주'], tel: ['+82 10-0000-1234'] }, { name: [], tel: ['01000005678'] }, { name: ['번호없음'], tel: [] } ]; } }""")
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
     edit_cell(pc, 'tr.item [data-f="tel"]', '010-0000-9999')
@@ -1542,6 +1542,8 @@ def test_daily_contacts_button_fills_tel(pc, repo_url, custom_token, made):
     pc.wait_for_function("document.querySelector('tr.item [data-f=\"tel\"]').textContent.includes('가짜상주')", timeout=5000)
     assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999 / 가짜상주 010-0000-1234 / 010-0000-5678'   # 번호 없는 사람은 안 들어간다
     assert text_of(pc, '#toast') == '2명의 번호를 연락처 칸에 넣었습니다'   # 멈춘 자리마다 알림 — 사장님 폰에서 조용히 안 들어간 일(10-30)
+    # 한 명 고르기 — 여러 명(multiple)이면 이름을 눌러도 체크만 되고 '완료' 를 더 눌러야 해서 사장님 폰에서 '이동이 안 된다' 로 보였다(10-30)
+    assert pc.evaluate('window.__pickOpts') == {'multiple': False}
     html = pc.evaluate("() => window.FoodbellDoc.serialize()")
     assert 'btn-contacts' not in html and '가짜상주 010-0000-1234' in html
 
