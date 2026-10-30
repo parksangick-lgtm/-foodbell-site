@@ -1541,6 +1541,7 @@ def test_daily_contacts_button_fills_tel(pc, repo_url, custom_token, made):
     pc.click('tr.item .btn-contacts')
     pc.wait_for_function("document.querySelector('tr.item [data-f=\"tel\"]').textContent.includes('가짜상주')", timeout=5000)
     assert text_of(pc, 'tr.item [data-f="tel"]') == '010-0000-9999 / 가짜상주 010-0000-1234 / 010-0000-5678'   # 번호 없는 사람은 안 들어간다
+    assert text_of(pc, '#toast') == '2명의 번호를 연락처 칸에 넣었습니다'   # 멈춘 자리마다 알림 — 사장님 폰에서 조용히 안 들어간 일(10-30)
     html = pc.evaluate("() => window.FoodbellDoc.serialize()")
     assert 'btn-contacts' not in html and '가짜상주 010-0000-1234' in html
 

@@ -787,13 +787,17 @@ const localTel = (t) => dashTels(String(t || '').replace(/^\+82[\s-]?/, '0').rep
 async function pickContacts(tr) {
   let list;
   try { list = await navigator.contacts.select(['name', 'tel'], { multiple: true }); }
-  catch { toast('연락처를 가져오지 못했습니다'); return; }   // 권한을 안 줬거나 이 브라우저가 못 여는 경우 (고르기를 취소하면 빈 목록이 온다)
+  catch (err) { toast('연락처를 가져오지 못했습니다 (' + ((err && err.name) || '알 수 없음') + ')'); return; }   // 권한을 안 줬거나 창을 못 연 경우
+  // 멈춘 자리마다 알림 — 사장님 폰에서 번호가 안 들어갔는데 어디서 멈췄는지 알 수 없었다 (2026-10-30)
+  if (!list || !list.length) { toast('고른 연락처가 없습니다'); return; }   // 고르기를 취소하면 빈 목록이 온다
   // 번호 없는 사람은 건너뛴다 — 이름만 들어가면 전화 단추가 안 생긴다
-  const parts = (list || []).map((c) => { const t = localTel((c.tel || [])[0]); return t ? [clean((c.name || [])[0]), t].filter(Boolean).join(' ') : ''; }).filter(Boolean);
-  if (!parts.length || !tr || !tr.isConnected) return;
+  const parts = list.map((c) => { const t = localTel((c.tel || [])[0]); return t ? [clean((c.name || [])[0]), t].filter(Boolean).join(' ') : ''; }).filter(Boolean);
+  if (!parts.length) { toast('고른 연락처에 쓸 수 있는 전화번호가 없습니다 (받은 값: ' + JSON.stringify(list.map((c) => c.tel)) + ')', 8000); return; }
+  if (!tr || !tr.isConnected) { toast('이 줄이 없어졌습니다'); return; }
   const e = tr.querySelector('[data-f="tel"]');
   e.textContent = [clean(e.textContent), ...parts].filter(Boolean).join(' / ');
   recalc(); save();
+  toast(parts.length + '명의 번호를 연락처 칸에 넣었습니다');
 }
 
 /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
