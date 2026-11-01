@@ -187,10 +187,12 @@ for s in $(ls .claude/skills); do diff -rq ".claude/skills/$s" "$HOME/.claude/sk
 ## 화면 만들 때
 
 **값은 `css/style.css` 의 `:root` 에서만 고른다.** 새 색·새 크기를 즉석에서 만들지 않는다.
+  (예외 — 서류 7종(견적서 둘 · 작업지시서 · 거래명세서 · 알바비 · 일정표 · 행사목록)은 종이색 · 띠 색을 자기 파일 안에 둔다. 2026-11-01 사장님 결정 — 옮기면 모양이 달라지고 큰 작업이라 그대로 둠.)
 
 - 색: `--color-primary #6E1E2B` / `--color-gold #B08D57` / `--color-ink #120C06` / `--color-cream #F7F2E9` 등
 - 글자 크기: `--text-xs`(12) ~ `--text-3xl`(28) + `--text-section`, `--text-hero` 램프 안에서만
 - 글자 굵기: **세 단계만** — 본문 400 / 라벨·버튼 600 / 제목 700
+  (예외 — 서류 7종의 본문은 500. 나이 드신 분이 잘 보이게 일부러 굵게 둔 것, 2026-11-01 사장님 결정.)
 - 간격: `--space-1`(4px) ~ `--space-24`(100px), 4px 격자
 - 글꼴: 제목 `Gowun Batang`(명조), 본문 Pretendard→맑은 고딕 대체 스택
 
