@@ -1,7 +1,7 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
 import { itemsBySide, newViewKey, viewLinkText } from './model.js';
-import { NOTES_KEY, putBundle, eventToStatement, eventToQuote } from '../docs/handoff.js?v=3';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
+import { NOTES_KEY, putBundle, eventToStatement, eventToQuote } from '../docs/handoff.js?v=4';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,

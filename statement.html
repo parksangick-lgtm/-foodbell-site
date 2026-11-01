@@ -6,7 +6,7 @@
 <title>푸드벨 거래명세서</title>
 <meta name="description" content="푸드벨(박상익출장음식) 거래명세서. 품목·수량·단가를 넣으면 공급가액·세액·합계가 자동 계산되고, 인쇄·PDF·이미지로 고객에게 보낼 수 있습니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<link rel="icon" href="icons/app-stmt-192.png">
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
@@ -63,7 +63,7 @@ body{
 .brand{display:flex; flex-direction:column; gap:6px}
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
 .brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
-.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.brand-tel{display:inline-flex; align-items:center; min-height:44px; font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
 .doc-meta{display:flex; align-items:flex-start; gap:18px}
 .doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.3em; color:var(--ink); margin:0 0 10px; text-indent:.3em}
 .meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
@@ -75,7 +75,7 @@ body{
 /* ---------- 섹션 제목 ---------- */
 .sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
 .sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
-.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head .hanja{font-size:14px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
 .sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
 section + section{margin-top:34px}
 
@@ -135,7 +135,7 @@ tr.addrow .btn-mini{width:100%}
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
-.sum-note{margin:4px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
+.sum-note{margin:4px 0 0; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
 
 /* ---------- 인수자 ---------- */
 .receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
@@ -152,7 +152,7 @@ body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute
 
 .rowctl{display:inline-flex; margin-left:6px; vertical-align:middle}
 .btn-mini{
-  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  font-family:var(--sans); font-size:14px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
   border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
   border-radius:3px; padding:6px 8px; white-space:nowrap;
 }
@@ -488,14 +488,14 @@ body:not(.editing) tr.addrow{display:none !important}
     each(tb.querySelectorAll("tr.item"), function (tr) {
       if (tr.querySelector(".rowctl")) return;
       var box = el("span", "rowctl");
-      var d = el("button", "btn-mini btn-del", "✕ 줄 삭제"); d.type = "button";
+      var d = el("button", "btn-mini btn-del", "줄 삭제"); d.type = "button";
       box.appendChild(d);
       tr.querySelector('td[data-label="비고"]').appendChild(box);
     });
     if (!tb.querySelector("tr.addrow")) {
       var ar = el("tr", "addrow"), td = el("td");
       td.colSpan = 8;
-      var ab = el("button", "btn-mini", "＋ 줄 추가"); ab.type = "button";
+      var ab = el("button", "btn-mini", "줄 추가"); ab.type = "button";
       td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
     }
   }
@@ -597,6 +597,12 @@ body:not(.editing) tr.addrow{display:none !important}
     var t = c ? c.textContent.replace(/\s+/g, " ").trim() : "";
     return t ? t.slice(0, 24) : "고객";
   }
+  /* 파일 이름 하나로 — 보내기 사진 · 파일로 저장 · 인쇄 PDF 가 모두 이 이름을 쓴다 */
+  function fileBase() {
+    var d = new Date();
+    var ymd = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+    return "푸드벨_거래명세서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + "_" + ymd;
+  }
 
   /* ---------- 문서면을 이미지(PNG)로 ---------- */
   function renderImage() {
@@ -620,9 +626,14 @@ body:not(.editing) tr.addrow{display:none !important}
     }).catch(function () { return null; });
   }
 
+  /* 인쇄 · PDF: 저장 창에 뜨는 파일 이름이 문서 제목을 따르므로, 그동안만 제목을 파일 이름으로 바꾼다 */
+  var pageTitle = document.title;
+  window.addEventListener("afterprint", function () { document.title = pageTitle; });
   document.getElementById("btn-print").addEventListener("click", function () {
     setEditing(false);
+    document.title = fileBase();
     window.print();
+    setTimeout(function () { document.title = pageTitle; }, 1500);
   });
 
   document.getElementById("btn-copy").addEventListener("click", function () {
@@ -637,7 +648,7 @@ body:not(.editing) tr.addrow{display:none !important}
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
-    var fname = "푸드벨_거래명세서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + ".png";
+    var fname = fileBase() + ".png";
     var title = "푸드벨 거래명세서 (" + custName() + ")";
     var text = buildText();
     function done() { btn.disabled = false; btn.textContent = old; }
@@ -672,9 +683,7 @@ body:not(.editing) tr.addrow{display:none !important}
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "저장 중…";
     setEditing(false);
-    var d = new Date();
-    var ymd = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
-    var fname = "푸드벨_거래명세서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + "_" + ymd + ".png";
+    var fname = fileBase() + ".png";
     renderImage().then(function (blob) {
       btn.disabled = false; btn.textContent = old;
       if (blob) { downloadBlob(blob, fname); toast("거래명세서를 파일로 저장했습니다. (다운로드 폴더에서 확인하세요)"); }
@@ -750,7 +759,7 @@ body:not(.editing) tr.addrow{display:none !important}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=10"></script>
+<script type="module" src="js/docs/doc-page.js?v=11"></script>
 
 </body>
 </html>

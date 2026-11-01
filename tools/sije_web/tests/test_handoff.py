@@ -85,7 +85,7 @@ def test_quote_to_statement_fills_one_row(pc, repo_url, custom_token, test_db, m
     doc = wait_db(test_db.collection('docs').document(opened_doc_id(pc, made)), lambda s: s.exists).to_dict()
     assert doc['kind'] == 'statement' and doc['label'] == '○○ 김씨 문중 종친회'
     assert doc['total'] == '1,100,000'                                      # 견적서 합계와 같다
-    assert '11/21' in doc['html'] and '5열 진설 제수상 1상 + 종친 음복 식사' in doc['html']
+    assert '11/21' in doc['html'] and '제수상 1상 + 종친 음복 식사' in doc['html']
     time.sleep(1)
     assert qref.get().get('html') == before                                  # 원래 견적서 그대로 (Review Focus 4)
     for secret in ('문중', '1000000', '1,000,000'):                         # 주소에 손님 정보 없음 (Review Focus 3)
@@ -157,15 +157,15 @@ def test_quote_to_event_fills_fields_and_template(pc, repo_url, custom_token, te
     assert ev['customer'] == '○○ 김씨 문중 종친회'
     assert (ev['date'], ev['time']) == ('2026-11-21', '오전 10시')
     assert ev['place'] == ev['titlePlace'] == '충남 ○○군 ○○면 선산 묘역 (야외)'
-    assert ev['setting'] == '5열 진설 제수상 1상 + 종친 음복 식사'
+    assert ev['setting'] == '제수상 1상 + 종친 음복 식사'
     assert ev['amount'] == '1,000,000원'                                    # 공급가액 (답 42)
     assert ev['items'] == test_db.collection('templates').document('7치 고임상').get().get('items')   # 빈 양식의 품목으로 시작
     time.sleep(1)
     assert qref.get().get('html') == before                                  # 원래 견적서 그대로
 
 
-def test_quote_40man_asks_template(pc, repo_url, custom_token, test_db, made, made_events, templates):
-    quote_for_event(pc, repo_url, custom_token, made, '40man')
+def test_quote_45man_asks_template(pc, repo_url, custom_token, test_db, made, made_events, templates):
+    quote_for_event(pc, repo_url, custom_token, made, '45man')
     answer_next(pc)
     pc.click('#doc-make-event')
     pc.locator('#toast', has_text='내역서를 만드는 중').wait_for(timeout=20_000)   # 받는 동안 표시 (검토 M1 — 안 된 줄 알고 또 누르지 않게)

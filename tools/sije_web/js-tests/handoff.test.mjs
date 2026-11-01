@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseWhen, parseAmount, monthDay, wonText, pickTemplate,
-  quoteToEvent, quoteToStatement, eventToStatement, eventToQuote, putBundle, takeBundle,
+  quoteToEvent, quoteToStatement, quoteToWorksheet, eventToStatement, eventToQuote, putBundle, takeBundle,
 } from '../../../js/docs/handoff.js';
 
 const NO_DATE = '날짜를 읽지 못했습니다 — 직접 넣어 주세요';
@@ -117,6 +117,16 @@ test('quoteToStatement — 공급가액이 없으면 단가 비우고 알림', (
   const r = quoteToStatement({ ...QUOTE, supply: 0 });
   assert.equal(r.fields.price, null);
   assert.deepEqual(r.notes, [NO_AMOUNT]);
+});
+
+test('quoteToWorksheet — 시제 견적서 → 작업지시서 (봉행 일시 · 봉행 장소 · 고임 규격만, 사장님 2026-11-01)', () => {
+  assert.deepEqual(quoteToWorksheet(QUOTE), {
+    fields: { when: '2026년 11월 21일 (토) 오전 10시', place: '충남 ○○군 ○○면 선산 묘역 (야외)', tier: '7치 고임상' },
+    notes: [],
+  });
+  const bad = quoteToWorksheet({ ...QUOTE, when: ' ', place: '', tier: '' });   // 빈 칸은 비워 두고 날짜만 알림
+  assert.deepEqual(bad.fields, { when: '', place: '', tier: '' });
+  assert.deepEqual(bad.notes, [NO_DATE]);
 });
 
 test('eventToStatement — 내역서 금액 글자에서 단가', () => {

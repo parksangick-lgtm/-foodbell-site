@@ -2,7 +2,7 @@
 // 순수 함수만 둔다 — 화면(DOM)은 daily-schedule.html 이 이 줄 목록으로 그린다.
 // 사진에 찍히는 글자라 ::before 이름표 · tabular-nums 를 쓰지 않는다(html2canvas 가 사본에 박거나 숫자 사이에 틈을 낸다).
 export const STAFF_NOTE = "전화 · 지도는 홈 화면의 '푸드벨 일정' 아이콘을 누르세요";
-export const STAFF_LIKE = '확인했으면 사진을 길게 눌러 👍 해 주세요';
+export const STAFF_LIKE = '확인했으면 사진을 길게 눌러 좋아요 해 주세요';   // 이모지는 안 쓴다 (보완 일정표 4, 2026-11-01)
 export const SHOT_W = 540;   // 카드 묶음 폭(CSS px) — 휴대폰 폭, 2배로 찍어 사진은 1080px
 export const SHOT_H = 960;   // 한 장 = 휴대폰 화면 비율 9:16
 

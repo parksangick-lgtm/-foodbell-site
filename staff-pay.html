@@ -6,7 +6,7 @@
 <title>푸드벨 알바비 지급내역서</title>
 <meta name="description" content="푸드벨(박상익출장음식) 알바비 지급내역서. 행사별 알바 이름·전화번호·일당·계좌를 적으면 인원과 총 지급액이 자동 계산되고, 사진·인쇄로 사무실 직원에게 전달합니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<link rel="icon" href="icons/app-pay-192.png">
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
@@ -69,7 +69,8 @@ body:not(.editing) .pay-date:has([data-k="paydate"]:empty){display:none}
 .brand{display:flex; flex-direction:column; gap:6px}
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
 .brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
-.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:center; min-height:44px}   /* 누르는 자리 44px (보완 공통 1, 2026-11-01) */
 .doc-meta{display:flex; align-items:flex-start; gap:18px}
 .doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.3em; color:var(--ink); margin:0 0 10px; text-indent:.3em}
 .meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
@@ -81,7 +82,7 @@ body:not(.editing) .pay-date:has([data-k="paydate"]:empty){display:none}
 /* ---------- 섹션 제목 ---------- */
 .sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
 .sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
-.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head .hanja{font-size:14px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
 .sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
 section + section{margin-top:34px}
 
@@ -140,7 +141,7 @@ tr.addrow .btn-mini{width:100%}
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
-.sum-note{margin:4px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
+.sum-note{margin:4px 0 0; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
 
 /* ---------- 인수자 ---------- */
 .receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
@@ -157,7 +158,7 @@ body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute
 
 .rowctl{display:inline-flex; margin-left:6px; vertical-align:middle}
 .btn-mini{
-  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  font-family:var(--sans); font-size:14px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
   border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
   border-radius:3px; padding:6px 8px; white-space:nowrap;
 }
@@ -516,14 +517,14 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     each(tb.querySelectorAll("tr.item"), function (tr) {
       if (tr.querySelector(".rowctl")) return;
       var box = el("span", "rowctl");
-      var d = el("button", "btn-mini btn-del", "✕ 줄 삭제"); d.type = "button";
+      var d = el("button", "btn-mini btn-del", "줄 삭제"); d.type = "button";
       box.appendChild(d);
       tr.querySelector("td.memo-cell").appendChild(box);
     });
     if (!tb.querySelector("tr.addrow")) {
       var ar = el("tr", "addrow"), td = el("td");
       td.colSpan = 6;
-      var ab = el("button", "btn-mini", "＋ 줄 추가 (한 사람)"); ab.type = "button";
+      var ab = el("button", "btn-mini", "줄 추가 (한 사람)"); ab.type = "button";
       td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
     }
   }
@@ -710,6 +711,8 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 
   document.getElementById("btn-send").addEventListener("click", function () {
     if (!recalc() && !window.confirm("일당을 아직 안 넣으셨습니다. 그래도 보낼까요?")) return;
+    // 사진에 모든 사람의 전화번호 · 계좌가 담긴다 — 만들기 전에 한 번 더 묻는다 (사장님 2026-11-01, 보완 알바비 2)
+    if (!window.confirm("사진에 모든 사람의 전화번호·계좌가 담깁니다. 보낼까요?")) return;
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
@@ -787,7 +790,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=10"></script>
+<script type="module" src="js/docs/doc-page.js?v=11"></script>
 
 
 </body>

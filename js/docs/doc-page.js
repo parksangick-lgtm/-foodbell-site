@@ -2,7 +2,7 @@
 // 화면은 window.FoodbellDoc(연결 고리)만 내주고, 저장소는 ../sije/store.js 로만 부른다.
 // 주소에 ?id= 가 없으면 그 종류의 목록, 있으면 그 서류.
 import { KINDS, sortDocs, editedText, rowCells } from './doc-model.js';
-import { putBundle, takeBundle, quoteToEvent, quoteToStatement, NOTES_KEY as NOTES } from './handoff.js';
+import { putBundle, takeBundle, quoteToEvent, quoteToStatement, quoteToWorksheet, NOTES_KEY as NOTES } from './handoff.js';
 import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
@@ -74,10 +74,11 @@ document.querySelector('.sheet').after(delWrap);
 $('doc-del').textContent = `이 ${noun} 지우기`;
 
 // 3단계 서류 잇기 — '이 견적서로 …만들기' 줄 (지우기 위). 누르면 겹치는 칸을 꾸러미로 넘기고 받는 화면을 ?make=1 로 연다.
-const MAKES = { 'sije-quote': ['event', 'statement'], 'event-quote': ['statement'] };
+const MAKES = { 'sije-quote': ['event', 'statement', 'sije-worksheet'], 'event-quote': ['statement'] };
 const MAKE = {
   event: { label: '내역서 만들기', ask: `이 ${noun} 내용으로 새 내역서를 만들까요?`, url: 'sije-list.html?make=1', build: quoteToEvent },
   statement: { label: '거래명세서 만들기', ask: `이 ${noun} 내용으로 새 거래명세서를 만들까요?`, url: 'statement.html?make=1', build: quoteToStatement },
+  'sije-worksheet': { label: '작업지시서 만들기', ask: `이 ${noun} 내용으로 새 작업지시서를 만들까요?`, url: 'sije-worksheet.html?make=1', build: quoteToWorksheet },   // 사장님 2026-11-01
 };
 if (MAKES[D.kind]) {
   const row = document.createElement('div');
@@ -99,8 +100,8 @@ if (MAKES[D.kind]) {
   }
   delWrap.before(row);
 }
-// 받는 쪽(거래명세서 목록 · 시제 견적서 목록(내역서에서, 2026-10-28)) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
-const incoming = ['statement', 'sije-quote'].includes(D.kind) && !docId
+// 받는 쪽(거래명세서 목록 · 시제 견적서 목록(내역서에서, 2026-10-28) · 작업지시서 목록(시제 견적서에서, 2026-11-01)) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
+const incoming = ['statement', 'sije-quote', 'sije-worksheet'].includes(D.kind) && !docId
   ? takeBundle(sessionStorage, D.kind, params.get('make') === '1', Date.now()) : null;
 
 const toastEl = document.createElement('div');

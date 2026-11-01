@@ -77,6 +77,15 @@ export function quoteToStatement(src) {
   };
 }
 
+// 시제 견적서 → 작업지시서 (사장님 2026-11-01). 겹치는 칸만 — 봉행 일시(글자 그대로) · 봉행 장소 · 고임 규격(상 종류 단추).
+// 작업지시서에는 수신 · 상차림 · 금액 칸이 없어 customer · setting · supply 는 안 옮긴다.
+export function quoteToWorksheet(src) {
+  const when = (src.when || '').trim();
+  const notes = [];
+  if (!when) notes.push(NO_DATE);
+  return { fields: { when, place: src.place || '', tier: src.tier || '' }, notes };
+}
+
 // 내역서(1단계 행사 문서) → 거래명세서 한 줄. 단가 = 금액 글자에서 읽은 숫자
 export function eventToStatement(ev) {
   const price = parseAmount(ev.amount);

@@ -39,6 +39,6 @@ test('보냄 표시', () => {
 
 test('상수 — 아래 문구 두 줄, 사진 폭 540 · 한 장 960', () => {
   assert.equal(STAFF_NOTE, "전화 · 지도는 홈 화면의 '푸드벨 일정' 아이콘을 누르세요");
-  assert.equal(STAFF_LIKE, '확인했으면 사진을 길게 눌러 👍 해 주세요');
+  assert.equal(STAFF_LIKE, '확인했으면 사진을 길게 눌러 좋아요 해 주세요');
   assert.deepEqual([SHOT_W, SHOT_H], [540, 960]);
 });

@@ -496,6 +496,22 @@ def test_staff_pay_many_people_split_into_pages(phone, repo_url, custom_token, m
     assert all(f'{i + 1}/{len(names)}' in t for i, t in enumerate(texts)), texts
 
 
+def test_staff_pay_send_asks_about_private_info(pc, repo_url, custom_token, made):
+    """'직원에게 보내기'는 사진을 만들기 전에 전화번호 · 계좌가 담긴다고 한 번 묻는다 — 아니오면 사진을 만들지 않고 단추가 돌아온다
+    (사장님 2026-11-01, 보완 알바비 2). 일당이 비었을 때의 물음이 먼저고 이 물음은 그 뒤다."""
+    open_list(pc, repo_url, 'staff-pay.html', custom_token(ALLOWED, allowed=True))
+    new_doc(pc, made)
+    pc.click('#btn-edit')
+    pay_fill(pc, 1)                                                                       # 일당이 있으니 일당 물음은 안 뜬다
+    pc.click('#btn-edit')
+    asked = []
+    pc.once('dialog', lambda d: (asked.append(d.message), d.dismiss()))
+    pc.click('#btn-send')
+    pc.wait_for_timeout(800)
+    assert asked == ['사진에 모든 사람의 전화번호·계좌가 담깁니다. 보낼까요?']
+    assert pc.locator('#btn-send').inner_text() == '직원에게 보내기' and pc.locator('#btn-send').is_enabled()
+
+
 # ---------- 시제 견적서 ----------
 
 QUOTE = dict(file='sije-quote.html', sel='.brief-row dd span[data-edit]')
@@ -1451,13 +1467,13 @@ def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_tok
 
 
 STAFF_NOTE = "전화 · 지도는 홈 화면의 '푸드벨 일정' 아이콘을 누르세요"      # 10-24 검토 반영 — 공지 링크는 사라진 적이 있다
-STAFF_LIKE = '확인했으면 사진을 길게 눌러 👍 해 주세요'
+STAFF_LIKE = '확인했으면 사진을 길게 눌러 좋아요 해 주세요'      # 11-01 보완 — 이모지 없이
 STAFF_HINT = "직원이시면 단톡방 공지의 '푸드벨 일정' 링크를 누르세요"
 
 
 def test_daily_photo_ends_with_staff_note(pc, repo_url, custom_token, made):
     """직원에게 가는 사진 맨 아래에 '전화 · 지도는 공지 링크' 한 줄 — 사진 속 글자는 눌리지 않아서 (사장님 10-21 밤).
-    그 아래에 '👍 해 주세요' 한 줄이 더 붙는다 (사장님 10-23). 화면 · 인쇄에는 없다."""
+    그 아래에 '좋아요 해 주세요' 한 줄이 더 붙는다 (사장님 10-23, 이모지는 11-01 뺌). 화면 · 인쇄에는 없다."""
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     fill_work(pc)
     assert pc.get_by_text(STAFF_NOTE).count() == 0 or pc.get_by_text(STAFF_NOTE).is_hidden()   # 화면에는 없음

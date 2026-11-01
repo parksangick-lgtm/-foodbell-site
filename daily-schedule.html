@@ -6,7 +6,7 @@
 <title>푸드벨 일일 일정표</title>
 <meta name="description" content="푸드벨(박상익출장음식) 일일 일정표. 다음 날 일을 줄마다 적어 직원 단톡방에 사진으로 보내는 내부용 서류입니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗓</text></svg>">
+<link rel="icon" href="icons/app-daily-192.png">
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
@@ -60,7 +60,8 @@ body{
 .brand{display:flex; flex-direction:column; gap:6px}
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
 .brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
-.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:center; min-height:44px}   /* 누르는 자리 44px (보완 공통 1, 2026-11-01) */
 .doc-meta{display:flex; align-items:flex-start; gap:18px}
 .doc-title{font-family:var(--serif); font-weight:var(--w-bold); font-size:24px; letter-spacing:.3em; color:var(--ink); margin:0 0 10px; text-indent:.3em}
 .meta-list{display:grid; grid-template-columns:auto auto; gap:3px 12px; font-size:14.5px; line-height:1.6; margin:0}
@@ -72,7 +73,7 @@ body{
 /* ---------- 섹션 제목 ---------- */
 .sec-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0 0 14px}
 .sec-head h2{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--ink); margin:0; letter-spacing:.02em; white-space:nowrap}
-.sec-head .hanja{font-size:13.5px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
+.sec-head .hanja{font-size:14px; font-weight:var(--w-medium); color:var(--gold-deep); letter-spacing:.14em; font-family:var(--serif); white-space:nowrap}
 .sec-head::after{content:""; flex:1; height:2px; background:linear-gradient(90deg, var(--gold) 0 40px, var(--line-strong) 40px)}
 section + section{margin-top:34px}
 
@@ -131,7 +132,7 @@ tr.addrow .btn-mini{width:100%}
 .sum-total .val em{font-style:normal; font-size:16px; font-weight:var(--w-medium); margin-left:3px}
 .sum-total .val:has([data-k="total"]:empty) em{display:none}
 .sum-hangul{margin:9px 0 0; font-family:var(--serif); font-size:15.5px; font-weight:var(--w-bold); color:var(--ink); text-align:right}
-.sum-note{margin:4px 0 0; font-size:13.5px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
+.sum-note{margin:4px 0 0; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); text-align:right}
 
 /* ---------- 인수자 ---------- */
 .receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
@@ -148,7 +149,7 @@ body.editing span[data-edit]:empty::after{content:"입력"; color:var(--ink-mute
 
 .rowctl{display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:6px; vertical-align:middle}
 .btn-mini{
-  font-family:var(--sans); font-size:13.5px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  font-family:var(--sans); font-size:14px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
   border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
   border-radius:3px; padding:6px 8px; white-space:nowrap;
 }
@@ -259,7 +260,9 @@ body:not(.editing) tr.addrow{display:none !important}
 
 /* 표제: 푸드벨 옆 사이트 주소 (인장 옆 QR 은 2026-10-24 사장님 요청으로 뺌 — 그림 images/qr-foodbell.png 는 남아 있음) */
 .brand-row{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
-.brand-url{font-size:16px; font-weight:var(--w-medium); color:var(--seal); text-decoration:none; border-bottom:1px solid var(--gold); letter-spacing:.02em}
+.brand-url{font-size:16px; font-weight:var(--w-medium); color:var(--seal); letter-spacing:.02em;
+  text-decoration:underline; text-decoration-color:var(--gold); text-decoration-thickness:1px; text-underline-offset:.15em;   /* 밑줄을 글자 바로 아래에 — 44px 상자의 border-bottom 은 글자에서 멀어진다 */
+  display:inline-flex; align-items:center; min-height:44px}   /* 누르는 자리 44px (보완 일정표 3, 2026-11-01) */
 
 /* 큰 날짜(요일은 저절로) · 음력 · 장 번호 */
 .day{font-family:var(--serif); font-weight:var(--w-bold); font-size:30px; color:var(--ink); margin:0 0 .6rem; letter-spacing:.02em}
@@ -299,11 +302,11 @@ table.stmt.day-table td.crew{word-break:keep-all}   /* 담당 직원 이름은 �
 table.stmt.day-table td.work .amt{display:block; white-space:nowrap; font-size:.86em; color:var(--seal)}
 table.stmt.day-table .amt:empty{display:none}
 /* 단위 없는 단가('250') 알림 — 화면에서만 보이고 직원 사진(카드 — rowsData 가 뺀다) · 인쇄에는 안 나간다 (2026-10-21) */
-table.stmt.day-table .amt.warn{color:#c62828; font-weight:700; white-space:normal}
+table.stmt.day-table .amt.warn{color:var(--seal); font-weight:700; white-space:normal}
 @media print{ table.stmt.day-table .amt.warn{display:none !important} }
 /* 인원 · 단가 입력 칸은 편집할 때만 (보기에서는 '60명 × 15,000원 = 900,000원' 한 줄) */
 table.stmt.day-table .qty{display:none}
-body.editing table.stmt.day-table .qty{display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; font-size:.9em; color:var(--ink-mute)}
+body.editing table.stmt.day-table .qty{display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; font-size:14px; color:var(--ink-mute)}
 /* 현지 안내인 전화가 비면 '안내' 글자도 숨긴다 */
 body:not(.editing) table.stmt.day-table .guide:has([data-f="guide-tel"]:empty){display:none}
 /* 장례식장 · 발인 · 화장 (사장님 2026-10-21) — 발인 · 화장은 한 줄에, 좁으면 둘째 줄로. 비면 '발인' · '화장' 글자도 숨긴다 */
@@ -312,7 +315,7 @@ body:not(.editing) table.stmt.day-table .rite:has([data-edit]:empty),
 body:not(.editing) table.stmt.day-table .rites:not(:has([data-edit]:not(:empty))){display:none}
 /* 연기 · 취소 — 번호 아래 표시(recalc 가 그림), 보기에서는 그 줄 글자를 흐리게. 메모에 '연기'만 적으면 다른 일과 똑같아 보였다 (사장님 10-24 저녁) */
 table.stmt.day-table td.c .state{display:block; width:max-content; margin:4px auto 0; padding:0 4px; background:var(--seal); color:var(--paper);
-  font-size:12px; font-weight:var(--w-bold); line-height:1.6; border-radius:3px; white-space:nowrap}
+  font-size:14px; font-weight:var(--w-bold); line-height:1.6; border-radius:3px; white-space:nowrap}
 body:not(.editing) table.stmt.day-table tr.item[data-state] td:not(.c){opacity:.55}
 
 /* 편집할 때: 두세 줄 칸도 한 칸씩 따로 누르게, 빈 칸에는 무엇을 적을지 흐린 글자로 */
@@ -462,7 +465,7 @@ import { lunarText } from './js/docs/lunar.js?v=1';
 import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
 import { parseOrder } from './js/docs/order-text.js?v=4';
-import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W, SHOT_H } from './js/docs/cards.js?v=2';
+import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W, SHOT_H } from './js/docs/cards.js?v=3';
 
 const SITE = 'https://foodbell.kr/';
 const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
@@ -618,7 +621,7 @@ function addControls() {
       return b;
     });
     const p = el('button', 'btn-mini btn-paste', '문자 붙여넣기'); p.type = 'button';
-    const d = el('button', 'btn-mini btn-del', '✕ 줄 삭제'); d.type = 'button';
+    const d = el('button', 'btn-mini btn-del', '줄 삭제'); d.type = 'button';
     box.append(...marks, p);
     // 연락처에서 고르기 — 휴대폰 연락처 고르기 창이 있는 브라우저(안드로이드 크롬)에서만 단추가 보인다 (사장님 2026-10-30, 갤럭시)
     if (hasContacts()) { const c = el('button', 'btn-mini btn-contacts', '연락처에서'); c.type = 'button'; box.append(c); }
@@ -628,7 +631,7 @@ function addControls() {
   if (!tb.querySelector('tr.addrow')) {
     const ar = el('tr', 'addrow'), td = el('td');
     td.colSpan = 6;
-    const ab = el('button', 'btn-mini', '＋ 줄 추가 (일 하나)'); ab.type = 'button';
+    const ab = el('button', 'btn-mini', '줄 추가 (일 하나)'); ab.type = 'button';
     td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
   }
 }
@@ -1042,6 +1045,6 @@ fillFresh();
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=10"></script>
+<script type="module" src="js/docs/doc-page.js?v=11"></script>
 </body>
 </html>

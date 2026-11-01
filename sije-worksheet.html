@@ -6,7 +6,7 @@
 <title>푸드벨 시제 작업지시서</title>
 <meta name="description" content="푸드벨(박상익출장음식) 시제 상차림 작업지시서. 준비 품목을 편집·추가하고 인쇄·이미지로 저장하는 내부용 A4 서식입니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏮</text></svg>">
+<link rel="icon" href="icons/app-work-192.png">
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
@@ -69,7 +69,7 @@ body{
 .brand-perhead:has([data-k="perhead"]:empty) .won{display:none}
 .brand-name{font-family:var(--serif); font-weight:var(--w-bold); font-size:32px; letter-spacing:.04em; color:var(--seal); line-height:1.2; margin:0}
 .brand-tag{font-size:15px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.02em}
-.brand-tel{font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
+.brand-tel{display:inline-flex; align-items:center; min-height:44px; font-family:var(--serif); font-weight:var(--w-bold); font-size:19px; color:var(--seal); letter-spacing:.02em; text-decoration:none; font-variant-numeric:tabular-nums}
 .brand-tel:hover{color:var(--seal-light)}
 
 .doc-meta{display:flex; align-items:flex-start; gap:18px}
@@ -107,7 +107,6 @@ section + section{margin-top:34px}
 .jrow{display:grid; grid-template-columns:78px 1fr; gap:12px; align-items:center; padding:9px 0; border-bottom:1px dashed var(--gold)}
 .jrow:last-of-type{border-bottom:0}
 .jrow-label{font-family:var(--serif); font-weight:var(--w-bold); font-size:14.5px; color:var(--ink); line-height:1.35; text-align:right}
-.jrow-label small{display:block; font-size:13px; font-weight:var(--w-medium); color:var(--ink-mute); letter-spacing:.08em}
 .jitems{display:flex; flex-wrap:wrap; gap:5px}
 .jitems span{
   font-size:15px; padding:3px 9px; background:var(--paper);
@@ -178,7 +177,6 @@ body.editing .remark-box:empty::before{content:"특이사항이 있으면 적어
 .steps{display:grid; gap:12px}
 @media (min-width:640px){ .steps{grid-template-columns:repeat(3,1fr)} }
 .step{border:1px solid var(--line); border-left:3px solid var(--gold); background:var(--band); padding:13px 15px}
-.step .no{font-family:var(--sans); font-size:13px; font-weight:var(--w-medium); letter-spacing:.18em; color:var(--gold-deep)}
 .step h3{font-family:var(--serif); font-size:16.5px; font-weight:var(--w-bold); color:var(--ink); margin:3px 0 5px}
 .step p{margin:0; font-size:15px; font-weight:var(--w-medium); color:var(--ink-soft); line-height:1.65}
 
@@ -209,7 +207,7 @@ body.editing td[data-edit]:empty::before{content:"입력"; color:var(--ink-mute)
 /* ---------- 편집용 항목 컨트롤 (편집 모드에서만 JS가 삽입) ---------- */
 .rowctl{display:inline-flex; gap:3px; margin-left:10px; vertical-align:middle}
 .btn-mini{
-  font-family:var(--sans); font-size:13px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
+  font-family:var(--sans); font-size:14px; font-weight:var(--w-medium); line-height:1; cursor:pointer;
   border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft);
   border-radius:3px; padding:4px 6px; white-space:nowrap;
 }
@@ -295,7 +293,6 @@ body:not(.editing) .addjrow{display:none !important}
   .doc-title{letter-spacing:.3em; text-indent:.3em}
   .jrow{grid-template-columns:1fr; gap:6px}
   .jrow-label{text-align:left}
-  .jrow-label small{display:inline; margin-left:6px}
   .sum{max-width:none}
 }
 
@@ -313,6 +310,7 @@ body:not(.editing) .addjrow{display:none !important}
   /* 한 장(A4)에 들어오도록 문서 사이 여백은 좁히고, 글자는 인쇄용으로 최대한 키움 */
   .masthead{gap:9px}
   .brand{gap:1px}
+  .brand-tel{min-height:0}
   .brand-name{font-size:24px}
   .brand-tag{font-size:13px}
   .brand-perhead{font-size:12px}
@@ -347,7 +345,7 @@ body:not(.editing) .addjrow{display:none !important}
 <link rel="stylesheet" href="css/docs.css?v=3">
 </head>
 <body>
-<p class="hint"><b>안내</b><strong>편집</strong>을 누르면 품목·수량을 고치고 <strong>＋ 항목 추가</strong>로 줄을 늘릴 수 있습니다. <strong>파일로 저장</strong>은 이미지로, <strong>인쇄 · PDF</strong>는 종이로 남깁니다. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 작업지시서가 보입니다. 새 행사는 <strong>목록</strong>에서 <strong>새 작업지시서</strong>를 누르세요.</p>
+<p class="hint"><b>안내</b><strong>편집</strong>을 누르면 품목·수량을 고치고 <strong>항목 추가</strong>로 줄을 늘릴 수 있습니다. <strong>파일로 저장</strong>은 이미지로, <strong>인쇄 · PDF</strong>는 종이로 남깁니다. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 작업지시서가 보입니다. 새 행사는 <strong>목록</strong>에서 <strong>새 작업지시서</strong>를 누르세요.</p>
 
 <div class="toolbar">
   <button type="button" id="btn-edit" aria-pressed="false">편집</button>
@@ -417,7 +415,7 @@ body:not(.editing) .addjrow{display:none !important}
           </tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">포 · 혜 · 나물</td>
-            <td class="item-detail" data-edit data-t="text">북어포, 식혜, 간장, 삼색나물(고사리 · 도라지 · 시금치), 나박김치</td>
+            <td class="item-detail" data-edit data-t="text">북어포, 식혜, 삼색나물(고사리 · 도라지 · 시금치), 나박김치</td>
             <td class="n" data-label="수량"><span data-edit data-t="text">500g</span></td>
           </tr>
           <tr class="item">
@@ -432,7 +430,7 @@ body:not(.editing) .addjrow{display:none !important}
           </tr>
           <tr class="item">
             <td class="item-name" data-edit data-t="text">반 · 갱 · 면</td>
-            <td class="item-detail" data-edit data-t="text">메(밥), 탕국, 국수, 시접 일습, 떡(웃기 · 주악), 생수, 청주</td>
+            <td class="item-detail" data-edit data-t="text">메(밥), 탕국, 국수, 떡(웃기 · 주악), 청주</td>
             <td class="n" data-label="수량"><span data-edit data-t="text">1</span></td>
           </tr>
           <tr class="item">
@@ -578,7 +576,7 @@ body:not(.editing) .addjrow{display:none !important}
         if (tr.querySelector(".rowctl")) return;
         var qc = tr.querySelector('td[data-label="수량"]');
         var box = el("span", "rowctl");
-        var d = el("button", "btn-mini btn-del", "✕"); d.type = "button"; d.title = "이 항목 삭제";
+        var d = el("button", "btn-mini btn-del", "삭제"); d.type = "button"; d.title = "이 항목 삭제";
         box.appendChild(d); qc.appendChild(box);
       });
       // 구분 삭제 버튼
@@ -591,7 +589,7 @@ body:not(.editing) .addjrow{display:none !important}
       if (!g.querySelector("tr.addrow")) {
         var ar = el("tr", "addrow");
         var td = el("td"); td.colSpan = 3;
-        var ab = el("button", "btn-mini", "＋ 항목 추가"); ab.type = "button";
+        var ab = el("button", "btn-mini", "항목 추가"); ab.type = "button";
         td.appendChild(ab); ar.appendChild(td); g.appendChild(ar);
       }
     });
@@ -599,13 +597,13 @@ body:not(.editing) .addjrow{display:none !important}
     var qw = sheet.querySelector(".qwrap");
     if (qw && !(qw.nextElementSibling && qw.nextElementSibling.matches(".addgroup"))) {
       var wrap = el("div", "addgroup");
-      var gb = el("button", "btn-mini", "＋ 새 구분 추가"); gb.type = "button";
+      var gb = el("button", "btn-mini", "새 구분 추가"); gb.type = "button";
       wrap.appendChild(gb); qw.parentNode.insertBefore(wrap, qw.nextSibling);
     }
     // 음식 구성 품목 추가 버튼
     each(sheet.querySelectorAll(".jitems"), function (ji) {
       if (ji.querySelector(".btn-add")) return;
-      var b = el("button", "btn-mini btn-add", "＋"); b.type = "button"; b.title = "품목 추가";
+      var b = el("button", "btn-mini btn-add", "추가"); b.type = "button"; b.title = "품목 추가";
       ji.appendChild(b);
     });
     // 음식 구성 줄 삭제 버튼
@@ -619,7 +617,7 @@ body:not(.editing) .addjrow{display:none !important}
     var jn = sheet.querySelector(".jinseol");
     if (jn && !(jn.nextElementSibling && jn.nextElementSibling.matches(".addjrow"))) {
       var jw = el("div", "addjrow");
-      var jb = el("button", "btn-mini", "＋ 구성 줄 추가"); jb.type = "button";
+      var jb = el("button", "btn-mini", "구성 줄 추가"); jb.type = "button";
       jw.appendChild(jb); jn.parentNode.insertBefore(jw, jn.nextSibling);
     }
   }
@@ -770,6 +768,12 @@ body:not(.editing) .addjrow{display:none !important}
     var t = place || when;
     return t ? t.slice(0, 24) : "무제";
   }
+  /* 파일 이름 하나로 — 보내기 사진 · 파일로 저장 · 인쇄(PDF) 제목이 모두 이것을 쓴다 (확장자 없이) */
+  function fileBase() {
+    var d = new Date();
+    var ymd = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    return "푸드벨_작업지시서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + "_" + ymd;
+  }
 
   /* ---------- 견적서를 이미지(PNG blob)로 ---------- */
   function renderImage() {
@@ -790,9 +794,14 @@ body:not(.editing) .addjrow{display:none !important}
     }).catch(function () { return null; });
   }
 
+  /* 인쇄 · PDF: 저장 창에 뜨는 파일 이름이 문서 제목을 따르므로, 그동안만 제목을 파일 이름으로 바꾼다 */
+  var pageTitle = document.title;
+  window.addEventListener("afterprint", function () { document.title = pageTitle; });
   document.getElementById("btn-print").addEventListener("click", function () {
     setEditing(false);
+    document.title = fileBase();
     window.print();
+    setTimeout(function () { document.title = pageTitle; }, 1500);
   });
 
   document.getElementById("btn-copy").addEventListener("click", function () {
@@ -816,7 +825,7 @@ body:not(.editing) .addjrow{display:none !important}
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
-    var fname = "푸드벨_작업지시서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + ".png";
+    var fname = fileBase() + ".png";
     var title = "푸드벨 시제 작업지시서 (" + custName() + ")";
     var text = buildText();
     function done() { btn.disabled = false; btn.textContent = old; }
@@ -837,7 +846,7 @@ body:not(.editing) .addjrow{display:none !important}
       if (blob && window.claude && window.claude.use) {
         copyText(text);
         claudeSave(fname, blob).then(function (r) {
-          if (r === true) toast("견적서 이미지를 저장했습니다. 카톡·문자로 보내세요. (요약 문구도 복사됨)");
+          if (r === true) toast("작업지시서 이미지를 저장했습니다. 카톡·문자로 보내세요. (요약 문구도 복사됨)");
           else if (r !== "declined") fallbackNoClaude();
           done();
         });
@@ -853,7 +862,7 @@ body:not(.editing) .addjrow{display:none !important}
         downloadBlob(blob, fname);
         copyImage(blob).then(function (ok) {
           if (ok) toast("작업지시서 사진을 복사했습니다. 카톡 대화창에서 Ctrl+V 로 붙여넣으세요. (다운로드 폴더에도 저장됨)", 8000);
-          else { copyText(text); toast("견적서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요."); }
+          else { copyText(text); toast("작업지시서 이미지를 저장하고 요약 문구를 복사했습니다. 카톡·문자로 보내세요."); }
         });
       }
     }, function () { fallbackNoClaudeSimple(); });
@@ -866,14 +875,12 @@ body:not(.editing) .addjrow{display:none !important}
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "저장 중…";
     setEditing(false);
-    var d = new Date();
-    var ymd = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
-    var fname = "푸드벨_작업지시서_" + custName().replace(/[\\/:*?"<>|\s]+/g, "-") + "_" + ymd + ".png";
+    var fname = fileBase() + ".png";
     renderImage().then(function (blob) {
       btn.disabled = false; btn.textContent = old;
       if (blob) {
         downloadBlob(blob, fname);
-        toast("견적서를 파일로 저장했습니다. (다운로드 폴더에서 확인하세요)");
+        toast("작업지시서를 파일로 저장했습니다. (다운로드 폴더에서 확인하세요)");
       } else {
         toast("저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
       }
@@ -904,6 +911,15 @@ body:not(.editing) .addjrow{display:none !important}
     },
     fresh: function () { sheet.innerHTML = FRESH; fillFreshDefaults(); recalc(); },
     summary: function () { return { label: custName(), issue: whenText(), total: "" }; },
+    /* 3단계 서류 잇기 — 시제 견적서에서 받은 칸 (사장님 2026-11-01): 봉행 개요의 고임 규격 · 봉행 일시 · 봉행 장소 (custName 과 같은 칸 순서).
+       빈 값은 비워 둔다: 예시 글('7치 고임상')이 그대로 남지 않게 */
+    prefill: function (f) {
+      var dd = sheet.querySelectorAll(".brief-row dd");
+      if (dd[1]) dd[1].textContent = f.tier || "";
+      if (dd[2]) dd[2].textContent = f.when || "";
+      if (dd[3]) dd[3].textContent = f.place || "";
+      recalc();
+    },
     editing: function () { return body.classList.contains("editing"); },
     onSave: null
   };
@@ -916,7 +932,7 @@ body:not(.editing) .addjrow{display:none !important}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=10"></script>
+<script type="module" src="js/docs/doc-page.js?v=11"></script>
 
 </body>
 </html>
