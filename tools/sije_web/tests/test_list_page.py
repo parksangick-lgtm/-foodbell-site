@@ -1,6 +1,7 @@
-"""행사 목록 화면(sije-list.html) 시험 — 시험 프로젝트에 가짜 행사 3건 · 빈 양식 1개를 넣고, 끝나면 지운다."""
+"""행사 목록 화면(sije-list.html) 시험 — 시험 프로젝트에 가짜 행사 4건 · 빈 양식 1개를 넣고, 끝나면 지운다."""
 import re
 import time
+from datetime import date, timedelta
 
 import pytest
 
@@ -8,11 +9,19 @@ from conftest import ROOT, fake_event
 
 ALLOWED = 'list-allowed@example.com'
 DENIED = 'list-denied@example.com'
+
+
+def day(offset):
+    """오늘 기준 며칠 뒤(음수면 전)의 'YYYY-MM-DD' — 목록은 오늘 이후를 먼저 · 지난 행사를 아래로 나누므로 고정 날짜를 쓰면 날이 지나며 깨진다."""
+    return (date.today() + timedelta(days=offset)).isoformat()
+
+
 SEEDED = {
-    'list-a': fake_event(date='2026-11-20', titlePlace='가짜동 2-2', place='가짜동 2-2 마을 뒷산'),
-    'list-b': fake_event(date='2026-11-13'),
-    'list-c': fake_event(date='2026-11-01', titlePlace='가짜동 3-3', place='가짜동 3-3 큰길 옆', status='미확정',
+    'list-a': fake_event(date=day(19), titlePlace='가짜동 2-2', place='가짜동 2-2 마을 뒷산'),
+    'list-b': fake_event(date=day(12)),
+    'list-c': fake_event(date=day(0), titlePlace='가짜동 3-3', place='가짜동 3-3 큰길 옆', status='미확정',
                          expectedDate='2026년 11월 2일 (월)', basis='작년 음력 날짜'),
+    'list-d': fake_event(date=day(-31), titlePlace='가짜동 4-4', place='가짜동 4-4 옛 터'),   # 지난 행사 (확정)
 }
 TEMPLATE = {'name': '가짜상', 'items': {'L01': {'group': '과일', 'no': '1', 'name': '배', 'qty': '5개', 'note': ''}}}
 BLANK = {'name': '가짜 빈 양식', 'type': '', 'items': {'L01': {'group': '과일', 'no': '1', 'name': '배', 'qty': '', 'note': ''}}}
@@ -46,20 +55,46 @@ def test_denied_account_sees_no_permission_message(page, repo_url, custom_token)
     assert page.locator('#rows .row').count() == 0
 
 
+def seeded_order(page):
+    """줄과 '지난 행사' 구분 줄의 순서 — 이 시험이 넣은 행사 id 와 구분 줄 글자만."""
+    items = page.eval_on_selector_all('#rows > *', 'els => els.map(e => e.dataset.id || e.textContent)')
+    return [i for i in items if i in SEEDED or i == '지난 행사']
+
+
 def test_allowed_account_sees_confirmed_events_sorted_by_date(page, repo_url, custom_token):
+    """오늘 이후는 가까운 순으로 먼저, 지난 행사는 '지난 행사' 구분 줄 아래 (목록 보완 1)."""
     open_list(page, repo_url, custom_token(ALLOWED, allowed=True))
     page.locator('#rows .row[data-id="list-a"]').wait_for(timeout=20_000)
     assert page.get_attribute('button[data-status="확정"]', 'aria-pressed') == 'true'
-    assert seeded_rows(page) == ['list-b', 'list-a']
+    assert seeded_rows(page) == ['list-b', 'list-a', 'list-d']
+    assert seeded_order(page) == ['list-b', 'list-a', '지난 행사', 'list-d']
+    assert page.locator('#rows .past-head').count() == 1
+    assert page.eval_on_selector('#rows .past-head', 'e => e.tagName') == 'DIV'   # 구분 줄은 링크가 아니라 누를 수 없다
 
 
 def test_status_buttons_filter(page, repo_url, custom_token):
     open_list(page, repo_url, custom_token(ALLOWED, allowed=True))
     page.locator('#rows .row[data-id="list-a"]').wait_for(timeout=20_000)
     page.click('button[data-status="미확정"]')
-    assert seeded_rows(page) == ['list-c']
+    assert seeded_rows(page) == ['list-c']   # 오늘 날짜는 '다가오는' 쪽
+    assert page.locator('#rows .past-head').count() == 0, '지난 행사가 없으면 구분 줄도 없다'
     row = page.locator('#rows .row[data-id="list-c"]').inner_text()
     assert '2026년 11월 2일 (월)' in row and '작년 음력 날짜' in row
+
+
+def test_search_box_filters_by_place(page, repo_url, custom_token):
+    """검색 글상자 — 장소 글자를 치면 그 줄만, 비우면 전부 (목록 보완 2). 서버에 다시 묻지 않고 읽어 온 줄 안에서만."""
+    open_list(page, repo_url, custom_token(ALLOWED, allowed=True))
+    page.locator('#rows .row[data-id="list-a"]').wait_for(timeout=20_000)
+    page.fill('#search', '4-4 옛 터')
+    assert seeded_rows(page) == ['list-d']
+    page.fill('#search', '마을 뒷산')
+    assert seeded_rows(page) == ['list-a']
+    page.fill('#search', '')
+    assert seeded_rows(page) == ['list-b', 'list-a', 'list-d']
+    box = page.locator('#search').bounding_box()
+    assert box['height'] >= 44
+    assert page.eval_on_selector('#search', 'e => parseFloat(getComputedStyle(e).fontSize)') >= 16
 
 
 def test_new_event_from_template_opens_sheet(page, repo_url, custom_token, test_db):

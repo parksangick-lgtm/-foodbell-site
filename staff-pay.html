@@ -255,6 +255,7 @@ body:not(.editing) tr.addrow{display:none !important}
   section + section{margin-top:20px}
   .sec-head{margin-bottom:8px}
   .prow dt,.prow dd{padding-top:4px; padding-bottom:4px; min-height:0}
+  .brand-tel{min-height:0}
   table.stmt thead th,table.stmt td{padding-top:6px; padding-bottom:6px}
   tr{break-inside:avoid}
   .totals{margin-top:12px}
@@ -326,7 +327,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 .shot-cards .shot-foot p{margin:0; font-weight:var(--w-bold); font-size:19px}
 .shot-cards .shot-foot .note{margin-top:4px; font-weight:var(--w-normal); font-size:14px}
 </style>
-<link rel="stylesheet" href="css/docs.css?v=3">
+<link rel="stylesheet" href="css/docs.css?v=4">
 </head>
 <body>
 <p class="hint"><b>안내</b><strong>편집</strong>을 누르고 줄마다 행사 날짜·행사·이름·전화번호·일당·은행·계좌·메모를 채우면 인원과 총 지급액이 자동으로 계산됩니다. <strong>직원에게 보내기</strong>를 누르면 사진으로 사무실 직원에게 보낼 수 있고, <strong>파일로 저장</strong>하면 작성일자로 이름이 붙습니다(예: 알바비지급내역서_2026-10-03.png). 사진에는 모든 사람의 전화번호·계좌가 담기니 받는 사람을 꼭 확인하세요. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 지급내역서가 보입니다. 새 내역은 <strong>목록</strong>에서 <strong>새 지급내역서</strong>를 누르세요.</p>
@@ -711,8 +712,9 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 
   document.getElementById("btn-send").addEventListener("click", function () {
     if (!recalc() && !window.confirm("일당을 아직 안 넣으셨습니다. 그래도 보낼까요?")) return;
-    // 사진에 모든 사람의 전화번호 · 계좌가 담긴다 — 만들기 전에 한 번 더 묻는다 (사장님 2026-11-01, 보완 알바비 2)
-    if (!window.confirm("사진에 모든 사람의 전화번호·계좌가 담깁니다. 보낼까요?")) return;
+    // 지급일을 한 번 보여 주고(보완 알바비 1), 사진에 모든 사람의 전화번호 · 계좌가 담긴다고 묻는다 (보완 알바비 2) — 확인창 하나로 (사장님 2026-11-01)
+    var payLine = getText("paydate") ? "지급일 " + getText("paydate") + " 로 보냅니다." : "지급일이 비어 있습니다.";
+    if (!window.confirm(payLine + "\n사진에 모든 사람의 전화번호·계좌가 담깁니다. 보낼까요?")) return;
     var btn = this, old = btn.textContent;
     btn.disabled = true; btn.textContent = "준비 중…";
     setEditing(false);
@@ -790,7 +792,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=11"></script>
+<script type="module" src="js/docs/doc-page.js?v=12"></script>
 
 
 </body>

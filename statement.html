@@ -140,6 +140,14 @@ tr.addrow .btn-mini{width:100%}
 /* ---------- 인수자 ---------- */
 .receiver{display:flex; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
 .receiver .line{display:inline-block; width:150px; border-bottom:1px solid var(--ink-soft)}
+/* 입금 계좌 · 인수일 — 사장님이 서류에서 직접 적는다. 비어 있으면 보기 · 사진 · 인쇄에서 숨긴다 (2026-11-01) */
+.closing{display:flex; flex-direction:column; gap:6px; margin-top:34px; font-size:15.5px; font-weight:var(--w-medium); color:var(--ink-soft)}
+.closing-row{display:flex; align-items:baseline; gap:10px}
+.closing-row .lab{white-space:nowrap; color:var(--ink-mute); letter-spacing:.04em}
+.closing-row span[data-edit]{font-variant-numeric:tabular-nums}
+body.editing .closing-row span[data-edit]{flex:1}
+body:not(.editing) .closing-row:has(span[data-edit]:empty){display:none}
+body:not(.editing) .closing:not(:has(span[data-edit]:not(:empty))){display:none}
 
 /* ---------- 편집 표시 ---------- */
 [data-edit]{outline:none}
@@ -257,10 +265,12 @@ body:not(.editing) tr.addrow{display:none !important}
   .totals{margin-top:12px}
   .sum-row{padding:5px 0}
   .sum-total{margin-top:8px; padding:9px 16px}
+  .brand-tel{min-height:0}
+  .closing{margin-top:22px}
   .receiver{margin-top:22px}
 }
 </style>
-<link rel="stylesheet" href="css/docs.css?v=3">
+<link rel="stylesheet" href="css/docs.css?v=4">
 </head>
 <body>
 <p class="hint"><b>안내</b><strong>편집</strong>으로 받는 분과 품목·규격·수량·단가를 채우면 공급가액·세액·합계가 자동으로 계산됩니다. <strong>고객에게 보내기</strong>를 누르면 문자·카톡으로 바로 보낼 수 있고, <strong>파일로 저장</strong>은 기록용 이미지를 남깁니다. <strong>인쇄 · PDF</strong>, <strong>복사</strong>(요약 문구)도 됩니다. 고치는 대로 저절로 저장되고, 휴대폰·PC 어디서 열어도 같은 거래명세서가 보입니다. 새 손님은 <strong>목록</strong>에서 <strong>새 거래명세서</strong>를 누르세요.</p>
@@ -372,6 +382,10 @@ body:not(.editing) tr.addrow{display:none !important}
       </div>
     </div>
 
+    <div class="closing">
+      <div class="closing-row"><span class="lab">입금 계좌</span><span data-edit data-t="text" data-k="acct"></span></div>
+      <div class="closing-row"><span class="lab">인수일</span><span data-edit data-t="text" data-k="recvDate"></span></div>
+    </div>
     <div class="receiver">인수자 <span class="line"></span> (인)</div>
   </section>
 
@@ -463,13 +477,12 @@ body:not(.editing) tr.addrow{display:none !important}
   }
   /* 저장은 공통 부품(js/docs/doc-page.js)이 웹 저장소로 한다 — 이 화면은 "바뀌었다"고만 알린다 */
   function save() { var D = window.FoodbellDoc; if (D && D.onSave) D.onSave(); }
-  /* 처음 여는 화면일 때만: 문서번호 · 작성일자 · 첫 줄 날짜를 오늘로 */
+  /* 처음 여는 화면일 때만: 문서번호 · 작성일자를 오늘로 (첫 줄 월/일은 빈 칸 — 2026-11-01, 견적서 · 내역서에서 옮길 때는 prefill 이 행사일을 넣는다) */
   function fillFreshDefaults() {
     var d = new Date();
     setText("issue", fmtDateKR(d));
     setText("dno", "FB-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
                    "-" + pad2(d.getHours()) + pad2(d.getMinutes()));
-    setText("md", (d.getMonth() + 1) + "/" + d.getDate());
   }
 
   /* ---------- 편집 모드: 줄 삭제 · 줄 추가 버튼 ---------- */
@@ -759,7 +772,7 @@ body:not(.editing) tr.addrow{display:none !important}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=11"></script>
+<script type="module" src="js/docs/doc-page.js?v=12"></script>
 
 </body>
 </html>

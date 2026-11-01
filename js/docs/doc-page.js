@@ -1,8 +1,8 @@
 // 웹 서류 5종 공통 부품 (2단계) — 로그인 · 목록 · 저장(모아서 올리기) · 다른 기기 고침 반영 · 지우기.
 // 화면은 window.FoodbellDoc(연결 고리)만 내주고, 저장소는 ../sije/store.js 로만 부른다.
 // 주소에 ?id= 가 없으면 그 종류의 목록, 있으면 그 서류.
-import { KINDS, sortDocs, editedText, rowCells } from './doc-model.js';
-import { putBundle, takeBundle, quoteToEvent, quoteToStatement, quoteToWorksheet, NOTES_KEY as NOTES } from './handoff.js';
+import { KINDS, sortDocs, editedText, rowCells, filterDocs } from './doc-model.js';
+import { putBundle, takeBundle, quoteToEvent, eventQuoteToEvent, quoteToStatement, quoteToWorksheet, NOTES_KEY as NOTES } from './handoff.js';
 import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
@@ -40,6 +40,7 @@ gate.innerHTML = `
   <section id="doc-list" data-show="list">
     <header class="doc-head"><h1></h1><p class="doc-who" id="doc-who"></p></header>
     <div class="doc-bar"><button type="button" id="doc-new" class="doc-primary"></button></div>
+    <input type="search" id="doc-search" placeholder="손님 · 날짜로 찾기" autocomplete="off" aria-label="서류 찾기">
     <div id="doc-rows"></div>
     <p class="doc-empty" id="doc-empty" hidden>아직 서류가 없습니다</p>
   </section>
@@ -74,9 +75,10 @@ document.querySelector('.sheet').after(delWrap);
 $('doc-del').textContent = `이 ${noun} 지우기`;
 
 // 3단계 서류 잇기 — '이 견적서로 …만들기' 줄 (지우기 위). 누르면 겹치는 칸을 꾸러미로 넘기고 받는 화면을 ?make=1 로 연다.
-const MAKES = { 'sije-quote': ['event', 'statement', 'sije-worksheet'], 'event-quote': ['statement'] };
+const MAKES = { 'sije-quote': ['event', 'statement', 'sije-worksheet'], 'event-quote': ['event', 'statement'] };   // 행사 견적서 → 내역서는 2026-11-01
 const MAKE = {
-  event: { label: '내역서 만들기', ask: `이 ${noun} 내용으로 새 내역서를 만들까요?`, url: 'sije-list.html?make=1', build: quoteToEvent },
+  event: { label: '내역서 만들기', ask: `이 ${noun} 내용으로 새 내역서를 만들까요?`, url: 'sije-list.html?make=1',
+    build: D.kind === 'event-quote' ? eventQuoteToEvent : quoteToEvent },   // 행사 견적서는 상 종류가 없어 빈 양식으로
   statement: { label: '거래명세서 만들기', ask: `이 ${noun} 내용으로 새 거래명세서를 만들까요?`, url: 'statement.html?make=1', build: quoteToStatement },
   'sije-worksheet': { label: '작업지시서 만들기', ask: `이 ${noun} 내용으로 새 작업지시서를 만들까요?`, url: 'sije-worksheet.html?make=1', build: quoteToWorksheet },   // 사장님 2026-11-01
 };
@@ -174,8 +176,15 @@ function apply(html) {
 const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 function showState() {
   if (!docId) return;
-  if (failed) state.textContent = '저장하지 못했습니다';
-  else if (offline()) state.textContent = '연결 안 됨 — 연결되면 올라갑니다';
+  if (failed) {                                   // 실패일 때만 '다시 시도' 단추 — 같은 내용을 다시 올린다 (사장님 2026-11-01 공통 12)
+    state.textContent = '저장하지 못했습니다 ';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'doc-retry';
+    b.textContent = '다시 시도';
+    b.addEventListener('click', () => { lastHtml = null; flush(); });   // flush 는 lastHtml 과 같으면 건너뛰므로 비운다
+    state.append(b);
+  } else if (offline()) state.textContent = '연결 안 됨 — 연결되면 올라갑니다';
   // 치는 중에 다른 기기 고침이 왔다 — 이 기기 것이 올라가 남는다는 것을 알린다
   else if (waiting !== null) state.textContent = '다른 기기에서 같은 서류를 고쳤습니다 — 지금 고치는 내용으로 저장합니다';
   else if (pending || timer) state.textContent = '저장 중…';
@@ -314,10 +323,18 @@ function rowEl({ id, doc }) {
   return a;
 }
 
+// 검색 글상자로 거른 줄만 그린다 — 읽어 온 것 안에서만, 서버에 다시 묻지 않는다 (사장님 2026-11-01 공통 11)
+function drawRows() {
+  const shown = filterDocs(lastRows, D.kind, $('doc-search').value);
+  $('doc-rows').replaceChildren(...sortDocs(shown).map(rowEl));
+  $('doc-empty').textContent = lastRows.length ? '찾는 서류가 없습니다' : '아직 서류가 없습니다';
+  $('doc-empty').hidden = shown.length > 0;
+}
+$('doc-search').addEventListener('input', drawRows);
+
 function onRows(rows, meta) {
   lastRows = rows;
-  $('doc-rows').replaceChildren(...sortDocs(rows).map(rowEl));
-  $('doc-empty').hidden = rows.length > 0;
+  drawRows();
   trackCache(meta.fromCache);
 }
 

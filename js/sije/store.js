@@ -95,7 +95,7 @@ export function ensureViewKey(id, makeKey) {
 
 export async function listTemplates() {
   const snap = await fs.getDocs(fs.collection(db, 'templates'));
-  return snap.docs.map((d) => ({ name: d.data().name ?? d.id, items: d.data().items ?? {}, itemRows: d.data().itemRows ?? 0 }));
+  return snap.docs.map((d) => ({ name: d.data().name ?? d.id, type: d.data().type, items: d.data().items ?? {}, itemRows: d.data().itemRows ?? 0 }));
 }
 
 // extra = 다른 서류에서 옮겨 온 칸 (3단계 — 견적서의 고객 · 날짜 · 장소 · 상차림 · 금액)

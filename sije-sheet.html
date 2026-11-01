@@ -6,7 +6,7 @@
 <title>푸드벨 시제행사 내역서</title>
 <meta name="description" content="푸드벨(박상익출장음식) 시제행사 내역서. 허락된 계정만 로그인해서 고치는 내부용 화면입니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+<link rel="icon" href="icons/app-sijelist-192.png">
 <meta name="theme-color" content="#6E1E2B">
 <!-- 휴대폰이 다크모드여도 브라우저가 색을 반전하지 않도록 ("light" 만으로는 안 막힌다) -->
 <meta name="color-scheme" content="only light">
@@ -121,8 +121,8 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
     <p id="overflow-note" class="card note no-print" role="alert" hidden>A4 한 장을 넘습니다 — 꼭 지킬 것 · 메모를 줄여 주세요. (이대로는 휴대폰용 PDF 가 만들어지지 않습니다)</p>
     <div id="quick" class="no-print"></div>
     <div class="sheet-scroll"><div id="sheet"></div></div>
-    <!-- 3단계 서류 잇기 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 -->
-    <div class="doc-make no-print"><b>이 내역서로</b><button type="button" id="make-statement">거래명세서 만들기</button><button type="button" id="make-quote">견적서 만들기</button></div>
+    <!-- 3단계 서류 잇기 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 · 견적서 · 작업지시서(2026-11-01) -->
+    <div class="doc-make no-print"><b>이 내역서로</b><button type="button" id="make-statement">거래명세서 만들기</button><button type="button" id="make-quote">견적서 만들기</button><button type="button" id="make-worksheet">작업지시서 만들기</button></div>
   </section>
 </main>
 <div id="toast" class="toast no-print" role="status" hidden></div>
@@ -131,6 +131,6 @@ button.primary, button[aria-pressed="true"]{background:var(--seal); border-color
 // 인터넷이 없어도 한 번 열어 본 목록 · 내역서가 열리게 (sw.js)
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
-<script type="module" src="js/sije/sheet-page.js?v=11"></script>
+<script type="module" src="js/sije/sheet-page.js?v=12"></script>
 </body>
 </html>

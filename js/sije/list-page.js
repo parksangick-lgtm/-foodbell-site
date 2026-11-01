@@ -1,5 +1,6 @@
-// 시제행사 목록 화면 (sije-list.html) — 로그인 · 상태 버튼 · 새 행사
+// 시제행사 목록 화면 (sije-list.html) — 로그인 · 상태 버튼 · 검색 · 새 행사
 import { formatDateText } from './model.js';
+import { splitRows, matchRow, todayISO } from './list-model.js';
 import { takeBundle, pickTemplate, NOTES_KEY } from '../docs/handoff.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchEvents, listTemplates, createFromTemplate,
@@ -46,12 +47,14 @@ function rowEl({ id, ev }) {
   return a;
 }
 
+// 상태 버튼 + 검색 글상자로 거른 뒤, 오늘(포함) 이후를 먼저 · 그 아래 '지난 행사' 구분 줄 · 지난 행사는 최근 순
 function render() {
-  const shown = rows
-    .filter((r) => filter === '전체' || r.ev.status === filter)
-    .sort((a, b) => (a.ev.date || '9999').localeCompare(b.ev.date || '9999')
-      || (a.ev.time || '').localeCompare(b.ev.time || ''));
-  $('rows').replaceChildren(...shown.map(rowEl));
+  const query = $('search').value;
+  const shown = rows.filter((r) => (filter === '전체' || r.ev.status === filter) && matchRow(r.ev, query));
+  const { upcoming, past } = splitRows(shown, todayISO());
+  const els = upcoming.map(rowEl);
+  if (past.length) els.push(el('div', 'past-head', '지난 행사'), ...past.map(rowEl));
+  $('rows').replaceChildren(...els);
   $('empty').hidden = shown.length > 0;
   for (const b of document.querySelectorAll('[data-status]')) {
     b.setAttribute('aria-pressed', String(b.dataset.status === filter));
@@ -61,13 +64,14 @@ function render() {
 for (const b of document.querySelectorAll('[data-status]')) {
   b.addEventListener('click', () => { filter = b.dataset.status; render(); });
 }
+$('search').addEventListener('input', render);
 
 $('sign-in').addEventListener('click', () => signIn().catch((e) => toast(`로그인하지 못했습니다 (${e.code || e.message})`)));
 $('sign-out').addEventListener('click', () => signOutUser());
 
 // 새 행사 만들기 — bundle(3단계: 견적서에서 옮겨 온 칸 · 알림)이 있으면 함께 넣고, 뒤로 가면 견적서로 돌아가게 한다
 async function makeEvent(name, bundle) {
-  const { template, ...extra } = bundle ? bundle.fields : {};
+  const { template, blank, ...extra } = bundle ? bundle.fields : {};   // template · blank 는 양식 고르기에만 쓰고 저장소엔 안 넣는다
   const id = await createFromTemplate(name, extra);
   if (bundle?.notes.length) sessionStorage.setItem(NOTES_KEY, JSON.stringify(bundle.notes));
   const url = `sije-sheet.html?id=${encodeURIComponent(id)}`;
@@ -108,7 +112,10 @@ const incoming = takeBundle(sessionStorage, 'event', new URLSearchParams(locatio
 async function receive(bundle) {
   toast('견적서 내용으로 내역서를 만드는 중…');   // 신호가 약하면 몇 초 걸린다 — 안 된 줄 알고 또 누르지 않게 (내역서는 지울 수 없다)
   try {
-    const name = pickTemplate(bundle.fields.template, (await listTemplates()).map((t) => t.name));
+    const tpls = await listTemplates();
+    // 행사 견적서에서 온 꾸러미(blank)는 상 종류가 없다 — 수량 없는 빈 양식(type '')이 있으면 그것으로 (사장님 2026-11-01)
+    const name = bundle.fields.blank ? (tpls.find((t) => t.type === '')?.name ?? null)
+      : pickTemplate(bundle.fields.template, tpls.map((t) => t.name));
     if (name) await makeEvent(name, bundle);
     else await chooseTemplate(bundle);
   } catch (e) {

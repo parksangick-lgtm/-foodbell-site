@@ -12,14 +12,17 @@ SHEET_DONE = '**/sije-sheet.html?id=*'
 FAKE_TPL_ITEMS = {'L01': {'group': '과일', 'no': '1', 'name': '배', 'qty': '5개', 'note': ''}}
 
 
+FAKE_BLANK = '가짜 빈 양식 (잇기)'   # type '' — 수량 없는 빈 양식 (행사 견적서 → 내역서가 고른다, 2026-11-01)
+
+
 @pytest.fixture
 def templates(test_db):
-    """빈 양식 '7치 고임상' · '60만원상'(가짜 품목). 원래 없던 것만 끝나고 지운다."""
+    """빈 양식 '7치 고임상' · '60만원상'(가짜 품목) · 수량 없는 빈 양식(type ''). 원래 없던 것만 끝나고 지운다."""
     added = []
-    for name in ('7치 고임상', '60만원상'):
+    for name in ('7치 고임상', '60만원상', FAKE_BLANK):
         ref = test_db.collection('templates').document(name)
         if not ref.get().exists:
-            ref.set({'name': name, 'items': FAKE_TPL_ITEMS, 'itemRows': 1})
+            ref.set({'name': name, 'items': FAKE_TPL_ITEMS, 'itemRows': 1, **({'type': ''} if name == FAKE_BLANK else {})})
             added.append(ref)
     yield
     for ref in added:
@@ -264,6 +267,47 @@ def test_sheet_to_quote(pc, repo_url, custom_token, test_db, made, event_id):
     assert pc.locator('[data-k="total"]').inner_text() == '660,000'           # 600,000 + 부가세 10%
     time.sleep(1)
     assert eref.get().to_dict() == before                                     # 내역서 그대로
+
+
+WORKSHEET_DONE = '**/sije-worksheet.html?id=*'
+
+
+def test_sheet_to_worksheet(pc, repo_url, custom_token, test_db, made, event_id):
+    """내역서 → 작업지시서: 고임 규격(머리글 상 종류) · 봉행 일시 · 봉행 장소가 채워진 새 작업지시서 (사장님 2026-11-01)."""
+    eref = test_db.collection('events').document(event_id)
+    before = eref.get().to_dict()
+    open_sheet(pc, repo_url, custom_token, event_id)
+    asked = answer_next(pc)
+    pc.click('#make-worksheet')
+    pc.wait_for_url(WORKSHEET_DONE, timeout=20_000)
+    wait_view(pc, 'doc')
+    assert asked == ['이 내역서 내용으로 새 작업지시서를 만들까요?']
+    doc = wait_db(test_db.collection('docs').document(opened_doc_id(pc, made)), lambda s: s.exists).to_dict()
+    assert doc['kind'] == 'sije-worksheet'
+    dd = pc.eval_on_selector_all('.brief-row dd', BRIEF)
+    assert dd[1:4] == ['60만원상', '2026년 11월 13일 (금) 10시', '가짜동 1-1 놀이터 위']   # 고임 규격 · 봉행 일시 · 봉행 장소
+    time.sleep(1)
+    assert eref.get().to_dict() == before                                     # 내역서 그대로
+
+
+def test_event_quote_to_event_uses_blank_template(pc, repo_url, custom_token, test_db, made, made_events, templates):
+    """행사 견적서 → 내역서: 상 종류 단추가 없으니 수량 없는 빈 양식(type '')으로 바로 — 수신 · 행사 일시 · 장소 · 공급가액이 채워진다
+    (사장님 2026-11-01). 양식 고르기 표시(template · blank)는 저장소에 남지 않는다."""
+    quote_id = quote_with_supply(pc, repo_url, custom_token, made, 'event-quote.html', '500000')
+    qref = test_db.collection('docs').document(quote_id)
+    before = wait_db(qref, lambda s: s.get('total') == '550,000').get('html')
+    asked = answer_next(pc)
+    pc.click('#doc-make-event')
+    ev = opened_event(pc, test_db, made_events)
+    assert asked == ['이 견적서 내용으로 새 내역서를 만들까요?']
+    assert ev['status'] == '미확정' and ev['templateType'] == ''              # 빈 양식 — 머리글에 상 종류가 안 붙는다
+    assert ev['customer'] == '○○ 단체'
+    assert (ev['date'], ev['time']) == ('2026-11-21', '오전 11시')
+    assert ev['place'] == ev['titlePlace'] == '충남 ○○군 ○○면 행사장 (야외)'
+    assert ev['setting'] == '' and ev['amount'] == '500,000원'
+    assert 'template' not in ev and 'blank' not in ev
+    time.sleep(1)
+    assert qref.get().get('html') == before                                  # 원래 견적서 그대로
 
 
 def test_sheet_to_quote_blank_fields_note(pc, repo_url, custom_token, test_db, made, event_id):

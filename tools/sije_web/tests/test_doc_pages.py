@@ -508,8 +508,40 @@ def test_staff_pay_send_asks_about_private_info(pc, repo_url, custom_token, made
     pc.once('dialog', lambda d: (asked.append(d.message), d.dismiss()))
     pc.click('#btn-send')
     pc.wait_for_timeout(800)
-    assert asked == ['사진에 모든 사람의 전화번호·계좌가 담깁니다. 보낼까요?']
+    assert len(asked) == 1 and '전화번호·계좌가 담깁니다' in asked[0], asked   # 앞에 '지급일 … 로 보냅니다' 한 줄이 붙어도(1단계) 물음은 하나
     assert pc.locator('#btn-send').inner_text() == '직원에게 보내기' and pc.locator('#btn-send').is_enabled()
+
+
+def test_list_search_filters_loaded_rows(pc, repo_url, custom_token, test_db, made):
+    """목록 검색 글상자 — 이미 읽어 온 줄 안에서 손님 · 날짜 글자로 거른다(서버에 다시 묻지 않음), 공백은 무시, 비우면 전부
+    (사장님 2026-11-01, 공통 11). 글상자는 누르는 자리 44px 이상."""
+    utc = datetime.timezone.utc
+    seeds = {
+        'a': dict(kind='statement', html='<p>가짜</p>', label='가짜동 매화 문중', issue='2026년 10월 15일', total='1,000',
+                  updatedAt=datetime.datetime(2026, 10, 15, 5, tzinfo=utc)),
+        'b': dict(kind='statement', html='<p>가짜</p>', label='가짜동 소나무 문중', issue='2026년 10월 16일', total='2,000',
+                  updatedAt=datetime.datetime(2026, 10, 16, 5, tzinfo=utc)),
+    }
+    ids = {}
+    for name, data in seeds.items():
+        ids[name] = 'docs-' + uuid.uuid4().hex[:8]
+        test_db.collection('docs').document(ids[name]).set(data)
+        made.append(ids[name])
+    open_list(pc, repo_url, 'statement.html', custom_token(ALLOWED, allowed=True))
+    pc.locator(f'#doc-rows .doc-row[data-id="{ids["a"]}"]').wait_for(timeout=20_000)
+    assert pc.locator('#doc-search').bounding_box()['height'] >= 44
+
+    def shown():
+        return [i for i in pc.eval_on_selector_all('#doc-rows .doc-row', 'els => els.map(e => e.dataset.id)') if i in ids.values()]
+
+    pc.fill('#doc-search', '매화')
+    assert shown() == [ids['a']]
+    pc.fill('#doc-search', '2026년10월16일')                                   # 공백 무시 — 날짜로도
+    assert shown() == [ids['b']]
+    pc.fill('#doc-search', '없는 손님')
+    assert shown() == [] and pc.locator('#doc-empty').is_visible()
+    pc.fill('#doc-search', '')
+    assert shown() == [ids['b'], ids['a']]                                       # 비우면 전부, 최근 고친 순 그대로
 
 
 # ---------- 시제 견적서 ----------

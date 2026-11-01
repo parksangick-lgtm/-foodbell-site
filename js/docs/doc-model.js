@@ -37,3 +37,15 @@ export function rowCells(kind, doc) {
   if (kind === 'daily-schedule') return [doc.label || '(날짜 없음)', doc.count || '0건', ''];
   return [doc.label || '(이름 없음)', doc.issue || '', total];
 }
+
+// 목록 검색 (사장님 2026-11-01) — 이미 읽어 온 줄 안에서만 거른다(서버에 다시 묻지 않음). 공백 · 하이픈 · 대소문자 무시, 빈 검색은 전부.
+// 비교 대상 = 목록 줄 글자 셋 + 그 서류 summary 의 글자 칸(label · issue · total · count 등). 서류 본문(html) · 종류(kind)는 안 본다.
+const squash = (s) => String(s).replace(/[\s-]/g, '').toLowerCase();
+export function filterDocs(rows, kind, query) {
+  const q = squash(query || '');
+  if (!q) return rows;
+  return rows.filter(({ doc }) => {
+    const texts = [...rowCells(kind, doc), ...Object.entries(doc).filter(([k, v]) => k !== 'html' && k !== 'kind' && typeof v === 'string').map(([, v]) => v)];
+    return texts.some((t) => squash(t).includes(q));
+  });
+}

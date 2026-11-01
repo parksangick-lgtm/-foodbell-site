@@ -1,7 +1,7 @@
 // js/docs/doc-model.js 시험 — 실행: node --test "tools/sije_web/js-tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { KINDS, sortDocs, editedText, rowCells } from '../../../js/docs/doc-model.js';
+import { KINDS, sortDocs, editedText, rowCells, filterDocs } from '../../../js/docs/doc-model.js';
 
 test('서류 여섯 종류의 목록 제목과 이름', () => {
   assert.deepEqual(KINDS, {
@@ -54,4 +54,31 @@ test('알바비 줄 = 작성일 · 인원 · 총 지급액', () => {
   const doc = { label: '2026년 10월 3일', issue: '2026년 10월 3일', total: '450,000', count: '3명' };
   assert.deepEqual(rowCells('staff-pay', doc), ['2026년 10월 3일', '3명', '450,000원']);
   assert.deepEqual(rowCells('staff-pay', { issue: '2026년 10월 3일', total: '', count: '' }), ['2026년 10월 3일', '0명', '-']);
+});
+
+// 목록 검색 (사장님 2026-11-01 공통 11) — 읽어 온 줄 안에서만, 공백 · 하이픈 · 대소문자 무시
+const ROWS = [
+  { id: 'a', doc: { kind: 'statement', html: '<p>본문 글</p>', label: '가짜동 매화 문중', issue: '2026년 10월 15일', total: '1,000' } },
+  { id: 'b', doc: { kind: 'statement', html: '<p>본문 글</p>', label: '가짜동 소나무 문중', issue: '2026년 10월 16일', total: '2,000' } },
+  { id: 'c', doc: { kind: 'staff-pay', html: '', issue: '2026년 10월 3일', total: '450,000', count: '3명' } },
+];
+
+test('filterDocs — 손님 이름 · 날짜 글자로 거른다', () => {
+  assert.deepEqual(filterDocs(ROWS, 'statement', '매화').map((r) => r.id), ['a']);
+  assert.deepEqual(filterDocs(ROWS, 'statement', '10월 16일').map((r) => r.id), ['b']);
+  assert.deepEqual(filterDocs(ROWS, 'staff-pay', '3명').map((r) => r.id), ['c']);
+});
+
+test('filterDocs — 공백 · 하이픈 · 대소문자는 무시, 빈 검색은 전부', () => {
+  assert.deepEqual(filterDocs(ROWS, 'statement', '2026년10월15일').map((r) => r.id), ['a']);
+  assert.deepEqual(filterDocs(ROWS, 'statement', '10월-15-일').map((r) => r.id), ['a']);
+  assert.deepEqual(filterDocs([{ id: 'x', doc: { label: 'ABC 문중' } }], 'statement', 'abc').map((r) => r.id), ['x']);
+  assert.equal(filterDocs(ROWS, 'statement', ''), ROWS);
+  assert.equal(filterDocs(ROWS, 'statement', '  '), ROWS);
+  assert.equal(filterDocs(ROWS, 'statement', undefined), ROWS);
+});
+
+test('filterDocs — 서류 본문(html) · 종류(kind) 글자로는 안 걸린다', () => {
+  assert.deepEqual(filterDocs(ROWS, 'statement', '본문'), []);
+  assert.deepEqual(filterDocs(ROWS, 'statement', 'statement'), []);
 });

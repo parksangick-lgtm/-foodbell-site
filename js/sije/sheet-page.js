@@ -1,7 +1,7 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
 import { itemsBySide, newViewKey, viewLinkText } from './model.js';
-import { NOTES_KEY, putBundle, eventToStatement, eventToQuote } from '../docs/handoff.js?v=4';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
+import { NOTES_KEY, putBundle, eventToStatement, eventToQuote, eventToWorksheet } from '../docs/handoff.js?v=5';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
 import { renderSheet, fitToA4 } from './sheet-render.js';
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,
@@ -155,9 +155,9 @@ for (const b of document.querySelectorAll('[data-set-status]')) {
   b.addEventListener('click', () => save('status', b.dataset.setStatus));
 }
 $('print').addEventListener('click', () => { measurePrint(); print(); });
-// 3단계 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 · 시제 견적서(2026-10-28) (꾸러미는 같은 탭 sessionStorage, 주소엔 안 실음)
+// 3단계 — 이 내역서의 고객 · 행사일 · 상차림 · 금액으로 새 거래명세서 · 시제 견적서(2026-10-28) · 작업지시서(2026-11-01) (꾸러미는 같은 탭 sessionStorage, 주소엔 안 실음)
 for (const [btn, to, noun, build] of [['make-statement', 'statement', '거래명세서', eventToStatement],
-  ['make-quote', 'sije-quote', '견적서', eventToQuote]]) {
+  ['make-quote', 'sije-quote', '견적서', eventToQuote], ['make-worksheet', 'sije-worksheet', '작업지시서', eventToWorksheet]]) {
   $(btn).addEventListener('click', async () => {
     if (!ev || !confirm(`이 내역서 내용으로 새 ${noun}를 만들까요?`)) return;
     flush();

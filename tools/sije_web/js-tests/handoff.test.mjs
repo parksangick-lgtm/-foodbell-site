@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseWhen, parseAmount, monthDay, wonText, pickTemplate,
-  quoteToEvent, quoteToStatement, quoteToWorksheet, eventToStatement, eventToQuote, putBundle, takeBundle,
+  quoteToEvent, quoteToStatement, quoteToWorksheet, eventToStatement, eventToQuote, eventToWorksheet, eventQuoteToEvent, putBundle, takeBundle,
 } from '../../../js/docs/handoff.js';
 
 const NO_DATE = '날짜를 읽지 못했습니다 — 직접 넣어 주세요';
@@ -175,4 +175,42 @@ test('꾸러미 — 한 번만 · 1분 안 · make 있을 때 · 받는 곳이 �
   assert.equal(takeBundle(s, 'statement', true, 2000), null);               // 받는 곳이 다름
   s.setItem('foodbell-handoff', '{깨진');
   assert.equal(takeBundle(s, 'statement', true, 2000), null);               // 깨진 꾸러미
+});
+
+test('eventToWorksheet — 내역서 → 작업지시서 (봉행 일시 · 봉행 장소 · 고임 규격 = 머리글 상 종류, 사장님 2026-11-01)', () => {
+  const ev = { customer: '가짜 문중', date: '2026-11-13', time: '10시', place: '가짜동 1-1 놀이터 위', titlePlace: '가짜동 1-1',
+    setting: '7치 1상', amount: '600,000원', templateType: '60만원상' };
+  assert.deepEqual(eventToWorksheet(ev), {
+    fields: { when: '2026년 11월 13일 (금) 10시', place: '가짜동 1-1 놀이터 위', tier: '60만원상' },
+    notes: [],
+  });
+  assert.equal(eventToWorksheet({ ...ev, place: ' ' }).fields.place, '가짜동 1-1');       // 장소가 비면 맨 위 주소
+  assert.equal(eventToWorksheet({ ...ev, time: '' }).fields.when, '2026년 11월 13일 (금)');
+  const blank = eventToWorksheet({ ...ev, templateType: '' });                          // 수량 없는 빈 양식 → 고임 규격 비움
+  assert.equal(blank.fields.tier, '');
+  assert.equal(eventToWorksheet({ ...ev, templateType: undefined }).fields.tier, '');
+  const bad = eventToWorksheet({ ...ev, date: '' });                                     // 날짜 없음 → 비우고 알림
+  assert.equal(bad.fields.when, '');
+  assert.deepEqual(bad.notes, [NO_DATE]);
+});
+
+const EVENT_QUOTE = { customer: '○○ 단체', when: '2026년 11월 21일 (토) 오전 11시', item: '단체 · 모임 행사 상차림',
+  place: '충남 ○○군 ○○면 행사장 (야외)', supply: 500000 };
+
+test('eventQuoteToEvent — 행사 견적서 → 내역서 (빈 양식으로, 사장님 2026-11-01)', () => {
+  assert.deepEqual(eventQuoteToEvent(EVENT_QUOTE), {
+    fields: {
+      customer: '○○ 단체', date: '2026-11-21', time: '오전 11시',
+      place: '충남 ○○군 ○○면 행사장 (야외)', titlePlace: '충남 ○○군 ○○면 행사장 (야외)', setting: '',
+      amount: '500,000원', template: '', blank: true,
+    },
+    notes: [],
+  });
+});
+
+test('eventQuoteToEvent — 못 읽은 날짜 · 금액은 비우고 알림, 장소가 비면 빈 칸', () => {
+  const r = eventQuoteToEvent({ ...EVENT_QUOTE, when: '11월 말', supply: 0, place: '' });
+  assert.deepEqual([r.fields.date, r.fields.time, r.fields.amount, r.fields.place, r.fields.titlePlace], ['', '', '', '', '']);
+  assert.equal(r.fields.blank, true);
+  assert.deepEqual(r.notes, [NO_DATE, NO_AMOUNT]);
 });

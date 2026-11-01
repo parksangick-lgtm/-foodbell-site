@@ -34,6 +34,10 @@ body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저
 .doc-head h1{margin:0; font-size:28px; font-weight:var(--w-bold); color:var(--seal)}
 .doc-who{margin:0; font-size:14px; color:var(--ink-mute)}
 .doc-bar{display:flex; justify-content:flex-end; margin-bottom:16px}
+/* 목록 검색 글상자 — 읽어 온 줄 안에서 손님 · 날짜로 거른다 (사장님 2026-11-01). 보통 흐름에 둬 휴대폰 아래 고정 단추와 안 겹친다 */
+#doc-search{display:block; width:100%; margin:0 0 12px; font-family:var(--sans); font-size:16px; min-height:44px; padding:8px 12px;
+  color:var(--ink); background:var(--paper); border:1px solid var(--line-strong); border-radius:0; appearance:none; -webkit-appearance:none}
+#doc-search::placeholder{color:var(--ink-mute)}
 #doc-rows{background:var(--paper); border:1px solid var(--line)}
 #doc-rows:empty{display:none}
 .doc-row{display:grid; grid-template-columns:1fr 170px 150px 150px; gap:4px 16px; align-items:center;
@@ -47,6 +51,10 @@ body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저
 
 /* 서류 보기: 저장 표시 · 지우기 */
 .doc-state{max-width:880px; margin:-4px auto 12px; font-size:14px; font-weight:var(--w-medium); color:var(--seal); min-height:1.6em}
+/* 저장 실패 때만 붙는 '다시 시도' 단추 — .doc-make button 과 같은 모양 (사장님 2026-11-01) */
+#doc-retry{font-family:var(--sans); font-size:15px; font-weight:var(--w-medium); min-height:44px; padding:8px 16px; margin-left:8px; cursor:pointer;
+  background:var(--paper); color:var(--seal); border:1px solid var(--seal)}
+#doc-retry:hover{background:var(--band2)}
 .doc-del-wrap{max-width:880px; margin:24px auto; text-align:right}
 #doc-del{font-family:var(--sans); font-size:15px; font-weight:var(--w-medium); min-height:44px; padding:8px 16px;
   background:var(--paper); color:var(--seal); border:1px solid var(--line-strong); cursor:pointer}
@@ -73,7 +81,7 @@ body[data-doc-view="doc"] .doc-net{display:none}   /* 서류 보기에서는 저
 }
 
 @media print{
-  .doc-gate, .doc-state, .doc-del-wrap, .doc-make, .doc-toast{display:none !important}
+  .doc-gate, .doc-state, .doc-del-wrap, .doc-make, .doc-toast, #doc-search, #doc-retry{display:none !important}
 }
 /* 보기 명단(직원) — 일일 일정표 읽기만: 편집 · 새로 만들기 · 지우기 버튼 없음 (js/docs/doc-page.js 가 body[data-role] 을 단다) */
 body[data-role="viewer"] #doc-new,

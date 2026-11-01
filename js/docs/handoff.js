@@ -86,6 +86,23 @@ export function quoteToWorksheet(src) {
   return { fields: { when, place: src.place || '', tier: src.tier || '' }, notes };
 }
 
+// 행사 견적서 → 내역서 (사장님 2026-11-01). src = 행사 견적서 화면의 handoff() 값 { customer, when, item, supply, place }.
+// 상 종류 단추가 없으니 blank — 받는 목록 화면이 수량 없는 빈 양식(type '')을 고른다. 상차림(setting)은 행사 견적서에 없어 비운다.
+export function eventQuoteToEvent(src) {
+  const when = parseWhen(src.when);
+  const notes = [];
+  if (!when) notes.push(NO_DATE);
+  if (!(src.supply > 0)) notes.push(NO_AMOUNT);
+  return {
+    fields: {
+      customer: src.customer || '', date: when ? when.date : '', time: when ? when.time : '',
+      place: src.place || '', titlePlace: src.place || '', setting: '',
+      amount: src.supply > 0 ? wonText(src.supply) : '', template: '', blank: true,
+    },
+    notes,
+  };
+}
+
 // 내역서(1단계 행사 문서) → 거래명세서 한 줄. 단가 = 금액 글자에서 읽은 숫자
 export function eventToStatement(ev) {
   const price = parseAmount(ev.amount);
@@ -108,6 +125,20 @@ export function eventToQuote(ev) {
     fields: {
       customer, when: ev.date ? formatDateText(ev.date, ev.time) : '',
       place: (ev.place || '').trim() || (ev.titlePlace || '').trim(), setting: ev.setting || '', supply,
+    },
+    notes,
+  };
+}
+
+// 내역서 → 작업지시서 (사장님 2026-11-01). quoteToWorksheet 와 같은 꼴 — 봉행 일시(날짜 · 시간 글자) · 봉행 장소 · 고임 규격(머리글 상 종류, 빈 양식은 '')
+export function eventToWorksheet(ev) {
+  const notes = [];
+  if (!ev.date) notes.push(NO_DATE);
+  return {
+    fields: {
+      when: ev.date ? formatDateText(ev.date, ev.time) : '',
+      place: (ev.place || '').trim() || (ev.titlePlace || '').trim(),
+      tier: ev.templateType || '',
     },
     notes,
   };
