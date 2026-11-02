@@ -334,22 +334,13 @@ main:focus:not(:focus-visible) { outline: none; }
 }
 
 /* ---------- 공통 섹션 타이틀 ---------- */
-/* 절 머리말 — 붉은 글씨 대신 차분한 먹색, 앞에 금색 차례 숫자(一 二 三 …) */
+/* 절 머리말 — 붉은 글씨 대신 차분한 먹색 (차례 숫자 一~五 는 줄표처럼 보여 뺐다, 2026-11-03 사장님) */
 .section-eyebrow {
   color: var(--color-ink-muted);
   font-weight: var(--weight-medium);
   letter-spacing: 0.08em;
   font-size: var(--text-caption);
   margin-bottom: var(--space-2);
-}
-.section-eyebrow__num {
-  font-family: var(--font-display);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-lg);
-  line-height: 1;
-  color: var(--color-gold);
-  letter-spacing: 0;
-  margin-right: var(--space-3);
 }
 .section-title {
   font-size: var(--text-section);
