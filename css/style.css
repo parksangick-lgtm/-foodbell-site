@@ -43,6 +43,7 @@
   --weight-medium: 600;
   --weight-bold: 700;
 
+  --radius-xs: 2px;          /* 단추 · 탭 — 알약 대신 거의 각진 모서리 (2026-11-03) */
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
@@ -131,22 +132,25 @@ main:focus:not(:focus-visible) { outline: none; }
   align-items: center;
   gap: var(--space-2);
   padding: 16px 28px;
-  border-radius: 999px;
+  border-radius: var(--radius-xs);
   font-weight: var(--weight-medium);
   font-size: var(--text-sm);
+  letter-spacing: 0.02em;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
 }
+/* 누르는 순간 살짝 내려앉는다 — 그림자 대신 손에 닿는 느낌만 */
+.btn:active { transform: translateY(1px); }
 .btn--primary {
   background: var(--color-primary);
   color: var(--color-white);
-  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--color-primary);
 }
-.btn--primary:hover { background: var(--color-primary-dark); }
+.btn--primary:hover { background: var(--color-primary-dark); border-color: var(--color-primary-dark); }
 .btn--outline {
   background: transparent;
   color: var(--color-primary);
-  border: 1.5px solid var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 .btn--outline:hover { background: var(--color-primary); color: var(--color-white); }
 .btn--outline-light {
@@ -163,12 +167,18 @@ main:focus:not(:focus-visible) { outline: none; }
 }
 .btn--ghost:hover { border-color: var(--color-gold); color: var(--color-primary); }
 
+/* 맨 위 전화 — 테두리 상자 없이 전화 그림과 번호만 (누르는 자리 44px 은 유지) */
 .header__cta {
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   color: var(--color-primary-dark);
   letter-spacing: 0.01em;
+  border-color: transparent;
+  padding: 8px 0;
+  min-height: 44px;
 }
+.header__cta svg { color: var(--color-gold); }
+.header__cta:hover { border-color: transparent; color: var(--color-primary); }
 
 /* ---------- 헤더 ---------- */
 .header {
@@ -324,12 +334,22 @@ main:focus:not(:focus-visible) { outline: none; }
 }
 
 /* ---------- 공통 섹션 타이틀 ---------- */
+/* 절 머리말 — 붉은 글씨 대신 차분한 먹색, 앞에 금색 차례 숫자(一 二 三 …) */
 .section-eyebrow {
-  color: var(--color-primary);
+  color: var(--color-ink-muted);
   font-weight: var(--weight-medium);
   letter-spacing: 0.08em;
   font-size: var(--text-caption);
   margin-bottom: var(--space-2);
+}
+.section-eyebrow__num {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: var(--color-gold);
+  letter-spacing: 0;
+  margin-right: var(--space-3);
 }
 .section-title {
   font-size: var(--text-section);
@@ -404,27 +424,30 @@ main:focus:not(:focus-visible) { outline: none; }
 
 /* ---------- 서비스 / 메뉴 ---------- */
 .menu { padding: var(--space-24) 0; background: var(--color-cream-deep); }
+/* 서비스 탭 — 알약 대신 밑줄 탭. 고른 탭만 버건디 글자 + 밑줄 */
 .menu__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-6);
   margin: var(--space-12) 0 var(--space-8);
+  border-bottom: 1px solid var(--color-border);
 }
 .menu__tab {
-  padding: 12px 24px;
-  border-radius: 999px;
-  border: 1.5px solid var(--color-border);
-  background: var(--color-cream-light);
+  padding: 12px 4px;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
   font-weight: var(--weight-medium);
-  font-size: var(--text-sm);
-  color: var(--color-ink);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  font-size: var(--text-base);
+  color: var(--color-ink-muted);
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
-.menu__tab:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.menu__tab:hover { color: var(--color-ink); border-bottom-color: var(--color-border); }
 .menu__tab.is-active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .menu__panel { display: none; }
@@ -701,7 +724,7 @@ main:focus:not(:focus-visible) { outline: none; }
 .step__num {
   display: block;
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   color: var(--color-gold);
   margin-bottom: var(--space-2);
@@ -731,41 +754,29 @@ main:focus:not(:focus-visible) { outline: none; }
   text-underline-offset: 3px;
   padding-block: var(--space-3); /* 누르는 자리를 44px 로 넓히되 줄 높이는 그대로 */
 }
+/* 안내 줄 아이콘 — 흰 바탕 상자 없이 금색 선 그림만 */
 .contact__icon {
   flex: none;
-  width: 42px; height: 42px;
-  border-radius: 12px;
-  background: var(--color-white);
+  width: 24px; height: 30px;
   display: flex; align-items: center; justify-content: center;
-  color: var(--color-primary);
+  color: var(--color-gold);
 }
 .contact__list strong { display: block; font-size: var(--text-base); font-weight: var(--weight-medium); margin-bottom: var(--space-1); color: var(--color-ink); }
 .contact__list p { color: var(--color-ink-soft); font-size: var(--text-base); font-weight: var(--weight-normal); }
 .contact__list a:hover { color: var(--color-primary); }
 
-/* 전화 상담 카드 — 문의 폼이 있던 자리를 채우는 큰 전화 안내 */
+/* 전화 상담 — 상자 · 그림자 없이 금색 줄 아래에 반듯하게. 단추는 같은 폭으로 줄 세운다 */
 .contact__cta {
-  background: var(--color-cream-light);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  padding: var(--space-12) var(--space-8);
+  border-top: 2px solid var(--color-gold);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-8) 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: stretch;
+  text-align: left;
   gap: var(--space-2);
 }
-.contact__cta-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  background: var(--color-white);
-  color: var(--color-primary);
-  margin-bottom: var(--space-2);
-}
+.contact__cta .btn { justify-content: center; }
 .contact__cta-label {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -794,7 +805,6 @@ main:focus:not(:focus-visible) { outline: none; }
   font-size: var(--text-caption);
   color: var(--color-ink-muted);
   margin-top: var(--space-3);
-  max-width: 260px;
 }
 
 /* 복사 완료 안내 — 컴퓨터에서 "전화로 문의하기"를 누르면 화면 아래에 잠깐 뜬다 */
@@ -835,28 +845,28 @@ main:focus:not(:focus-visible) { outline: none; }
 /* 개인정보 처리방침 — 첫 화면에서 바로 찾을 수 있게 굵게·밑줄 (개인정보위 작성지침), 누르는 자리 44px */
 .footer__policy a { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-caption); font-weight: var(--weight-bold); color: var(--color-white); text-decoration: underline; text-underline-offset: 3px; }
 
-/* ---------- 맨 위로 ---------- */
+/* ---------- 맨 위로 — 붉은 동그라미 대신 작은 미색 네모 (글자를 덜 가리게) ---------- */
 .to-top {
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: var(--color-white);
+  width: 44px; height: 44px;
+  border-radius: var(--radius-xs);
+  background: var(--color-cream);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  box-shadow: var(--shadow-soft);
   opacity: 0;
   pointer-events: none;
   transform: translateY(10px);
-  transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s ease, color 0.25s ease;
   z-index: 90;
 }
 .to-top.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-.to-top:hover { background: var(--color-primary-dark); }
+.to-top:hover { border-color: var(--color-gold); color: var(--color-primary); }
 
 /* ---------- 휴대폰 아래 고정 문의 줄 — 긴 페이지 어디서든 바로 전화·카톡 ---------- */
 .quick-bar { display: none; }
@@ -880,8 +890,8 @@ main:focus:not(:focus-visible) { outline: none; }
     justify-content: center;
     gap: var(--space-2);
     min-height: 48px;
-    border: 1.5px solid var(--color-primary);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-xs);
     color: var(--color-primary);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
@@ -944,12 +954,12 @@ main:focus:not(:focus-visible) { outline: none; }
   .process { padding: var(--space-16) 0; }
   .steps { grid-template-columns: 1fr; gap: var(--space-6); margin-top: var(--space-8); }
   .album { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
-  .menu__tab { padding: 12px 16px; font-size: var(--text-caption); }
+  .menu__tab { padding: 12px 4px; font-size: var(--text-caption); }
   .album-toggle { width: 100%; }
 
   /* 문의: 좁은 화면에서는 안내글 위 · 전화 카드 아래로 쌓음 */
   .contact__inner { grid-template-columns: 1fr; gap: var(--space-8); }
-  .contact__cta { padding: var(--space-8) var(--space-6); }
+  .contact__cta { padding: var(--space-8) 0; }
   .contact__cta-sms, .contact__cta-kakao { display: inline-flex; margin-top: var(--space-3); }
   /* 사업자 정보: 좁은 화면에서는 항목마다 한 줄, 구분 막대 없이 (줄 끝에 막대만 남지 않게) */
   .footer__biz br { display: none; }
