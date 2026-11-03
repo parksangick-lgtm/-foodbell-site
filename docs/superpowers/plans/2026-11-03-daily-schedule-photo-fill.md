@@ -148,4 +148,6 @@
 (과제 1 · 5 · 6 의 실제 숫자를 여기에 적는다.)
 
 - **과제 1 (2026-11-03 19:5x 사무실, 자동 저장 81bf370 뒤)**: `GET /api/ping` → `{"ok":true,"sdk":true,"waited":0}` (버셀이 `package.json` 의존을 깔고 웹 표준 `GET`/`POST` 내보내기를 돌림) · `?wait=50` → 200, 50.26초 (`export const maxDuration = 60` 로 충분 — `vercel.json` 손대지 않음) · POST 3,000,000자 · 4,400,000자 → 둘 다 200 · `/` · `daily-schedule.html` · `sije-list.html` 200 · `/package.json` 404(공개 안 됨).
+- **과제 2~5 (관리자, 21:3x)**: JS 97/97 · pytest 전체 통과 · 390px 넘침 0 · `.btn-photo` 44px. **과제 5 배포 확인(f241494)**: `/api/read-note` → `{"ready":false}` · `/api/ping` 404 · `doc-page.js?v=13` · `foodbell-v42`.
+- **최종 검토(fable)**: Critical 0. Important 1(doc-page.js 가 store.js 를 `?v=` 없이 불러 옛 저장본과 섞이면 서류 6종이 안 뜸) 고침 — `store.js?v=1` · `doc-page.js?v=14`, 시험 `doc_page_imports_store_with_version`. 나머지는 작은 것으로 미룸(작업 기록장).
 - 부품 1.4.0 타입으로 확인: `output_config.format` = `{ type: 'json_schema', schema }`(`BetaJSONOutputFormat`) · `fallbacks?: Array<…> | 'default'` · 베타 이름 `'server-side-fallback-2026-07-01'` 있음 · `effort` 에 `'medium'`.
