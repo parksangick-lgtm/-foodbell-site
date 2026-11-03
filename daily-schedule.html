@@ -112,6 +112,9 @@ table.stmt td.c{text-align:center}
 table.stmt td.item-name{font-weight:var(--w-medium)}
 tr.addrow td{padding:6px 8px; background:rgba(176,141,87,.06)}
 tr.addrow .btn-mini{width:100%}
+/* 사진으로 채우기 (2026-11-03) — 줄 추가 아래 한 줄, 읽는 동안은 막힘 */
+tr.addrow .btn-photo{margin-top:6px; min-height:44px}
+tr.addrow .btn-photo:disabled{opacity:.55; cursor:default}
 
 /* ---------- 합계 ---------- */
 .totals{display:flex; margin-top:22px}
@@ -318,6 +321,10 @@ body:not(.editing) table.stmt.day-table .rites:not(:has([data-edit]:not(:empty))
 table.stmt.day-table td.c .state{display:block; width:max-content; margin:4px auto 0; padding:0 4px; background:var(--seal); color:var(--paper);
   font-size:14px; font-weight:var(--w-bold); line-height:1.6; border-radius:3px; white-space:nowrap}
 body:not(.editing) table.stmt.day-table tr.item[data-state] td:not(.c){opacity:.55}
+/* 사진으로 채우기 — 자신 없다고 온 칸은 노란 바탕(ai-unsure). 그 칸을 고치면 사라지고, 저장 HTML(serialize) · 직원 사진(카드) · 인쇄에는 없다 (2026-11-03) */
+table.stmt.day-table .ai-unsure{background:rgba(176,141,87,.35)}
+@media print{ table.stmt.day-table .ai-unsure{background:transparent} }
+.toast{white-space:pre-line}   /* 사진으로 채우기 알림은 줄을 바꿔 (채운 줄 수 · 날짜 다름 · 노트의 남은 글) */
 
 /* 편집할 때: 두세 줄 칸도 한 칸씩 따로 누르게, 빈 칸에는 무엇을 적을지 흐린 글자로 */
 body.editing table.stmt.day-table td > [data-edit],
@@ -396,6 +403,8 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
   <textarea id="paste-text" rows="8" placeholder="여기를 길게 누르고 붙여넣기"></textarea>
   <div class="paste-btns"><button type="button" id="paste-cancel">닫기</button><button type="button" id="paste-ok" class="primary">넣기</button></div>
 </dialog>
+<!-- 사진으로 채우기 (편집 중) — 휴대폰은 카메라 · 사진첩 고르기 -->
+<input type="file" id="photo-input" accept="image/*" hidden>
 
 <article class="sheet">
 
@@ -507,6 +516,8 @@ const fileBase = () => ymd();   // 파일 이름은 날짜만 (사장님 2026-10
 /* 목록 · 공유 제목: '2026년 10월 21일 (수)' — 요일을 못 구하면 적힌 그대로 */
 const label = () => [getText('date'), getText('dow')].filter(Boolean).join(' ');
 const filled = (tr) => FIELDS.some((f) => field(tr, f));
+/* 단위(만 · 천 · 원) 없이 숫자만 쓴 단가('250') — 천 단위 쉼표가 제대로 찍힌 숫자('350,000')는 원이 분명해서 아니다 (recalc · 사진으로 채우기) */
+const bareNumber = (t) => /\d/.test(t) && !/[만천원]/.test(t) && !/(^|[^\d,])\d{1,3}(?:,\d{3})+(?![\d,])/.test(t);
 
 /* ---------- 줄 번호 · 요일 · 음력 · 금액 ---------- */
 function recalc() {
@@ -525,7 +536,7 @@ function recalc() {
     // 사장님이 '250' 을 25만 뜻으로 쳤는데 250원으로 직원 사진에 나갔다 (사장님 결정 2026-10-21)
     // 천 단위 쉼표가 제대로 찍힌 숫자('350,000')는 원이 분명하다 — 사장님이 그렇게 쳤는데 사진에 금액이 빠졌다 (2026-10-21)
     const priceText = field(tr, 'price');
-    const bare = /\d/.test(priceText) && !/[만천원]/.test(priceText) && !/(^|[^\d,])\d{1,3}(?:,\d{3})+(?![\d,])/.test(priceText);
+    const bare = bareNumber(priceText);
     const price = bare ? null : readNumber(priceText);
     const amt = tr.querySelector('[data-k="amt"]');
     // 둘 다 있으면 곱셈, 단가만 있으면(상 주문 '35만' · 인원이 애매함) 단가만 — 사장님 결정 2026-10-20
@@ -601,6 +612,8 @@ function serialize() {
   each(c.querySelectorAll('.day-stats'), (n) => { n.textContent = ''; });   // 사장님 한 줄은 그릴 때마다 계산 — 저장 HTML 에는 없다
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
+  // 사진으로 채우기의 노란 표시는 저장하지 않는다 — 다른 기기 · 직원 게시판 · 인쇄 프로그램에 안 가게
+  each(c.querySelectorAll('.ai-unsure'), (n) => { n.classList.remove('ai-unsure'); if (!n.classList.length) n.removeAttribute('class'); });
   telsPlain(c);
   placesPlain(c);
   return c.innerHTML;
@@ -635,6 +648,15 @@ function addControls() {
     const ab = el('button', 'btn-mini', '줄 추가 (일 하나)'); ab.type = 'button';
     td.appendChild(ab); ar.appendChild(td); tb.appendChild(ar);
   }
+  photoButton();
+}
+/* 줄 하나 더하기 — '줄 추가' 단추와 '사진으로 채우기'가 같이 쓴다 */
+function addRow() {
+  const ar = sheet.querySelector('tr.addrow');
+  const tr = el('tr', 'item'); tr.innerHTML = ROW_HTML;
+  ar.parentNode.insertBefore(tr, ar);
+  addControls(); setCE(true); foldMeet(tr);
+  return tr;
 }
 function removeControls() {
   each(sheet.querySelectorAll('.rowctl, tr.addrow'), (n) => n.remove());
@@ -707,6 +729,7 @@ function setEditing(on) {
 sheet.addEventListener('input', (e) => {
   const t = e.target.closest?.('[data-edit]');
   if (!t) return;
+  t.classList.remove('ai-unsure');   // 사진으로 채운 칸 — 고치면 노란 바탕을 뗀다
   recalc();
   save();
 });
@@ -728,6 +751,7 @@ sheet.addEventListener('click', (e) => {
   const b = e.target.closest?.('button.btn-mini');
   if (!b) return;
   e.preventDefault();
+  if (b.classList.contains('btn-photo')) { photoInput.click(); return; }   // 줄 추가 행 안에 있지만 줄을 더하지 않는다
   if (b.classList.contains('btn-open')) {
     const td = b.closest('td.meet');
     unfoldMeet(td);
@@ -751,10 +775,7 @@ sheet.addEventListener('click', (e) => {
     const row = b.closest('tr.item');
     if (row && window.confirm('이 항목을 삭제할까요?')) row.remove();
   } else if (b.closest('tr.addrow')) {
-    const tr = el('tr', 'item'); tr.innerHTML = ROW_HTML;
-    b.closest('tr.addrow').parentNode.insertBefore(tr, b.closest('tr.addrow'));
-    addControls(); setCE(true); foldMeet(tr);
-    tr.querySelector('[data-f="staff"]').focus();
+    addRow().querySelector('[data-f="staff"]').focus();
   }
   recalc(); save();
 });
@@ -805,6 +826,150 @@ async function pickContacts(tr) {
   recalc(); save();
   toast(parts.length + '명의 번호를 연락처 칸에 넣었습니다');
 }
+
+/* ---------- 사진으로 채우기 (편집 중 · 주인 · 서버 기능 준비됨, 2026-11-03 설계 docs/superpowers/specs/2026-11-03-daily-schedule-photo-fill-design.md 3-3) ----------
+   손글씨 노트 사진을 줄여 서버 기능(api/read-note.js — 클로드가 읽음)에 보내고, 받은 줄로 빈 줄부터 칸을 채운다.
+   자신 없다고 온 칸은 노란 바탕(ai-unsure). 열쇠를 넣기 전(ready:false) · 서버 기능이 없는 곳(404)에는 단추가 없다 */
+const PHOTO_FIELDS = ['staff', 'car', 'leave', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead-tel', 'hall', 'depart', 'cremate', 'memo'];
+const PHOTO_LABEL = '사진으로 채우기';
+const PHOTO_ERR = {
+  401: '로그인이 풀렸습니다 — 다시 로그인해 주세요', 403: '이 계정은 쓸 수 없습니다', 413: '사진이 너무 큽니다',
+  402: '이번 달 사용 한도에 닿았습니다(앤트로픽 설정 확인)', 504: '시간이 너무 걸렸습니다 — 다시 눌러 주세요',
+};
+const photoInput = document.getElementById('photo-input');
+let photoReady = false;   // 서버 기능이 열쇠를 받았다(GET ready:true)
+let reading = false;      // 읽는 중 — 단추를 막고 요청은 한 번만
+/* 단추 넣기 — 편집을 켤 때(addControls)와 준비 답이 늦게 왔을 때 같은 함수로, 두 번 넣지 않는다 */
+function photoButton() {
+  const td = sheet.querySelector('tr.addrow td');
+  if (!td || td.querySelector('.btn-photo') || !photoReady || body.dataset.role !== 'owner') return;
+  const b = el('button', 'btn-mini btn-photo', reading ? '읽는 중… (최대 1분)' : PHOTO_LABEL); b.type = 'button';
+  b.disabled = reading;
+  td.appendChild(b);
+}
+function setReading(on) {
+  reading = on;
+  const b = sheet.querySelector('.btn-photo');
+  if (b) { b.disabled = on; b.textContent = on ? '읽는 중… (최대 1분)' : PHOTO_LABEL; }
+}
+/* 열 때 한 번 묻는다 — 저장된 답이 굳지 않게 sw.js 는 /api/ 를 그냥 통과시킨다 */
+fetch('/api/read-note', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j) => { photoReady = !!(j && j.ready === true); photoButton(); })
+  .catch(() => {});   // 서버 기능이 없는 곳(시험 서버 · 끊김) — 단추 없이
+
+/* 긴 변 2000점 JPEG(base64 글자) — 몸통 한도(4,000,000자)에 가까우면 품질을 0.7 → 0.5 로. 못 열면(사진 아님 · HEIC 등) null */
+async function shrinkPhoto(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    const cv = el('canvas');
+    cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    if (bmp.close) bmp.close();
+    for (const q of [0.85, 0.7, 0.5]) {
+      const blob = await new Promise((res) => cv.toBlob(res, 'image/jpeg', q));
+      if (!blob) return null;
+      const b64 = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result).split(',')[1] || '');
+        fr.onerror = () => rej(fr.error);
+        fr.readAsDataURL(blob);
+      });
+      if (b64.length <= 3900000 || q === 0.5) return b64 || null;
+    }
+  } catch { return null; }
+  return null;
+}
+/* 이름 목록 — 최근에 고친 일정표 20장의 담당 · 장소 글자(각 60개 · 한 개 40자까지).
+   숫자가 3자리 이상 이어진 글자(전화 등)는 뺀다 — 손님 번호를 보내지 않는다 */
+async function photoHints() {
+  const out = { staff: [], places: [] };
+  let docs = [];
+  try { docs = await window.FoodbellDoc.recentDocs(20); } catch { return out; }   // 못 읽으면 목록 없이 읽는다
+  const t = document.createElement('template');
+  for (const { doc } of docs || []) {
+    if (!doc || !doc.html) continue;
+    t.innerHTML = doc.html;
+    for (const [f, list] of [['staff', out.staff], ['place', out.places]]) {
+      each(t.content.querySelectorAll(`[data-f="${f}"]`), (n) => {
+        const v = clean(n.textContent).slice(0, 40);
+        if (v && !/\d{3}/.test(v) && !list.includes(v) && list.length < 60) list.push(v);
+      });
+    }
+  }
+  return out;
+}
+/* 단가: 숫자로 읽히면 'N원'(손으로 칠 때와 같은 꼴), 아니면 적힌 그대로('협의').
+   단위 없는 숫자('250')도 그대로 — 25만인지 250원인지 모르니 recalc 가 '단위를 적어 주세요' 를 띄운다 (2026-10-21 사장님 결정) */
+function photoPrice(v) {
+  const n = bareNumber(v) ? null : readNumber(v);
+  return n ? `${fmt(n)}원` : v;
+}
+/* 받은 줄을 빈 줄(모든 칸이 비고 연기 · 취소 표시도 없는 줄)부터 위에서 차례로, 모자라면 줄을 더해서. 글자 있는 줄은 그대로 */
+function fillPhotoRows(data) {
+  if (!body.classList.contains('editing')) setEditing(true);   // 읽는 동안 편집을 껐어도 — 노란 칸을 보며 고치게
+  let n = 0;
+  for (const r of data.rows) {
+    if (!r || typeof r !== 'object') continue;
+    const vals = PHOTO_FIELDS.map((f) => { const v = r[f.replace('-', '_')]; return [f, typeof v === 'string' ? v.trim() : '']; });
+    if (!vals.some(([, v]) => v)) continue;
+    const tr = Array.prototype.find.call(sheet.querySelectorAll('tr.item'), (x) => !filled(x) && !x.dataset.state) || addRow();
+    for (const [f, v] of vals) {
+      const e = tr.querySelector(`[data-f="${f}"]`);
+      if (e && v) e.textContent = f === 'tel' || f === 'lead-tel' ? dashTels(v) : f === 'price' ? photoPrice(v) : v;
+    }
+    for (const u of Array.isArray(r.unsure) ? r.unsure : []) {
+      const f = String(u).replace('_', '-');
+      if (PHOTO_FIELDS.includes(f)) tr.querySelector(`[data-f="${f}"]`)?.classList.add('ai-unsure');
+    }
+    foldMeet(tr);   // 장례 칸에 글자가 들어갔으면 편다
+    n++;
+  }
+  recalc(); save();
+  // 알림 한 장에 줄을 바꿔: 채운 줄 수 · 노트 날짜가 일정표와 다름(일정표 날짜는 그대로) · 칸에 못 넣은 글
+  const lines = [n ? `${n}줄을 채웠습니다 — 노란 칸을 확인해 주세요` : '읽을 줄을 찾지 못했습니다'];
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof data.day === 'string' ? data.day : '');
+  const d = parseDay(getText('date'));
+  if (m && d && (+m[1] !== d.getFullYear() || +m[2] !== d.getMonth() + 1 || +m[3] !== d.getDate())) {
+    lines.push(`노트 날짜 ${+m[2]}/${+m[3]} · 일정표 날짜 ${d.getMonth() + 1}/${d.getDate()} — 확인하세요`);
+  }
+  if (typeof data.note === 'string' && data.note.trim()) lines.push(data.note.trim());
+  toast(lines.join('\n'), lines.length > 1 ? 10000 : 5000);
+}
+async function readPhoto(file) {
+  if (reading || !file) return;
+  setReading(true);
+  try {
+    const image = await shrinkPhoto(file);
+    if (!image) { toast('사진을 열지 못했습니다'); return; }
+    let token;
+    try { token = await window.FoodbellDoc.idToken(); } catch { toast(PHOTO_ERR[401]); return; }
+    const hints = await photoHints();
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 70000);   // 서버 기능 한도(60초)보다 조금 길게
+    let res, data;
+    try {
+      res = await fetch('/api/read-note', {
+        method: 'POST', cache: 'no-store', signal: ctl.signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ image, hints, day: parseDay(getText('date')) ? ymd() : '' }),
+      });
+      if (res.ok) data = await res.json();
+    } catch (e) {
+      toast(ctl.signal.aborted ? PHOTO_ERR[504] : `사진을 읽지 못했습니다 (${e && e.name === 'SyntaxError' ? '응답' : '연결'})`);
+      return;
+    } finally { clearTimeout(timer); }
+    if (!res.ok) { toast(PHOTO_ERR[res.status] || `사진을 읽지 못했습니다 (${res.status})`); return; }
+    if (!data || !Array.isArray(data.rows)) { toast('사진을 읽지 못했습니다 (응답)'); return; }
+    fillPhotoRows(data);
+  } finally { setReading(false); }
+}
+photoInput.addEventListener('change', () => {
+  const f = photoInput.files && photoInput.files[0];
+  photoInput.value = '';   // 같은 사진을 다시 골라도 바뀜이 일어나게
+  readPhoto(f);
+});
 
 /* ---------- 공용: 토스트 / 복사 / 다운로드 ---------- */
 const toastEl = document.getElementById('toast');
@@ -1046,6 +1211,6 @@ fillFresh();
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=12"></script>
+<script type="module" src="js/docs/doc-page.js?v=13"></script>
 </body>
 </html>

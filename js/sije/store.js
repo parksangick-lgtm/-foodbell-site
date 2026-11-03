@@ -129,6 +129,21 @@ export function watchDoc(id, cb, onError) {
     (snap) => cb(snap.exists() ? snap.data() : null, meta(snap)), onError);
 }
 
+// 같은 종류 서류를 한 번 읽어 최근에 고친 순 n장 — 일일 일정표 '사진으로 채우기' 의 이름 목록용 (2026-11-03).
+// 조건은 watchDocs 와 같고 순서는 받은 뒤에 정한다 — kind 와 updatedAt 을 묶은 질의는 저장소에 색인을 따로 만들어야 한다(추정).
+// 서버 시각이 아직 없는 방금 만든 서류는 맨 앞(목록의 sortDocs 와 같은 규칙). 끊겼으면 이 기기에 있는 것으로.
+export async function recentDocs(kind, n) {
+  const snap = await fs.getDocs(fs.query(fs.collection(db, 'docs'), fs.where('kind', '==', kind)));
+  const time = (r) => r.doc.updatedAt?.toMillis() ?? Infinity;
+  return snap.docs.map((d) => ({ id: d.id, doc: d.data() })).sort((a, b) => time(b) - time(a)).slice(0, n);
+}
+
+// 로그인한 사람의 ID 토큰 — 서버 기능(api/read-note)이 이것으로 주인인지 본다. 로그인 안 했으면 실패.
+export function idToken() {
+  if (!auth?.currentUser) return Promise.reject(new Error('로그인하지 않았습니다'));
+  return auth.currentUser.getIdToken();
+}
+
 // 서버 확인은 이만큼(ms)까지만 기다린다 — 끊긴 채 연 화면은 navigator.onLine 이 '연결됨'으로 나와서 그것만으로는 못 가린다.
 // 그 뒤에는 기기에 들고 있다가 연결되면 올라간다.
 export const CONFIRM_WAIT = 3000;

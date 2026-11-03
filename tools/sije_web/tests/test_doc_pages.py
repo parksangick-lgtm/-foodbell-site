@@ -1,6 +1,9 @@
 """웹 서류 5종 화면 시험 (2단계) — 시험 프로젝트의 docs 에 가짜 서류를 넣거나 화면으로 만들고, 끝나면 지운다.
 PC 창(1280px)과 휴대폰 창(390px)을 같이 띄워 같은 서류를 고친다. 손님 정보는 전부 가짜."""
+import base64
 import datetime
+import io
+import json
 import re
 import threading
 import time
@@ -8,6 +11,7 @@ import urllib.parse
 import uuid
 
 import pytest
+from conftest import fake_jpeg
 from google.cloud import firestore
 
 ALLOWED = 'docs-allowed@example.com'
@@ -966,6 +970,28 @@ def test_daily_paste_order_fills_empty_cells_only(pc, repo_url, custom_token, ma
     pc.click('#btn-edit')
     assert text_of(pc, 'tr.item [data-k="amt"]') == '350,000원'
     assert pc.locator('#paste-dlg').is_hidden()
+
+
+def test_daily_doc_hooks_give_token_and_recent(pc, repo_url, custom_token, test_db, made):
+    """'사진으로 채우기'(2026-11-03)가 쓰는 연결 고리 — 로그인 표(서버 기능이 주인인지 본다)와
+    최근에 고친 일정표들(담당 · 장소 이름 목록). 최근에 고친 것이 먼저 온다."""
+    token = custom_token(ALLOWED, allowed=True)
+    ids = []
+    for staff in ('가짜담당1', '가짜담당2'):
+        doc_id = daily_new(pc, repo_url, token, made)
+        pc.click('#btn-edit')
+        edit_cell(pc, 'tr.item [data-f="staff"]', staff)
+        pc.click('#btn-edit')
+        wait_db(test_db.collection('docs').document(doc_id),
+                lambda s, staff=staff: staff in (s.to_dict() or {}).get('html', ''))
+        ids.append(doc_id)
+    daily_new(pc, repo_url, token, made)                            # 새 일정표를 연 화면에서
+    assert pc.evaluate('window.FoodbellDoc.idToken()') != ''
+    recent = pc.evaluate('window.FoodbellDoc.recentDocs(20).then((r) => r.map((x) => ({ id: x.id, html: x.doc.html })))')
+    got = [r['id'] for r in recent]
+    assert len(recent) >= 2, got
+    assert got.index(ids[1]) < got.index(ids[0]), got              # 가짜담당2 를 나중에 고쳤다
+    assert '가짜담당2' in recent[got.index(ids[1])]['html']
 
 
 def test_daily_two_phone_numbers_stay_in_their_cell(pc, repo_url, custom_token, made):
@@ -1957,3 +1983,294 @@ def test_statement_photo_keeps_address_number_with_street(pc, repo_url, custom_t
     i = text.index('34길') + 2
     j = text.index('31', i)
     assert tops[i][1] == tops[j][1] == tops[j + 1][1], (text, [t for _, t in tops])
+
+
+# ---------- 사진으로 채우기 (2026-11-03, 설계 docs/superpowers/specs/2026-11-03-daily-schedule-photo-fill-design.md 3-3) ----------
+# 서버 기능 /api/read-note 는 가짜 답으로 바꾼다(page.route) — 시험 서버(http.server)에는 없어서 그냥 두면 404
+
+NOTE_FIELDS = ['staff', 'car', 'leave', 'time', 'place', 'tel', 'work', 'people', 'price', 'lead', 'lead_tel',
+               'hall', 'depart', 'cremate', 'memo']
+
+
+def note_row(**kw):
+    """서버가 주는 줄 하나 — 15칸 모두 글자(없으면 ''), 자신 없는 칸 이름은 unsure."""
+    row = {f: '' for f in NOTE_FIELDS}
+    row['unsure'] = []
+    row.update(kw)
+    return row
+
+
+def answer_rows(rows, day='', note=''):
+    return lambda route: route.fulfill(json={'day': day, 'rows': rows, 'note': note})
+
+
+def fake_note_api(page, ready=True, answer=None, posts=None, hold=None):
+    """page 의 /api/read-note 를 가짜로. GET → {ready}, POST → answer(route) 가 답한다(없으면 빈 결과).
+    posts 에 받은 POST 의 머리(Authorization) · 몸통을 모으고, hold 가 있으면 POST 에 답하지 않고 넣어 둔다(시험이 나중에 답한다)."""
+    def handle(route):
+        req = route.request
+        if req.method == 'GET':
+            route.fulfill(json={'ready': ready})
+            return
+        if posts is not None:
+            posts.append({'auth': req.headers.get('authorization', ''), 'body': req.post_data_json})
+        if hold is not None:
+            hold.append(route)
+        elif answer:
+            answer(route)
+        else:
+            route.fulfill(json={'day': '', 'rows': [], 'note': ''})
+    page.route('**/api/read-note', handle)
+
+
+def pick_photo(page, data=None, name='note.jpg', mime='image/jpeg'):
+    """'사진으로 채우기' 의 숨은 파일 입력에 사진을 넣는다 (휴대폰에서 사진을 고른 것처럼)."""
+    page.set_input_files('#photo-input', files=[{'name': name, 'mimeType': mime, 'buffer': data or fake_jpeg()}])
+
+
+def photo_ready(page):
+    """편집을 켜고 '사진으로 채우기' 단추가 나올 때까지."""
+    page.click('#btn-edit')
+    page.locator('.btn-photo').wait_for(timeout=10_000)
+
+
+def wait_toast(page, part, timeout=15_000):
+    """알림에 part 가 나올 때까지 — 알림 글 전체를 돌려준다."""
+    page.wait_for_function('(p) => document.getElementById("toast").textContent.includes(p)', arg=part, timeout=timeout)
+    return page.locator('#toast').text_content()
+
+
+def reopen(page):
+    """같은 서류를 다시 열고, 서버 기능 GET 의 답이 올 때까지 — 그 답의 상태 번호."""
+    with page.expect_response(lambda r: '/api/read-note' in r.url and r.request.method == 'GET') as got:
+        page.reload(wait_until='domcontentloaded')
+    wait_view(page, 'doc')
+    return got.value.status
+
+
+def test_daily_photo_button_only_when_ready_and_editing(pc, repo_url, custom_token, test_db, made):
+    """'사진으로 채우기' 단추 — 서버 기능이 열쇠를 받았다(GET ready:true)고 할 때만, 편집 중에만, 줄 추가 행 안에. 누르는 자리 44px.
+    서버 기능이 없는 곳(404 — 이 시험 서버, 다른 시험은 모두 이 상태)과 열쇠를 넣기 전(ready:false)에는 편집 중에도 없다.
+    GET 답이 편집을 켠 뒤에 와도 그때 넣는다(한 번만)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')                                           # 안 고친 새 서류는 새로 고치면 지워진다(10-26) — 한 칸 적어 남긴다
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 일')
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: '가짜 일' in (s.to_dict() or {}).get('html', ''))
+    btn = pc.locator('.btn-photo')
+    assert reopen(pc) == 404
+    pc.click('#btn-edit')
+    pc.locator('tr.addrow').wait_for()
+    pc.wait_for_timeout(500)
+    assert btn.count() == 0
+    fake_note_api(pc, ready=False)
+    assert reopen(pc) == 200
+    pc.click('#btn-edit')
+    pc.locator('tr.addrow').wait_for()
+    pc.wait_for_timeout(500)
+    assert btn.count() == 0
+    pc.unroute('**/api/read-note')
+    fake_note_api(pc, ready=True)
+    reopen(pc)
+    pc.wait_for_timeout(500)
+    assert btn.count() == 0                                         # 편집 전에는 없다
+    pc.click('#btn-edit')
+    btn.wait_for(timeout=10_000)
+    assert btn.count() == 1 and btn.inner_text().strip() == '사진으로 채우기'
+    assert btn.evaluate("(b) => !!b.closest('tr.addrow')")
+    assert btn.bounding_box()['height'] >= 44
+    pc.click('#btn-edit')
+    pc.click('#btn-edit')                                           # 편집을 껐다 켜도 하나
+    btn.wait_for(timeout=10_000)
+    assert btn.count() == 1
+    # GET 답이 편집을 켠 뒤에 온다
+    pc.unroute('**/api/read-note')
+    held = []
+    pc.route('**/api/read-note', lambda route: held.append(route))
+    pc.reload(wait_until='domcontentloaded')
+    wait_view(pc, 'doc')
+    pc.click('#btn-edit')
+    pc.locator('tr.addrow').wait_for()
+    deadline = time.time() + 10
+    while not held and time.time() < deadline:
+        pc.wait_for_timeout(100)
+    assert len(held) == 1 and btn.count() == 0
+    held[0].fulfill(json={'ready': True})
+    btn.wait_for(timeout=10_000)
+    pc.wait_for_timeout(300)
+    assert btn.count() == 1
+
+
+def test_daily_photo_fills_empty_rows_then_adds(pc, repo_url, custom_token, made):
+    """받은 줄은 빈 줄(글자도 연기 · 취소 표시도 없는 줄)부터 위에서 차례로, 모자라면 '줄 추가'와 같은 방법으로 맨 끝에.
+    글자 있는 줄 · 연기 표시만 있는 줄은 그대로. 연락처는 작대기, 단가는 숫자로 읽히면 'N원' 아니면 글자 그대로('협의'),
+    단위 없는 숫자('250')도 글자 그대로 — 손으로 칠 때처럼 '단위를 적어 주세요'(10-21 사장님 결정). 장례 칸에 글자가 들어가면 펼친다."""
+    fake_note_api(pc, answer=answer_rows([
+        note_row(work='가짜 첫째', tel='01000001234', price='35만', cremate='08:00'),
+        note_row(work='가짜 둘째', price='협의'),
+        note_row(work='가짜 셋째', price='250'),
+    ]))
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 먼저')
+    pc.click('tr.addrow button:not(.btn-photo)')                    # 2번 줄 — 비워 둔다
+    pc.click('tr.addrow button:not(.btn-photo)')                    # 3번 줄 — 연기 표시만
+    pc.click('tr.item:nth-child(3) .btn-state[data-set="연기"]')
+    pick_photo(pc)
+    wait_toast(pc, '3줄을 채웠습니다 — 노란 칸을 확인해 주세요')
+    assert pc.locator('tr.item').count() == 5
+
+    def cell(n, f):
+        return text_of(pc, f'tr.item:nth-child({n}) [data-f="{f}"]')
+    assert cell(1, 'work') == '가짜 먼저' and cell(1, 'tel') == ''
+    assert (cell(2, 'work'), cell(2, 'tel'), cell(2, 'price'), cell(2, 'cremate')) == ('가짜 첫째', '010-0000-1234', '350,000원', '08:00')
+    assert pc.locator('tr.item:nth-child(2) td.meet').evaluate("(td) => !td.classList.contains('folded')")
+    assert pc.locator('tr.item:nth-child(2) [data-f="cremate"]').is_visible()
+    assert pc.get_attribute('tr.item:nth-child(3)', 'data-state') == '연기'
+    assert pc.locator('tr.item:nth-child(3)').evaluate("(tr) => [...tr.querySelectorAll('[data-f]')].every((e) => !e.textContent.trim())")
+    assert (cell(4, 'work'), cell(4, 'price')) == ('가짜 둘째', '협의')
+    assert (cell(5, 'work'), cell(5, 'price')) == ('가짜 셋째', '250')
+    assert text_of(pc, 'tr.item:nth-child(5) [data-k="amt"]') == '단위를 적어 주세요(예: 25만)'
+
+
+def test_daily_photo_marks_unsure_until_edited(pc, repo_url, custom_token, made):
+    """자신 없는 칸(unsure — 팀장 전화는 lead_tel)은 노란 바탕(ai-unsure). 그 칸을 고치면 그 칸만 사라진다.
+    저장 HTML · 인쇄에는 나오지 않는다 (설계 3-3)."""
+    fake_note_api(pc, answer=answer_rows([note_row(work='가짜 일', tel='010-0000-1111', place='가짜장소', lead='가짜팀장',
+                                                   lead_tel='010-0000-2222', unsure=['tel', 'place', 'lead_tel'])]))
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    pick_photo(pc)
+    wait_toast(pc, '1줄을 채웠습니다')
+
+    def marked():
+        return sorted(pc.eval_on_selector_all('.ai-unsure', 'es => es.map((e) => e.dataset.f)'))
+    assert marked() == ['lead-tel', 'place', 'tel']
+    assert _bg(pc, 'tr.item [data-f="place"]') == 'rgba(176, 141, 87, 0.35)'
+    edit_cell(pc, 'tr.item [data-f="tel"]', '010-0000-3333')
+    assert marked() == ['lead-tel', 'place']
+    assert 'ai-unsure' not in pc.evaluate('window.FoodbellDoc.serialize()')
+    pc.emulate_media(media='print')
+    assert _bg(pc, 'tr.item [data-f="place"]') == 'rgba(0, 0, 0, 0)'
+    pc.emulate_media(media='screen')
+
+
+def test_daily_photo_request_carries_token_hints_and_resized_jpeg(pc, repo_url, custom_token, test_db, made):
+    """보내는 것 — 머리에 로그인 표, 몸통에 긴 변 2000 으로 줄인 JPEG · 이름 목록(최근 일정표의 담당 · 장소, 번호가 든 글자는 뺌) ·
+    일정표 날짜(YYYY-MM-DD)."""
+    token = custom_token(ALLOWED, allowed=True)
+    first = daily_new(pc, repo_url, token, made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="staff"]', '가짜담당1')
+    edit_cell(pc, 'tr.item [data-f="place"]', '가짜공원')
+    pc.click('tr.addrow button')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="place"]', '가짜장소 010-0000-1111')   # 번호가 든 글자는 보내지 않는다
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="tel"]', '010-0000-2222')
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(first), lambda s: '010-0000-1111' in (s.to_dict() or {}).get('html', ''))
+    posts = []
+    fake_note_api(pc, posts=posts)
+    daily_new(pc, repo_url, token, made)
+    photo_ready(pc)
+    edit_cell(pc, '[data-k="date"]', '2026년 11월 5일')
+    pick_photo(pc, fake_jpeg(3000, 2250))
+    wait_toast(pc, '읽을 줄을 찾지 못했습니다')
+    assert len(posts) == 1
+    auth, body = posts[0]['auth'], posts[0]['body']
+    assert auth.startswith('Bearer ') and len(auth) > len('Bearer ') + 20
+    from PIL import Image
+    img = Image.open(io.BytesIO(base64.b64decode(body['image'])))
+    assert img.format == 'JPEG' and max(img.size) <= 2000 and img.size == (2000, 1500), (img.format, img.size)
+    assert '가짜담당1' in body['hints']['staff'] and '가짜공원' in body['hints']['places'], body['hints']
+    assert '010-' not in json.dumps(body['hints'], ensure_ascii=False), body['hints']
+    assert body['day'] == '2026-11-05'
+
+
+PHOTO_ERRORS = [
+    (401, '로그인이 풀렸습니다 — 다시 로그인해 주세요'),
+    (403, '이 계정은 쓸 수 없습니다'),
+    (413, '사진이 너무 큽니다'),
+    (402, '이번 달 사용 한도에 닿았습니다(앤트로픽 설정 확인)'),
+    (504, '시간이 너무 걸렸습니다 — 다시 눌러 주세요'),
+    (500, '사진을 읽지 못했습니다 (500)'),
+    ('abort', '사진을 읽지 못했습니다 (연결)'),
+    ('html', '사진을 읽지 못했습니다 (응답)'),
+]
+
+
+def test_daily_photo_errors_show_reason(pc, repo_url, custom_token, made):
+    """실패하면 까닭 한 줄 알림 — 일정표는 그대로 (설계 3-3). 연결 끊김 · JSON 아닌 답도."""
+    how = {'now': None}
+
+    def answer(route):
+        if how['now'] == 'abort':
+            route.abort()
+        elif how['now'] == 'html':
+            route.fulfill(status=200, content_type='text/html', body='<html>가짜</html>')
+        else:
+            route.fulfill(status=how['now'], json={'error': 'x'})
+    fake_note_api(pc, answer=answer)
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 일')
+    before = pc.evaluate('window.FoodbellDoc.serialize()')
+    for now, msg in PHOTO_ERRORS:
+        how['now'] = now
+        pick_photo(pc)
+        pc.wait_for_function('(m) => document.getElementById("toast").textContent === m', arg=msg, timeout=15_000)
+        pc.wait_for_function("() => { const b = document.querySelector('.btn-photo'); return b && !b.disabled; }")
+        assert pc.evaluate('window.FoodbellDoc.serialize()') == before, now
+
+
+def test_daily_photo_day_mismatch_and_note(pc, repo_url, custom_token, made):
+    """노트 날짜가 일정표 날짜와 다르면 알림에 한 줄(일정표 날짜는 그대로), note 는 칸에 넣지 않고 알림으로. 날짜가 같으면 그 줄이 없다(대조)."""
+    ans = {'day': '2026-11-04'}
+    fake_note_api(pc, answer=lambda route: route.fulfill(json={'day': ans['day'], 'rows': [note_row(work='가짜 일')], 'note': '가짜 메모'}))
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    edit_cell(pc, '[data-k="date"]', '2026년 11월 5일')
+    pick_photo(pc)
+    msg = wait_toast(pc, '노트 날짜 11/4 · 일정표 날짜 11/5 — 확인하세요')
+    assert '1줄을 채웠습니다' in msg and '가짜 메모' in msg, msg
+    assert text_of(pc, '[data-k="date"]') == '2026년 11월 5일'
+    assert text_of(pc, 'tr.item [data-f="memo"]') == ''
+    ans['day'] = '2026-11-05'
+    pc.wait_for_function("() => { const b = document.querySelector('.btn-photo'); return b && !b.disabled; }")
+    pc.evaluate('document.getElementById("toast").textContent = ""')
+    pick_photo(pc)
+    msg = wait_toast(pc, '가짜 메모')
+    assert '노트 날짜' not in msg, msg
+
+
+def test_daily_photo_single_request_while_reading(pc, repo_url, custom_token, made):
+    """읽는 동안(답이 늦음) 단추는 막히고 '읽는 중…' — 또 눌러도 · 사진을 또 골라도 요청은 한 번."""
+    posts, held = [], []
+    fake_note_api(pc, posts=posts, hold=held)
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    btn = pc.locator('.btn-photo')
+    pick_photo(pc)
+    pc.wait_for_function("() => document.querySelector('.btn-photo').disabled")
+    assert '읽는 중…' in btn.inner_text()
+    btn.click(force=True)                                           # 읽는 동안 또 누름
+    pick_photo(pc)                                                  # 사진을 또 고름
+    pc.wait_for_timeout(3000)                                       # 답이 3초 늦게 온다
+    assert len(posts) == 1 and len(held) == 1
+    held[0].fulfill(json={'day': '', 'rows': [note_row(work='가짜 일')], 'note': ''})
+    wait_toast(pc, '1줄을 채웠습니다')
+    assert btn.is_enabled() and btn.inner_text().strip() == '사진으로 채우기'
+    pc.wait_for_timeout(500)
+    assert len(posts) == 1 and pc.locator('tr.item').count() == 1
+
+
+def test_daily_photo_bad_file_not_sent(pc, repo_url, custom_token, made):
+    """사진이 아닌 파일 · 열 수 없는 사진은 서버로 보내지 않고 '사진을 열지 못했습니다'."""
+    posts = []
+    fake_note_api(pc, posts=posts)
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    pick_photo(pc, '가짜 글자 파일'.encode(), name='note.txt', mime='text/plain')
+    wait_toast(pc, '사진을 열지 못했습니다')
+    pc.wait_for_timeout(500)
+    assert posts == []
+    assert pc.locator('.btn-photo').is_enabled()

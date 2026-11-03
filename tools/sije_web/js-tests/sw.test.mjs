@@ -122,3 +122,14 @@ test('인터넷이 되면 시제 화면은 늘 최신', async () => {
   const res = await within(fire(sw.handlers, { url: SITE + 'sije-list.html', mode: 'navigate' }), 5000);
   assert.equal(await res.text(), '최신 목록');
 });
+
+// '사진으로 채우기' 서버 기능 (2026-11-03) — 저장된 것 먼저로 주면 열쇠를 넣기 전의 { ready: false } 가 굳는다
+test('api_requests_pass_through — 서버 기능(/api/)은 가로채지 않고 저장도 안 한다', async () => {
+  let asked = 0;
+  const sw = loadSW(async () => { asked++; return new Response('{"ready":true}', { status: 200 }); });
+  const res = fire(sw.handlers, { url: SITE + 'api/read-note' });
+  assert.equal(res, undefined, 'respondWith 를 부르지 않는다 — 브라우저가 바로 서버로');
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(asked, 0, '서비스 워커가 따로 받아 오지 않는다');
+  assert.deepEqual(await sw.open(CACHE).keys(), [], '저장하지 않는다');
+});

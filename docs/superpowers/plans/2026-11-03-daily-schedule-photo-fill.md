@@ -146,3 +146,6 @@
 ## 확인 기록
 
 (과제 1 · 5 · 6 의 실제 숫자를 여기에 적는다.)
+
+- **과제 1 (2026-11-03 19:5x 사무실, 자동 저장 81bf370 뒤)**: `GET /api/ping` → `{"ok":true,"sdk":true,"waited":0}` (버셀이 `package.json` 의존을 깔고 웹 표준 `GET`/`POST` 내보내기를 돌림) · `?wait=50` → 200, 50.26초 (`export const maxDuration = 60` 로 충분 — `vercel.json` 손대지 않음) · POST 3,000,000자 · 4,400,000자 → 둘 다 200 · `/` · `daily-schedule.html` · `sije-list.html` 200 · `/package.json` 404(공개 안 됨).
+- 부품 1.4.0 타입으로 확인: `output_config.format` = `{ type: 'json_schema', schema }`(`BetaJSONOutputFormat`) · `fallbacks?: Array<…> | 'default'` · 베타 이름 `'server-side-fallback-2026-07-01'` 있음 · `effort` 에 `'medium'`.

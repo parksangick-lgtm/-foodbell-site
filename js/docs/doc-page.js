@@ -6,6 +6,7 @@ import { putBundle, takeBundle, quoteToEvent, eventQuoteToEvent, quoteToStatemen
 import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
+  idToken, recentDocs,
 } from '../sije/store.js';
 
 const D = window.FoodbellDoc;
@@ -200,6 +201,10 @@ D.onSave = () => {
   timer = setTimeout(flush, SAVE_WAIT);
   showState();
 };
+
+// 일일 일정표 '사진으로 채우기' (2026-11-03) — 로그인 표(서버 기능이 주인인지 본다) · 이 종류의 최근 서류 n장(이름 목록)
+D.idToken = idToken;
+D.recentDocs = (n) => recentDocs(D.kind, n);
 
 function flush() {
   clearTimeout(timer);

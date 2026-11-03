@@ -246,6 +246,9 @@ daily-schedule.html   직원용 일일 일정표 (2026-10-20, 설계 docs/superp
                       비면 접힘('장례 칸 펼치기'), 보내기 전 금액 빠진 줄 확인창, 날짜 아래 사장님 한 줄(건수 · 합계).
                       2026-10-24 저녁(사장님 요청): 줄마다 [연기] · [취소](tr 의 data-state — 표 번호 아래 · 사진 카드 · 직원 화면 · 복사 글에 표시, 사장님 한 줄의 건수 · 합계에서 빠짐),
                       줄 삭제는 묻고(다른 서류와 같게), 새 일정표를 누를 때 같은 날짜 일정표가 있으면 묻는다(확인 = 새로 만들기 · 취소 = 있는 것 열기, doc-page.js 의 sameDoc).
+                      2026-11-03: 편집 중 '사진으로 채우기'(주인 + 서버에 열쇠가 있을 때만, 줄 추가 아래) — 손글씨 노트 사진을 api/read-note 로 보내
+                      빈 줄부터 채우고, 자신 없는 칸은 노란 바탕(ai-unsure — 고치면 사라지고 저장 · 인쇄 · 직원 카드에는 안 나감).
+                      설계 docs/superpowers/specs/2026-11-03-daily-schedule-photo-fill-design.md · 계획 docs/superpowers/plans/2026-11-03-daily-schedule-photo-fill.md.
 today.html            직원용 고정 링크 "푸드벨 일정" (2026-10-21, 설계 docs/superpowers/specs/2026-10-21-staff-today-link-design.md). 단톡방 공지에 한 번 올린
                       today.html#암호 — 로그인 없이 오늘 · 내일 일정을 카드로, 전화번호마다 [전화] · 장소에 [지도](네이버). 일정표가 저장될 때마다
                       직원 게시판(share/암호, 일정표마다 한 칸)에 올라가고 열린 화면도 바로 바뀐다(js/sije/store.js publishShare · js/sije/share-store.js).
@@ -273,6 +276,10 @@ css/sije-sheet.css · js/sije/   내역서 A4 모양(지금 엑셀 색 그대로
 firestore.rules · firebase.json · .firebaserc   저장소 보안 규칙 — 허락 목록(allow)에 있는 구글 메일만. 메일 주소는 규칙 파일에 쓰지 않는다.
                       올리기: npx firebase-tools@15.34.0 deploy --only firestore:rules --project test (실제는 default)
 vercel.json           /__/ → foodbell-sije.firebaseapp.com (구글 로그인 창이 foodbell.kr 주소로 열리게). 다른 설정은 넣지 않는다.
+api/read-note.js · package.json   일일 일정표 '사진으로 채우기' 서버 기능(버셀, 2026-11-03). 사장님 로그인 표로 allow/{메일} 을 읽어 주인만 →
+                      클로드(claude-opus-5-5)가 노트 사진을 줄마다 칸 값으로. 열쇠는 버셀 환경 변수 ANTHROPIC_API_KEY 하나(없으면 GET 이
+                      {ready:false} → 단추 안 보임). 의존은 @anthropic-ai/sdk 하나 — 버셀이 package.json 을 보고 깐다(node_modules 는 .gitignore,
+                      이 PC 에서 시험할 때만 npm install). 서버 기록에는 숫자(상태 · 시간 · 토큰)만. 시험 tools/sije_web/js-tests/read-note.test.mjs.
 tools/sije_web/       옮기기 · PDF · 백업 · 허락 목록 파이썬 프로그램과 시험 — 파이썬 `python -X utf8 -m pytest tools/sije_web/tests -q`,
                       JS `node --test tools/sije_web/js-tests/*.test.mjs`(폴더 이름만 주면 0개 돌고 '실패 1' 로 나온다, 2026-10-28). 관리자 열쇠는 C:\foodbell-keys\
                       (원드라이브 · 저장소 밖). 노트북 백신(Avast)이 보안 연결을 검사해서 fsdb.py 가 윈도우 인증서를 합쳐 쓴다.

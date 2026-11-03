@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"btn-photo{margin\\\\|\\\\.ai-unsure{background:rgba\\\\|\\\\.toast{white-space\\\\|id=\\\\\"photo-input\\\\\"\\\\|const bareNumber\\\\|const bare = bareNumber\\\\|classList.remove\\('ai-unsure'\\); if\\\\|^  photoButton\\(\\);\\\\|^function addRow\\\\|t.classList.remove\\('ai-unsure'\\)\\\\|contains\\('btn-photo'\\)\\\\|addRow\\(\\).querySelector\\\\|^/\\\\* ---------- 사진으로 채우기\\\\|^photoInput.addEventListener\\\\|^function fillPhotoRows\\\\|^async function readPhoto\\\\|^function photoPrice\" daily-schedule.html)",
+      "Bash(grep -v \"^[0-9]*:[-+]\\\\s*$\")",
+      "Bash(grep -v \"^.*//\")"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
