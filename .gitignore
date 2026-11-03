@@ -40,3 +40,6 @@ sije-quote.artifact.html
 
 # 클로드 디자인 캔버스 조립 결과물 (2.4MB) — design/worksheet/*.dc.html 에서 다시 만든다
 design/worksheet/foodbell-sije-worksheet.html
+
+# 서버 기능(api/)이 쓰는 부품 — package.json 을 보고 버셀이 직접 깐다 (2026-11-03 일정표 사진으로 채우기)
+node_modules/
