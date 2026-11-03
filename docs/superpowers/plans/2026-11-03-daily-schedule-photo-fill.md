@@ -139,8 +139,8 @@
 
 ### Task 6: 열쇠 넣고 실제로 (메인 + 사장님)
 
-- [ ] **Step 1:** 사장님 안내(한 단계씩, 캡처로 확인): console.anthropic.com 가입 → 카드 → 월 한도 약 $7 → API 열쇠 만들기(대화창에 붙이지 않음) → 버셀 Settings → Environment Variables → `ANTHROPIC_API_KEY`(Production) → Deployments 에서 Redeploy. **월 한도 설정 화면이 없으면** 멈추고 여쭘(미리 충전 1만 원어치 등).
-- [ ] **Step 2:** `curl -s https://foodbell.kr/api/read-note` → `{"ready":true}`
+- [x] **Step 1:** 사장님 안내(한 단계씩, 캡처로 확인): console.anthropic.com 가입 → 카드 → 월 한도 약 $7 → API 열쇠 만들기(대화창에 붙이지 않음) → 버셀 Settings → Environment Variables → `ANTHROPIC_API_KEY`(Production) → Deployments 에서 Redeploy. **월 한도 설정 화면이 없으면** 멈추고 여쭘(미리 충전 1만 원어치 등).
+- [x] **Step 2:** `curl -s https://foodbell.kr/api/read-note` → `{"ready":true}`
 - [ ] **Step 3:** 사장님 휴대폰: 일정표 → 편집 → "사진으로 채우기" → 오늘 노트 사진. 잴 것: 걸린 시간(초) · 사장님이 고친 칸 수 / 채운 칸 수 · 앤트로픽 Usage 화면의 비용(원) — **설계 추정(1분 안 · 한 장 100~150원)과 나란히** 보고. 1분을 넘거나 고친 칸이 많으면 `effort` 를 `high` 로 바꿀지 사장님께 여쭘.
 
 ## 확인 기록
@@ -150,4 +150,5 @@
 - **과제 1 (2026-11-03 19:5x 사무실, 자동 저장 81bf370 뒤)**: `GET /api/ping` → `{"ok":true,"sdk":true,"waited":0}` (버셀이 `package.json` 의존을 깔고 웹 표준 `GET`/`POST` 내보내기를 돌림) · `?wait=50` → 200, 50.26초 (`export const maxDuration = 60` 로 충분 — `vercel.json` 손대지 않음) · POST 3,000,000자 · 4,400,000자 → 둘 다 200 · `/` · `daily-schedule.html` · `sije-list.html` 200 · `/package.json` 404(공개 안 됨).
 - **과제 2~5 (관리자, 21:3x)**: JS 97/97 · pytest 전체 통과 · 390px 넘침 0 · `.btn-photo` 44px. **과제 5 배포 확인(f241494)**: `/api/read-note` → `{"ready":false}` · `/api/ping` 404 · `doc-page.js?v=13` · `foodbell-v42`.
 - **최종 검토(fable)**: Critical 0. Important 1(doc-page.js 가 store.js 를 `?v=` 없이 불러 옛 저장본과 섞이면 서류 6종이 안 뜸) 고침 — `store.js?v=1` · `doc-page.js?v=14`, 시험 `doc_page_imports_store_with_version`. 나머지는 작은 것으로 미룸(작업 기록장).
+- **과제 6 Step 1 · 2 (2026-11-03 22:4x 사무실)**: 사장님 앤트로픽 월 한도 설정 · 열쇠 만듦 → 버셀 `ANTHROPIC_API_KEY`(Production, 자물쇠 표시) 저장 → Redeploy(메일 번호 확인 한 번 거침) → 22:47:09 `/api/read-note` → `{"ready":true}` · `/` 200 · `doc-page.js?v=14`. 열쇠가 실제로 도는지는 Step 3 휴대폰 시험에서 처음 확인된다(GET 은 값이 있는지만 봄). 앤트로픽 목록에 복사 못 한 안 쓰는 열쇠가 남아 있음 — 사장님이 지우기.
 - 부품 1.4.0 타입으로 확인: `output_config.format` = `{ type: 'json_schema', schema }`(`BetaJSONOutputFormat`) · `fallbacks?: Array<…> | 'default'` · 베타 이름 `'server-side-fallback-2026-07-01'` 있음 · `effort` 에 `'medium'`.
