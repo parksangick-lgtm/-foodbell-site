@@ -119,7 +119,7 @@
   - 페이지 열 때 한 번 `fetch('/api/read-note', {cache:'no-store'})` → `ready` 기억, 늦게 오면 편집 중일 때 단추를 그때 넣음(넣기는 같은 함수, 두 번 넣지 않음). 단추는 주인일 때만.
   - 사진 줄이기: `createImageBitmap` → canvas 긴 변 2000 → `toBlob('image/jpeg', 0.85)`; base64 가 3,900,000자 넘으면 0.7 → 0.5. 실패하면 "사진을 열지 못했습니다".
   - 요청: `POST /api/read-note`, 머리 `Authorization: Bearer ${await FoodbellDoc.idToken()}`, 몸통 `{image, hints, day}`; 70초 넘으면 끊고 "시간이 너무 걸렸습니다 — 다시 눌러 주세요".
-  - 빈 줄 = 15칸 모두 비고 `data-state` 없음. 위에서부터 빈 줄, 모자라면 `addRow()`. 넣는 값: 연락처 · 팀장 전화는 `dashTels(v)`, 단가는 `readNumber(v)` 가 숫자면 `${fmt(n)}원` 아니면 글자 그대로, 나머지 그대로. `unsure` 칸에 `ai-unsure`. 줄마다 `foldMeet(tr)` 로 장례 칸 펼침 판단, 끝에 `recalc(); save();`.
+  - 빈 줄 = 15칸 모두 비고 `data-state` 없음. 위에서부터 빈 줄, 모자라면 `addRow()`. 넣는 값: 연락처 · 팀장 전화는 `dashTels(v)`, 단가는 `readNumber(v)` 가 숫자면 `${fmt(n)}원` 아니면 글자 그대로 — 단, 단위 없는 맨숫자('250')는 그대로 두어 "단위를 적어 주세요" 가 뜨게(10-21 결정과 같게, 11-03 사장님 확인), 나머지 그대로. `unsure` 칸에 `ai-unsure`. 줄마다 `foldMeet(tr)` 로 장례 칸 펼침 판단, 끝에 `recalc(); save();`.
   - 알림 하나에 줄바꿈으로: "N줄을 채웠습니다 — 노란 칸을 확인해 주세요"(0줄이면 "읽을 줄을 찾지 못했습니다") + 날짜 다름 + `note`.
   - `ai-unsure` 배경 `rgba(176,141,87,.35)`(이 파일이 쓰는 금색 값), `input` 에서 그 칸 클래스 지움, `serialize()` 복사본에서 지움, `@media print` 에서 배경 없음.
   - `sw.js`: `/_vercel/` 줄 옆에 `/api/` 는 return(통과) + `CACHE` 번호 올림.
