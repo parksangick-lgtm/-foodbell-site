@@ -822,6 +822,28 @@ def edit_cell(page, selector, text):
     page.keyboard.press('Tab')
 
 
+@pytest.mark.parametrize('file,cell,box', [
+    pytest.param('staff-pay.html', '[data-k="paydate"]', '.pay-date', id='staff-pay-paydate'),
+    pytest.param('staff-pay.html', 'p.memo [data-k="memo"]', 'p.memo', id='staff-pay-memo'),
+    pytest.param('staff-pay.html', 'tr.item td.acct', 'tr.item td.acct', id='staff-pay-acct'),             # 휴대폰에서만 숨김
+    pytest.param('statement.html', '.closing-row [data-k="acct"]', '.closing-row:has([data-k="acct"])', id='statement-acct'),
+    pytest.param('statement.html', 'tr.item td[data-label="비고"] span[data-edit]', 'tr.item td[data-label="비고"]',
+                 id='statement-note'),                                                                    # 휴대폰에서만 숨김
+])
+def test_cleared_cell_hides_its_label(phone, repo_url, custom_token, made, file, cell, box):
+    """쳤다가 다 지운 칸에 크롬이 <br> 을 남겨 :empty 가 안 맞았다 — 비면 숨는 줄이 보기 화면 · 사진 · 인쇄에 빈 채로 남고
+    저장본에도 남았다 (일일 일정표 2026-10-21 에 고친 것과 같은 고장, 기록장 #39 · #82-3). 처음부터 빈 칸이 아니라 쳤다가 지운 칸으로 본다."""
+    open_list(phone, repo_url, file, custom_token(ALLOWED, allowed=True))
+    new_doc(phone, made)
+    assert phone.evaluate('document.documentElement.clientWidth') == 390
+    phone.click('#btn-edit')
+    edit_cell(phone, cell, '가짜12')
+    edit_cell(phone, cell, '')
+    assert phone.locator(cell).first.evaluate('e => e.innerHTML') == ''
+    phone.click('#btn-edit')
+    assert phone.locator(box).first.is_hidden()
+
+
 @pytest.fixture
 def no_daily(test_db):
     """시험 프로젝트에 일정표가 하나도 없게 (이어받을 것이 없는 '맨 처음')."""

@@ -7,7 +7,7 @@ import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
   idToken, recentDocs,
-} from '../sije/store.js?v=1';   // 판 번호 — 옛 store.js 저장본과 섞이면 새 이름을 못 찾아 서류가 통째로 안 뜬다(2026-11-03 최종 검토). store.js 를 고치면 올린다
+} from '../sije/store.js?v=2';   // 판 번호 — 옛 store.js 저장본과 섞이면 새 이름을 못 찾아 서류가 통째로 안 뜬다(2026-11-03 최종 검토). store.js 를 고치면 올린다
 
 const D = window.FoodbellDoc;
 const { title, noun } = KINDS[D.kind];

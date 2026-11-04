@@ -1,6 +1,6 @@
 // 서류 잇기 (3단계) — 칸 글자 읽기 · 넘길 꾸러미 만들기 · 꾸러미 주고받기. 저장소에 붙지 않는다.
 // 꾸러미는 같은 탭의 sessionStorage 에 잠깐 둔다 — 손님 이름 · 금액을 주소(URL)에 싣지 않으려고(주소는 방문 · 서버 기록에 남는다).
-import { formatDateText } from '../sije/model.js';
+import { formatDateText } from '../sije/model.js?v=1';   // 부르는 곳 모두 같은 주소 — 고치면 전부 올린다
 
 const KEY = 'foodbell-handoff';
 export const NOTES_KEY = 'foodbell-handoff-notes';   // 새 서류 화면에 한 번 보여 줄 알림 (못 읽은 날짜 · 금액)

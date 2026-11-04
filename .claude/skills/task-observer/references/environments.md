@@ -141,7 +141,7 @@ first task boundary instead of never.
 Loading a skill is not complete until you have queried the observation
 log for OPEN observations naming it and read their bodies:
   grep -l "skill:.*<skill-name>" \
-    [ABSOLUTE PATH]/skill-observations/observation-log/*.md
+    "[ABSOLUTE PATH]/skill-observations/observation-log/"*.md
 Read each body whole, never cut to a fixed length: the later paragraphs
 hold the fixes and recurrences. With many matches, read titles and areas
 first, then the full bodies of those that touch the task. Keep only OPEN
@@ -230,7 +230,7 @@ that every machine reads:
    aggregate review in `weekly-review.md`, qualifying every id with its
    machine.
 
-Four follow-ups make either choice hold:
+Five follow-ups make either choice hold:
 
 - **Retiring the old home is half the move.** On each machine, search the
   default and previously pinned paths for a leftover log. Merge its open
@@ -245,8 +245,11 @@ Four follow-ups make either choice hold:
   Sync hooks commonly pull a shared repository at session start but
   commit and push only the folder the session was opened in.
 - **Expect id collisions.** A sync that runs only at session boundaries
-  lets two machines issue the same id between syncs. The review's
-  renumbering step is routine here, not an exception.
+  lets two machines issue the same id between syncs, and git merges the
+  two files without complaint because their names differ. The id check in
+  SKILL.md Session Start step 1 catches it; renumbering
+  (`observation-log.md`, "Recovering from a collision") is routine here,
+  not an exception.
 - **An auto-commit setup hides "unsynced".** When a hook commits after
   every answer, an unsynced log is no longer a set of modified files but
   an ahead/behind state: a pull that conflicted and aborted keeps the
@@ -260,14 +263,30 @@ Four follow-ups make either choice hold:
   if the workspace is not at the root):
 
       skill-observations/checkpoints.log merge=union eol=lf
-      skill-observations/observation-log/archive/.id-floor merge=union eol=lf
+      skill-observations/observation-log/archive/.id-floor merge=binary eol=lf
 
-  `merge=union` keeps both sides' lines instead of conflicting. On
-  `.id-floor` that can leave two numbers, which the id snippet's
-  `sort -n | tail -1` already reads as their maximum; `eol=lf` keeps a
-  carriage return out of the shell arithmetic. (Observed: three machines
-  stalled in three days, each found only by a manual check, each needing
-  ids renumbered by hand.)
+  `merge=union` keeps both sides' lines instead of conflicting, which is
+  right for an append-only trace and wrong for `.id-floor`: the floor is
+  the shared counter, and a union of two diverged floors completes
+  silently with both numbers on two lines — exactly the state in which
+  both machines have issued the same ids, and the one merge that should
+  stop for a human. `merge=binary` makes a divergent floor always
+  conflict; resolve it by running the id check in Session Start step 1,
+  renumbering any clash, and writing the larger value alone. `eol=lf`
+  keeps a carriage return out of the shell arithmetic. (Observed: three
+  machines stalled in three days, each found only by a manual check, each
+  needing ids renumbered by hand; later, two machines apart for a day
+  each issued the same id, and the union-merged floor let it through.)
+- **Chain a count hook behind the sync hook, in one command.** When the
+  log reaches this machine through a sync hook on the session-start
+  event, a second hook on the same event that counts or reports the log
+  (the session-start hook below) can read it before the pull lands: hooks
+  registered on one event run in parallel, so their order in the config
+  file is not their order in time. Register one command that syncs first
+  and counts second, or have the count hook pull before it counts.
+  (Observed: a count hook announced dozens of open observations and a
+  review overdue by a week to a machine whose freshly pulled log had three
+  open and a review dated that day.)
 
 **Config detection (once per session):** with filesystem access, check the
 workspace root's CLAUDE.md (or equivalent) for a task-observer activation

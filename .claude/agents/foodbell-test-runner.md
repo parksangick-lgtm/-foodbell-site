@@ -43,13 +43,19 @@ model: sonnet
 - `test_doc_pages.py` 는 파일 하나로도 10분을 넘는다(10-29 노트북 실측: 149개 18분 44초, 그중 일정표 시간 초과 21개).
   통째로 돌리지 말고 세 묶음으로 나눠, 묶음마다 `--maxfail=5` 를 붙인다 — 시간 초과가 쌓이면 그 묶음만 일찍 멈추게.
 
-  | 묶음 | 명령 끝에 붙일 것 | 잰 시간(10-29 노트북) |
+  | 묶음 | 명령 끝에 붙일 것 | 개수(11-05 사무실 `--collect-only`) |
   |---|---|---|
-  | 견적서 · 작업지시서 | `-k "sije or event" --maxfail=5` | 2.7분 · 41개 |
-  | 일정표 · 직원 링크 | `-k "daily or today" --maxfail=5` | 시간 초과가 쌓이면 12분 넘음 — `--maxfail=5` 로 끊는다 |
-  | 나머지 | `-k "not sije and not event and not daily and not today" --maxfail=5` | 3.3분 · 46개 |
+  | 견적서 · 작업지시서 | `-k "sije-quote or event-quote or sije-worksheet" --maxfail=5` | 48개 |
+  | 일정표 · 직원 링크 | `-k "daily or today" --maxfail=5` | 79개 — 시간 초과가 쌓이면 12분 넘음, `--maxfail=5` 로 끊는다 |
+  | 나머지 | `-k "not sije-quote and not event-quote and not sije-worksheet and not daily and not today" --maxfail=5` | 55개 |
 
+  (셋을 더하면 182 — 앞의 두 묶음에 3개가 겹친다. 파일 전체는 179개.)
   `--maxfail` 로 멈춘 묶음은 "실패 5개에서 멈춤 — 나머지 N개 확인 못 함" 으로 적는다.
+- **`-k` 에 경로에 든 낱말을 쓰지 않는다.** 시험이 `tools/sije_web/tests/` 에 있어 `-k sije` 는 전부(179개), `-k "not sije"` 는
+  0개를 고른다 — 옛 표가 그랬다(2026-11-01 · 11-05). 화면 하나는 괄호 없는 매개변수 이름으로(`-k "staff-pay"` → 15개,
+  `-k "[staff-pay]"` 는 0개). 좁힌 뒤에는 돌리기 전에 `--collect-only -q | tail -1` 로 개수를 보고 보고서에 적는다.
+- **Playwright 시험 묶음을 동시에 돌리지 않는다** — 차례로 돌린다. 동시에 돌린 실행의 시간 초과는 스스로 만든 부하라
+  "부하 — 혼자 다시" 로 적고, 혼자 다시 돌린 결과로 판정한다(2026-11-01).
 - 서류 시험은 시험 열쇠가 있는 PC(사무실 · 노트북)에서만 돈다. 건너뜀 이유가 `시험 열쇠가 없습니다` 이면
   "이 PC 에서는 서류 시험 못 돌림" 으로 적는다 — **건너뜀을 통과로 세지 않는다.**
 - 긴 출력은 `%TEMP%` 의 파일로 보내고 끝부분만 읽는다.

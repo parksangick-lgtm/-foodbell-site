@@ -1,8 +1,10 @@
 """사무실 PC 의 PDF 자동 만들기 시험 — 가짜 저장소 · 가짜 그리기로 (파이어베이스 · 크롬 없이)."""
+from pathlib import Path
+
 import pymupdf
 
 from conftest import fake_event
-from tools.sije_web.pdf_sync import load_state, pdf_name, save_state, sync_once, target_path
+from tools.sije_web.pdf_sync import load_state, pdf_name, save_state, sync_once, target_path, targets
 
 
 class FakeSource:
@@ -47,6 +49,99 @@ def test_pdf_name_uses_file_label_exactly():
 
 def test_pdf_name_new_event_uses_place():
     assert pdf_name(fake_event(date='2026-11-13', fileLabel='', place='가짜동 1-1')) == '2026년11월13일 가짜동 1-1 시제행사 내역서.pdf'
+
+
+def test_pdf_name_empty_place_uses_time():
+    """사장님 2026-11-05 (기록장 #95): fileLabel 도 장소도 비면 시간을 붙인다 — 숫자만 있으면('11') '11시'."""
+    def name(**kw):
+        return pdf_name(fake_event(date='2026-11-15', fileLabel='', **kw))
+    assert name(place='', time='11시') == '2026년11월15일 11시 시제행사 내역서.pdf'
+    assert name(place='', time='11') == '2026년11월15일 11시 시제행사 내역서.pdf'
+    assert name(place='', time='') == '2026년11월15일  시제행사 내역서.pdf'                 # 시간도 없으면 예전 그대로 (겹침은 targets 가)
+    assert name(place='가짜동', time='11시') == '2026년11월15일 가짜동 시제행사 내역서.pdf'   # 장소가 있으면 시간을 안 붙인다
+
+
+def empty(t, time='', **kw):
+    """11-15 · fileLabel 도 장소도 빈 새 행사 (기록장 #95 의 모양)."""
+    return ev_at(t, date='2026-11-15', fileLabel='', place='', time=time, **kw)
+
+
+def test_same_date_empty_place_events_get_distinct_names_that_stay(tmp_path):
+    """기록장 #95: 같은 날 · 빈 장소 행사가 한 이름을 나눠 써서 5분마다 서로 덮어쓰고 지웠다.
+    이제 시간으로 가르고, 그래도 같으면 id 순으로 뒤의 것에 (2) — 고친 순서(updatedAt)가 아니라 id 순."""
+    src = FakeSource({'c': empty(1), 'a': empty(2, '10시'), 'b': empty(3, '10시'), 'd': empty(4)})
+    render, state = make_render(), {}
+    first = sync_once(src, tmp_path, state, render)
+    names = sorted(p.name for p in tmp_path.rglob('*.pdf'))
+    assert names == sorted(['2026년11월15일 10시 시제행사 내역서.pdf', '2026년11월15일 10시 (2) 시제행사 내역서.pdf',
+                            '2026년11월15일  시제행사 내역서.pdf', '2026년11월15일  (2) 시제행사 내역서.pdf'])
+    assert {i: Path(p).name for i, p in state['paths'].items()} == {
+        'a': '2026년11월15일 10시 시제행사 내역서.pdf', 'b': '2026년11월15일 10시 (2) 시제행사 내역서.pdf',
+        'c': '2026년11월15일  시제행사 내역서.pdf', 'd': '2026년11월15일  (2) 시제행사 내역서.pdf'}
+    assert first['removed'] == []
+    again = sync_once(src, tmp_path, state, render)             # 두 번째 차례: 같은 이름, 다시 그리지도 지우지도 않는다
+    assert again['made'] == [] and again['removed'] == []
+    assert sorted(p.name for p in tmp_path.rglob('*.pdf')) == names
+
+
+def test_name_freed_by_another_event_is_taken_over_in_the_same_run(tmp_path):
+    """a 가 날짜를 바꾸면 (2) 였던 b 가 그 차례에 바로 제 이름으로 — b 는 안 바뀌었으니 전체를 읽어 b 내용으로 다시 그린다."""
+    src = FakeSource({'a': empty(1), 'b': empty(2)})
+    render, state = make_render(), {}
+    sync_once(src, tmp_path, state, render)
+    assert Path(state['paths']['b']).name == '2026년11월15일  (2) 시제행사 내역서.pdf'
+    src.events['a'] = ev_at(3, date='2026-11-16', fileLabel='', place='', time='')
+    sync_once(src, tmp_path, state, render)
+    base = tmp_path / '2026년 PDF (휴대폰용)' / '확정 (인쇄 전)' / '2026년11월15일  시제행사 내역서.pdf'
+    assert sorted(p.name for p in tmp_path.rglob('*.pdf')) == ['2026년11월15일  시제행사 내역서.pdf', '2026년11월16일  시제행사 내역서.pdf']
+    assert state['paths']['b'] == str(base)
+    with pymupdf.open(base) as doc:
+        assert 'gajja-2026-11-15' in doc[0].get_text()           # a 의 옛 내용이 아니라 b 내용
+    assert sync_once(src, tmp_path, state, render)['made'] == []
+
+
+def _old_state(tmp_path, src):
+    """11-05 고침 전 상태 기록 모양 — 두 행사가 한 PDF 자리를 나눠 쓰고, 이름 목록(names)이 없다."""
+    shared = tmp_path / '2026년 PDF (휴대폰용)' / '확정 (인쇄 전)' / '2026년11월15일  시제행사 내역서.pdf'
+    shared.parent.mkdir(parents=True)
+    shared.write_bytes(b'old')
+    state = {'since': max(ev['updatedAt'] for ev in src.events.values()), 'paths': {i: str(shared) for i in src.events},
+             'done': {i: ev['updatedAt'] for i, ev in src.events.items()}, 'stale': []}
+    return shared, state
+
+
+def test_old_state_with_shared_name_is_split_and_shared_pdf_removed(tmp_path):
+    """옛 공유 자리를 아무도 안 쓰게 되면 프로그램이 스스로(상태 기록 paths 로) 지운다."""
+    src = FakeSource({'a': empty(1, '10시'), 'b': empty(2, '11시')})
+    shared, state = _old_state(tmp_path, src)
+    render = make_render()
+    result = sync_once(src, tmp_path, state, render)
+    assert sorted(p.name for p in tmp_path.rglob('*.pdf')) == ['2026년11월15일 10시 시제행사 내역서.pdf', '2026년11월15일 11시 시제행사 내역서.pdf']
+    assert shared in result['removed'] and len(render.calls) == 2
+
+
+def test_old_shared_name_kept_by_first_event_is_redrawn(tmp_path):
+    """시간도 없으면 id 가 앞선 a 가 옛 자리를 그대로 쓴다 — 거기 든 것이 누구 내용인지 모르니 a 내용으로 다시 그린다."""
+    src = FakeSource({'a': empty(1), 'b': empty(2)})
+    shared, state = _old_state(tmp_path, src)
+    render = make_render()
+    result = sync_once(src, tmp_path, state, render)
+    assert sorted(p.name for p in tmp_path.rglob('*.pdf')) == ['2026년11월15일  (2) 시제행사 내역서.pdf', '2026년11월15일  시제행사 내역서.pdf']
+    assert len(render.calls) == 2 and shared.read_bytes() != b'old' and result['removed'] == []
+
+
+def test_same_name_in_different_folders_is_not_a_collision(tmp_path):
+    t = targets(tmp_path, [('a', empty(1)), ('b', empty(2, status='미확정'))])
+    assert t['a'].name == t['b'].name == '2026년11월15일  시제행사 내역서.pdf' and t['a'].parent != t['b'].parent
+
+
+def test_suffix_skips_a_name_the_owner_already_uses(tmp_path):
+    """사장님이 손으로 붙인 ' (2)' 를 다른 행사에 또 주지 않는다."""
+    evs = [('a', fake_event(date='2026-11-15', fileLabel=' 가짜동')), ('b', fake_event(date='2026-11-15', fileLabel=' 가짜동')),
+           ('c', fake_event(date='2026-11-15', fileLabel=' 가짜동 (2)'))]
+    assert {i: p.name for i, p in targets(tmp_path, evs).items()} == {
+        'a': '2026년11월15일 가짜동 시제행사 내역서.pdf', 'b': '2026년11월15일 가짜동 (3) 시제행사 내역서.pdf',
+        'c': '2026년11월15일 가짜동 (2) 시제행사 내역서.pdf'}
 
 
 def test_target_path_uses_season_folder_and_status(tmp_path):

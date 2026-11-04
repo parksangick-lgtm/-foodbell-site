@@ -245,7 +245,10 @@ git, the floor is also read from the upstream branch as of the last fetch
 (`git show '@{u}:…'`, no network): a machine whose sync has stalled keeps
 a stale local floor, and without this second read it re-issues ids the
 other machines have already pushed (observed three times in three days on
-one three-machine log, each needing a manual renumbering at merge). The
+one three-machine log, each needing a manual renumbering at merge). It
+sees what the others have pushed, not what they have committed: ids
+issued on a machine whose push has not landed are invisible to it, so
+Session Start step 1 re-checks after the fact for an id on two files. The
 path inside `show` is relative to the repository root, so it is derived
 with `rev-parse --show-prefix`; outside a repository, or with no
 upstream, the read adds nothing. The archival sweep (see Archival
@@ -323,6 +326,24 @@ than left for a review to notice: derive a correct id with the snippet,
 `mv` the newer file to that prefix, and edit its `id:` frontmatter field
 to match. Both are ordinary single-file operations; no other entry is
 touched.
+
+When the clash comes from two machines that were apart — Session Start
+step 1 prints `ID CLASH` or `ID FLOOR BROKEN`, usually after a merge —
+the machine that merges renumbers, before anyone writes a new
+observation:
+
+1. Of each pair, the file committed later moves. `git log --diff-filter=A
+   --format='%ci %h' -- <file>` on both shows which.
+2. Its new id is the floor plus one, the floor being the largest of every
+   file prefix and every number in `.id-floor`. `mv` it to that prefix and
+   edit its `id:` line to match.
+3. Fix the mentions of the old number that mean the moved file — the ones
+   its machine wrote — and leave the rest, which mean the file that kept
+   the number. `grep -rn '#<old id>'` over the workspace finds them (the
+   trace log, handoff notes, memory), and `git log -S'#<old id>'` shows
+   which commit, and so which machine, wrote each.
+4. Write the new floor as one line, then run the step-1 check again: no
+   clash, one floor line.
 
 **Run the snippet once per file when writing a batch.** Appending several
 observations in one session that may overlap a scheduled review or another

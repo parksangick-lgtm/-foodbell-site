@@ -123,6 +123,16 @@ was handled without its reference loaded, log an observation.
 
 ## Session Start Protocol
 
+**Re-arm on stale state, not only on a new session.** A conversation can
+outlive what this protocol checked — resumed days later, or simply long.
+Before the next task, re-run steps 1, 2, 3 and 6 when any of these holds:
+the harness reports that the date has changed; the last `session-start
+scan` line in `checkpoints.log` is more than 12 hours old; a fetch shows
+upstream commits on the log. Then re-read each skill loaded earlier in the
+session whose master changed since that line (`git log --since="<that
+time>" -- <skill dir>` in the master's repository, or its files' mtime
+outside git): the copy in context is the old one.
+
 1. **Storage.** The existence check for `skill-observations/` is also
    the workspace-mount probe — one `ls` of the pinned path, run in this
    turn. If it fails, the first response is the environment's folder-picker
@@ -181,23 +191,49 @@ was handled without its reference loaded, log an observation.
    Output at that moment means earlier sessions' writes never left this
    machine — say so in one line; the other machines are reading a log
    without them. That check sees only uncommitted files, so check the
-   last hop as well — one fetch, then the commits touching the log on
-   either side:
+   last hop as well — one fetch, the commits touching the log on either
+   side, and whether any id now sits on two files:
 
    ```bash
-   git -C "[ABSOLUTE PATH]/skill-observations" fetch -q 2>/dev/null || echo "fetch failed (offline?) — the counts below are as of the last fetch"
-   git -C "[ABSOLUTE PATH]/skill-observations" rev-list --left-right --count '@{u}...HEAD' -- . 2>/dev/null || echo "no upstream — ahead/behind unknown"
+   g="[ABSOLUTE PATH]/skill-observations"   # re-derive in every call; keep it quoted; bash, not sh
+   git -C "$g" fetch -q 2>/dev/null || echo "fetch failed (offline?) — the verdict below is as of the last fetch"
+   if c=$(git -C "$g" rev-list --left-right --count '@{u}...HEAD' -- . 2>/dev/null); then
+     b=${c%%[[:space:]]*}; a=${c##*[[:space:]]}   # b = upstream log commits missing here; a = local ones not pushed
+     case "$b/$a" in
+       0/0) echo "log sync: up to date" ;;
+       */0) echo "log sync: behind=$b — behind only: pull pending; this machine's .id-floor is stale until it lands" ;;
+       0/*) echo "log sync: ahead=$a — ahead only: push pending; the other machines read a log without these commits" ;;
+       *)   echo "log sync: behind=$b ahead=$a — DIVERGED: under an auto-commit hook this means its pull is failing (a conflict). Tell the user in the first reply, before other work" ;;
+     esac
+   else echo "no upstream — ahead/behind unknown"; fi
+   d="$g/observation-log"; fl="$d/archive/.id-floor"   # id clash check: active + archive prefixes, and the floor
+   ids=$(ls "$d" "$d/archive" 2>/dev/null | grep -oE '^[0-9]+' | awk '{print $1 + 0}' | sort -n)   # +0 drops the zero padding
+   n=$(find "[ABSOLUTE PATH]/skill-observations/observation-log" "[ABSOLUTE PATH]/skill-observations/observation-log/archive" -maxdepth 1 -name '[0-9]*.md' | wc -l | tr -d ' ')   # literal paths, the same two directories the id snippet reads: independent of $ids
+   dup=$(printf '%s\n' "$ids" | uniq -d | xargs); top=$(printf '%s\n' "$ids" | tail -1)
+   k=$(grep -c '' "$fl" 2>/dev/null); v=$(cat "$fl" 2>/dev/null | tr -d '\r' | xargs)
+   if [ "$n" -gt 0 ] && [ -z "$ids" ]; then echo "ID CHECK BROKEN — $n files present, no ids read"; fi
+   if [ -n "$dup" ]; then echo "ID CLASH — ids on two files: $dup — stop and tell the user; renumber before any write"; fi
+   if [ -f "$fl" ] && { [ "${k:-0}" -ne 1 ] || ! [ "$v" -ge "${top:-0}" ] 2>/dev/null; }; then
+     echo "ID FLOOR BROKEN — .id-floor must be one number >= the highest file id ($top); it holds $k line(s): $v — stop and tell the user"; fi
+   printf 'ids: %s files, highest %s, floor %s\n' "$n" "${top:-none}" "${v:-none}"
    ```
 
-   The output is `left right`. Left above zero: other machines' log
-   commits have not arrived here, so this machine's `.id-floor` is stale.
-   Right above zero: log writes are committed but not pushed. Either way,
-   say so in one line. Neither command stops the session: offline or
-   without an upstream, each prints why and the protocol carries on.
-   Under a hook that commits for you, an empty porcelain no longer means
-   synced — a pull that conflicted and aborted leaves the local commits in
-   place, every later session starts with a clean tree, and the stall
-   shows up only here, as ahead/behind. The id snippet under "How to Log"
+   Act on the words, not on the numbers. `behind only` and `ahead only`
+   are lag: say so in one line and carry on. **`DIVERGED` is not lag.**
+   Under a hook that commits for you, both counts above zero mean the
+   hook's pull has been conflicting and aborting on every turn: local
+   commits pile up, every later session starts with a clean tree, and the
+   other machines read a log without them. Surface it in the first reply,
+   before the user's task, and offer to resolve it. Offline or without an
+   upstream, the git lines print why and the protocol carries on. The id
+   lines are a stop: a shared prefix, or a floor that is not one number at
+   least the highest file id, means two machines issued the same ids while
+   apart — git merges the two files without complaint because their names
+   differ, and a union merge keeps both floors on two lines. Tell the
+   user and renumber (`references/observation-log.md`, "Recovering from a
+   collision") before this session writes an observation; run the snippet
+   again after resolving any merge of the log, because the clash arrives
+   with the merge, not with the fetch. The id snippet under "How to Log"
    reads the upstream's floor as of this fetch, so a fetch that succeeded
    also keeps new ids above the ones other machines have pushed.
 2. **Scan.** Read only the frontmatter of each file in `observation-log/`
@@ -246,8 +282,8 @@ was handled without its reference loaded, log an observation.
    fi
    [ "$suspect" -gt 0 ] && echo "NOTE: $suspect of $n headers carry an unquoted ': ' in a value — quote those values (File format)"
    printf 'files: %s  parsed: %s  suspect: %s\n' "$n" "$parsed" "$suspect"
-   printf '%s session-start scan: files=%s parsed=%s\n' "$(date +%F)" "$n" "$parsed" \
-     >> "[ABSOLUTE PATH]/skill-observations/checkpoints.log"   # the protocol's own trace
+   printf '%s session-start scan: files=%s parsed=%s\n' "$(date '+%F %H:%M')" "$n" "$parsed" \
+     >> "[ABSOLUTE PATH]/skill-observations/checkpoints.log"   # the protocol's own trace; the time lets a long session measure its age
    ```
 
    **The scan ends in a write, not only a print.** Loading this skill and
@@ -308,7 +344,12 @@ was handled without its reference loaded, log an observation.
    remove the entry; live strictly newer/superset → superseded, remove
    with a note; staged content absent from live → NOT installed, keep the
    entry, surface it, and base any new staging of that skill on the staged
-   copy. Then say "N staged updates awaiting review" in one line.
+   copy. Where an entry says the skill also has an account copy
+   (`references/weekly-review.md`, "Delivering updated skills"), diff that
+   mirror against the master too — line endings ignored, the entry's
+   left-out files excepted; a mirror that lags the master is an upload
+   that has not landed, so the entry stays. Then say "N staged updates
+   awaiting review" in one line.
 7. **First run.** If the log is empty and the project has history
    (handover or decision docs, commit history, test scripts, an existing
    CLAUDE.md — which is largely a record of corrections nobody logged),
@@ -503,9 +544,11 @@ when the active directory is empty). Where the workspace syncs through
 git, the floor is read twice: the local file, and the upstream branch's
 copy as of the last fetch (`git show '@{u}:…'` — no network), so a
 machine whose own floor is stale still issues above the ids the others
-have pushed. The path inside `show` is relative to the repository root,
-so the snippet derives it with `rev-parse --show-prefix` instead of
-assuming where the log sits; outside a repository, or with no upstream,
+have pushed — pushed, not merely committed: ids another machine holds
+unpushed are invisible to it, which is why Session Start step 1 also
+checks for an id on two files. The path inside `show` is relative to
+the repository root, so the snippet derives it with `rev-parse
+--show-prefix` instead of assuming where the log sits; outside a repository, or with no upstream,
 that read adds nothing. The same command first sweeps stale
 resolved files into `archive/` — archival is a side effect of deriving the
 id, not a separate duty (see Archival on Write):
@@ -557,19 +600,31 @@ this rule was written for — but the failure belongs to *anything that
 passes through shell quoting*, and stating the rule in the shape of its
 originating example is exactly what lets it be read as "not about me"
 next time. A regex, a Python or JS script, an HTML file, a Windows path:
-same carrier, same failure. **Concrete trigger: if the content you are
-about to write contains a single backslash, do not use a heredoc.**
-"Long", "gnarly" or "quoting-heavy" are judgements, and judgements pass
-under load; the presence of a backslash is something you can see. Write
-it with the file-writing tool and hand the shell a path.
+same carrier, same failure. **Concrete trigger: if the content has a
+backslash, it takes no shell route at all** — not a heredoc (quoted
+delimiter or not), not doubled backslashes, not a string literal inside
+`python -c`, not an `awk -v` value, a `sed` replacement, a `printf`
+format or `echo -e`. Each is a layer that processes escapes, and quoting
+or doubling is a guess about how many such layers the text crosses —
+a guess that has failed with the delimiter quoted and every backslash
+doubled. "Long", "gnarly" or "quoting-heavy" are judgements, and
+judgements pass under load; the presence of a backslash is something you
+can see. Write it with the file-writing tool and hand the shell a path;
+a program that needs a backslash reads the text from that file or builds
+it (`chr(92)`, a path join). Any scripted text edit counts its matches
+before replacing — exactly the number intended, or write nothing — and
+reads the changed lines back afterwards. A Python `SyntaxWarning: invalid
+escape sequence` is a failed run even when the exit code is 0: the text
+it reported success over is already wrong.
 
 Its failure mode is the bad one, in two shapes. The heredoc fails to
 parse (`unexpected EOF while looking for matching quote`), the whole
 command writes nothing, and it reads like a minor syntax slip rather than
-a lost batch. Or — with an UNQUOTED delimiter (`<<PY` rather than
-`<<'PY'`) — the shell eats the backslashes, the command **succeeds**, and
-the corruption surfaces later as a failed match or a syntax error in
-another language entirely. (Observed: one bash call wrapping this snippet
+a lost batch. Or a layer eats one level of backslashes — an unquoted
+delimiter (`<<PY`), an `awk -v` value, a wrapper in front of the shell —
+the command **succeeds**, and the corruption surfaces later as a failed
+match, a stray control byte, or a syntax error in another language
+entirely. (Observed: one bash call wrapping this snippet
 in a function and feeding four observation bodies through `<<'EOF'`
 heredocs wrote none of them; the same error text appears twice more in one
 user's own notes, for a long HTML file and a long Python snippet, with the

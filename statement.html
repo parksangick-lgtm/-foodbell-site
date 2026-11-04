@@ -549,8 +549,13 @@ body:not(.editing) tr.addrow{display:none !important}
     save();
   });
   sheet.addEventListener("focusout", function (e) {
-    var t = e.target.closest && e.target.closest('[data-edit][data-t="num"]');
+    var t = e.target.closest && e.target.closest('[data-edit]');
     if (!t) return;
+    if (t.getAttribute("data-t") !== "num") {
+      // 글자를 다 지운 칸에는 브라우저가 <br> 을 남긴다 — 그러면 :empty 가 안 맞아 입금 계좌 · 인수일 · 비고 줄이 빈 채로 보인다 (일일 일정표와 같이)
+      if (!t.textContent.trim() && t.innerHTML) { t.textContent = ""; save(); }
+      return;
+    }
     t.textContent = money(raw(t));
     save();
   });
@@ -772,7 +777,7 @@ body:not(.editing) tr.addrow{display:none !important}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=14"></script>
+<script type="module" src="js/docs/doc-page.js?v=15"></script>
 
 </body>
 </html>

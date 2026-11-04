@@ -310,6 +310,18 @@ legitimately moves on, so a bare "differs" is not a verdict:
   escalated as a decision (install it, or discard it and re-open its
   observations) rather than carried forward a third time.
 
+An entry marked "also upload to the account" (Delivering updated skills,
+below) has a second live copy to reconcile: diff the account mirror
+against the master with `diff -rq --strip-trailing-cr`, excepting the
+files the entry lists as left out of the upload. Both exceptions are
+load-bearing: a mirror commonly stores LF where the masters are CRLF, and
+the left-out files read as missing, so a plain `diff -rq` flags nearly
+every skill and buries the real drift in noise. A host may also refold
+the frontmatter `description:` onto one line — the same content — so
+read a SKILL.md-only difference before calling it drift. A mirror that lags the master is an upload that has
+not landed: the entry stays, saying so, even when the local install
+diffs clean.
+
 Reconcile in BOTH directions every time: lingering-done (installed but
 still listed) and missing-done (staged but never installed) fail
 differently, and only the diff sees both. Completion of a manual batch is
@@ -452,6 +464,10 @@ grep -rn 'for f in \$(find "' "$s" && echo "DRIFT: retired word-splitting loop s
 grep -rL 'ARCHIVAL SWEEP BROKEN' "$s/SKILL.md" "$s/references/observation-log.md"
 # both id snippets must read the upstream floor too (retired form: the local .id-floor only)
 grep -rLF 'show "@{u}:${p}archive/.id-floor"' "$s/SKILL.md" "$s/references/observation-log.md"
+# the step-1 sync check prints a verdict, not a bare pair (retired form: the count line ending in || echo "no upstream …")
+grep -rn -e "--count '@{u}[.][.][.]HEAD' -- [.] 2>/dev/null ||" "$s" && echo "DRIFT: step-1 sync check prints a bare ahead/behind pair"
+# the floor must merge loudly (retired form: the union attribute on .id-floor); the brackets keep this line from matching itself
+grep -rn 'id-floor merge[=]union' "$s" && echo "DRIFT: .id-floor still recommended with merge=union"
 ```
 
 Add the retired form to this list in the SAME edit that corrects a
@@ -924,6 +940,22 @@ from this paragraph. (Observed: a second apply round for one skill started
 the same evening the first had been installed; the date-keyed anchor pointed
 at the installed copy, and only a manual check of the manifest state
 prevented seeding over it.)
+
+**Account copies are a second install surface.** A skill the user also
+uploaded to a hosted account loads from that copy in the account's
+phone, web and cloud sessions, and installing over the master and the
+local skills directory leaves it at the old version — no step reports
+it, because a different hand updates it. Where the harness mirrors those
+copies read-only on disk (e.g. Claude Code, under
+`~/.claude/skills/synced/<account>/<name>/`), check at staging time
+whether the staged skill has one. If it does, its manifest entry says
+"also upload to the account", names the upload file — a copy of the
+`.skill` bundle named `<name>.zip`, written beside it, since the bundle
+is already a zip of `<name>/…` — and lists any files the upload leaves
+out on purpose, which the reconciliation (Step 1) then excepts. (Observed:
+three skills' account copies sat four weeks behind masters whose local
+installs had all landed, so phone sessions ran rules already fixed on
+every machine.)
 
 **Staging manifest.** Every delivery appends one entry to
 `[workspace folder]/skill-updates/PENDING.md`: the skill, the date

@@ -78,6 +78,19 @@ def http(url):
 
 
 # ---------------------------------------------------------------- 1. PC · 저장소
+SESSION_DIRS = ('skill-observations/', 'handoff/', 'skill-updates/')   # vibe-study 에서 대화가 쓰는 곳 — 기록장 · 인수인계 · 대기 사본 (기록장 #103)
+
+
+def porcelain_paths(out):
+    """git status --porcelain 결과 → 경로 목록. 이름 바꿈(앞 -> 뒤)은 둘 다, 띄어쓰기 든 경로의 따옴표는 벗긴다."""
+    return [p.strip('"') for l in out.splitlines() if l for p in l[3:].split(' -> ')]
+
+
+def session_writes_only(paths):
+    """안 올린 변경이 모두 대화가 쓰는 곳인가 — 그러면 답이 끝날 때 자동 저장이 올리니 '확인' 거리가 아니다 (기록장 #103)."""
+    return bool(paths) and all(p.startswith(SESSION_DIRS) for p in paths)
+
+
 def pc_and_repos():
     row('PC', '이름', '정상', f"{os.environ.get('COMPUTERNAME')} · 커밋 이름 {git(REPO, 'config', 'user.name')[1].strip()}")
     dirs = [REPO] + sorted(p for p in DEV.iterdir() if p.is_dir())
@@ -87,10 +100,13 @@ def pc_and_repos():
             continue
         git(d, 'fetch', '-q', timeout=60)
         head = git(d, 'status', '-sb')[1].splitlines()[0]
-        dirty = len([l for l in git(d, 'status', '--porcelain')[1].splitlines() if l])
+        out = git(d, 'status', '--porcelain')[1]
+        dirty = len([l for l in out.splitlines() if l])
         lag = re.findall(r'(ahead|behind) (\d+)', head)
-        state = '정상' if not lag and dirty == 0 else '확인'
-        row('저장소', d.name, state, head.replace('## ', '') + (f' · 안 올린 변경 {dirty}개' if dirty else ''))
+        own = d == DEV / 'vibe-study' and session_writes_only(porcelain_paths(out))
+        state = '정상' if not lag and (dirty == 0 or own) else '확인'
+        note = (f' · 이 대화가 쓴 기록 {dirty}개(답이 끝나면 자동 저장)' if own else f' · 안 올린 변경 {dirty}개') if dirty else ''
+        row('저장소', d.name, state, head.replace('## ', '') + note)
 
 
 # ---------------------------------------------------------------- 2. 클로드 설정 · 스킬
@@ -128,6 +144,20 @@ def claude_setup():
     row('클로드', '스킬 설치본 = 원본(세 곳)', '확인' if bad else '정상', f'같음 {same}개' + (f' · {"; ".join(bad)}' if bad else ''))
 
 
+def mcp_name(line):
+    """'claude mcp list' 한 줄의 이름. 이름 안의 ':'(plugin:episodic-memory:episodic-memory)는 두고, 뒤에 띄어쓰기가 오는 첫 ': ' 에서 자른다 (기록장 #81 · #82)."""
+    return line.split(': ', 1)[0].strip()
+
+
+def sac_state():
+    """윈도우 스마트 앱 컨트롤 — 0 꺼짐 · 1 켜짐 · 2 평가 중 · None 값 없음 (기록장 #76)."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\CI\Policy') as k:
+            return winreg.QueryValueEx(k, 'VerifiedAndReputablePolicyState')[0]
+    except OSError:
+        return None
+
+
 def claude_tools():
     exes = glob.glob(str(HOME / '.vscode' / 'extensions' / 'anthropic.claude-code-*-win32-x64' / 'resources' / 'native-binary' / 'claude.exe'))
     ver = lambda p: tuple(int(x) for x in re.search(r'claude-code-(\d+)\.(\d+)\.(\d+)', p).groups())
@@ -135,14 +165,17 @@ def claude_tools():
     if not exe:
         row('클로드', '연결 도구(MCP)', '확인', 'claude 실행 파일을 못 찾음 — VS Code 확장이 없나?')
         return
-    _, out, _ = run([exe, 'mcp', 'list'], timeout=240)
+    _, out, err = run([exe, 'mcp', 'list'], timeout=240)
     lines = [l for l in out.splitlines() if ' - ' in l]
-    bad = [l.split(': ', 1)[0] for l in lines if not l.rstrip().endswith(' Connected')]   # 표시 글자는 PC 마다 다르다(✔ · √) — 낱말로 본다 (기록장 #81)
-    row('클로드', '연결 도구(MCP)', '확인' if bad or not lines else '정상', f'{len(lines) - len(bad)}/{len(lines)} 연결' + (f' · 안 됨: {", ".join(bad)}' if bad else ''))
+    bad = [mcp_name(l) for l in lines if not l.rstrip().endswith(' Connected')]   # 표시 글자는 PC 마다 다르다(✔ · √) — 낱말로 본다 (기록장 #81)
+    hint = ''
+    if bad and ('uv_spawn' in out + err or sac_state() == 1):   # 집 PC 10-30: 서명 없는 exe 를 스마트 앱 컨트롤이 막자 uv_spawn 오류로 보였다 (기록장 #101)
+        hint = ' (uv_spawn 오류면 스마트 앱 컨트롤이 그 실행 파일을 막은 것일 수 있음 — 파워셸 Start-Process 로 그 exe 를 켜 보면 윈도우 문구가 나옴)'
+    row('클로드', '연결 도구(MCP)', '확인' if bad or not lines else '정상', f'{len(lines) - len(bad)}/{len(lines)} 연결' + (f' · 안 됨: {", ".join(bad)}{hint}' if bad else ''))
     script = DEV / 'vibe-study' / 'tools' / 'MCP-설치.ps1'
     if script.exists():
         want = re.findall(r"Add-Mcp '([\w-]+)'", script.read_text(encoding='utf-8-sig'))
-        have = {l.split(':')[0].strip() for l in lines}
+        have = {mcp_name(l) for l in lines}
         miss = [w for w in want if w not in have]
         row('클로드', 'MCP-설치.ps1 목록이 다 있나', '확인' if miss else '정상', f'없음: {", ".join(miss)} (설치 조건이 없는 PC 면 정상)' if miss else f'{len(want)}개 모두')
     _, out, _ = run([exe, 'plugin', 'list'], timeout=120)
@@ -159,23 +192,74 @@ def claude_tools():
 
 
 # ---------------------------------------------------------------- 3. 파이썬 · 열쇠 · 도구
+# fitz(pymupdf)는 안쪽 부품 _mupdf.pyd 가 막혀도 'No module named mupdf' 로만 보인다 — pymupdf 가 첫 오류를 삼키고 다른 길로
+# 다시 불러 보기 때문. 그래서 그 .pyd 를 직접 열어 진짜 오류(스마트 앱 컨트롤이면 정책 문구)를 받는다 (기록장 #101).
+MUPDF_PROBE = '''
+import importlib.util, pathlib
+s = importlib.util.find_spec('pymupdf')
+pyd = next(pathlib.Path(s.submodule_search_locations[0]).glob('_mupdf*.pyd'), None) if s else None
+if not pyd:
+    raise SystemExit('_mupdf.pyd 가 없음 — pymupdf 설치가 덜 됨')
+try:
+    importlib.util.module_from_spec(importlib.util.spec_from_file_location('_mupdf', pyd))
+except Exception as e:
+    raise SystemExit(f'{pyd.name} 직접 열기: {e}')
+print(f'{pyd.name} 직접 열기는 됨 — 다른 원인')
+'''
+
+# 스마트 앱 컨트롤이 막은 기록(코드 무결성 3077) — 건수와 막힌 파일 이름. 읽기만 한다 (기록장 #76 · #82).
+# 3077 의 두 번째 칸(Properties[1])이 막힌 파일 경로다(알림 글의 %2).
+CI_PS = ("& { $log = 'Microsoft-Windows-CodeIntegrity/Operational'; try { "
+         "if (-not (Get-WinEvent -ListLog $log -ErrorAction Stop).IsEnabled) { return [pscustomobject]@{off=$true} }; "
+         "$e = @(Get-WinEvent -FilterHashtable @{LogName=$log; Id=%d; StartTime=(Get-Date).AddDays(-%d)} -ErrorAction Stop); "
+         "[pscustomobject]@{n=$e.Count; files=@($e | Select-Object -First 50 | ForEach-Object { [IO.Path]::GetFileName([string]$_.Properties[1].Value) })} "
+         "} catch { if ($_.FullyQualifiedErrorId -like 'NoMatchingEventsFound*') { [pscustomobject]@{n=0; files=@()} } "
+         "else { [pscustomobject]@{err=$_.Exception.Message} } } }")
+
+
+def blocked_files(event_id=3077, days=7):
+    """{'n': 건수, 'files': [최근 것부터 이름]} · {'off': True} · {'err': 글}. 파워셸이 아무것도 안 내면 {'err': …}."""
+    got = ps_json(CI_PS % (event_id, days), timeout=90)
+    if not got:
+        return {'err': '파워셸 결과가 비어 있음 — 측정 실패'}
+    r = got[0]
+    files = r.get('files') or []
+    r['files'] = [files] if isinstance(files, str) else [f for f in files if f]
+    return r
+
+
 def python_and_keys():
     mods = ['playwright', 'pytest', 'firebase_admin', 'google.cloud.firestore', 'fitz', 'pandas', 'openpyxl', 'PIL', 'cv2']
     optional = {'cv2': 'python -m pip install opencv-python'}   # 시험 · 도구가 안 쓰고 사진 비교 · QR 읽기에만 — 없으면 '확인' (기록장 #81)
+    sac = sac_state()
     bad, opt_bad = [], []
     for m in mods:   # 따로 띄워 본다 — 스마트 앱 컨트롤이 막으면 그 부품만 실패한다 (기록장 #76)
         code, _, err = run([sys.executable, '-X', 'utf8', '-c', f'import {m}'], timeout=60)
         if code:
-            (opt_bad if m in optional else bad).append(f'{m}({err.strip().splitlines()[-1][:60] if err.strip() else code})')
+            why = err.strip().splitlines()[-1][:60] if err.strip() else code
+            if m == 'fitz' and "No module named 'mupdf'" in err:
+                _, pout, perr = run([sys.executable, '-X', 'utf8', '-c', MUPDF_PROBE], timeout=60)
+                why = ((perr.strip() or pout.strip()).splitlines() or ['직접 열기 결과 없음'])[-1][:120]
+            (opt_bad if m in optional else bad).append(f'{m}({why})')
     detail = '; '.join([f'안 됨: {"; ".join(bad)}'] * bool(bad) + [f'사진 비교용만 없음: {"; ".join(opt_bad)} — 쓸 때 {" · ".join(optional[o.split("(")[0]] for o in opt_bad)}'] * bool(opt_bad))
+    if (bad or opt_bad) and sac == 1:
+        detail += ' (스마트 앱 컨트롤 켜짐 — 차단일 수 있음: 안쪽 부품을 직접 열어 확인)'
     row('파이썬', '부품', '문제' if bad else '확인' if opt_bad else '정상', detail or f'{len(mods)}개 모두 불러옴')
-    try:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\CI\Policy') as k:
-            sac = winreg.QueryValueEx(k, 'VerifiedAndReputablePolicyState')[0]
-    except OSError:
-        sac = None
     row('파이썬', '스마트 앱 컨트롤', '확인' if sac in (1, 2) else '정상',
         {0: '꺼짐', 1: '켜짐 — 서명 없는 파이썬 부품이 막힐 수 있음', 2: '평가 중', None: '값 없음'}.get(sac, str(sac)))
+    try:
+        ci = blocked_files()
+    except Exception as e:
+        ci = {'err': f'{type(e).__name__}: {e}'}
+    if 'err' in ci or ci.get('off'):
+        why = '기록이 꺼져 있음' if ci.get('off') else f'기록을 못 읽음 ({str(ci["err"])[:80]})'
+        row('파이썬', '막힌 기록(코드 무결성 3077, 7일)', '확인' if sac == 1 else '정상', why + ('' if sac == 1 else ' — 스마트 앱 컨트롤이 꺼져 있어 지금은 상관없음'))
+    else:
+        names = list(dict.fromkeys(ci['files']))   # 같은 파일은 한 번만, 최근 것부터
+        detail = f'{ci["n"]}건'
+        if ci['n']:
+            detail += f' · {", ".join(names[:5])}' + (f' 등 {len(names)}종' if len(names) > 5 else '') if names else ' · 파일 이름을 못 읽음'
+        row('파이썬', '막힌 기록(코드 무결성 3077, 7일)', '확인' if ci['n'] else '정상', detail)
     keys = {KEYS / 'sije-admin.json': '실제 저장소 도구', KEYS / 'sije-test-admin.json': '서류 시험',
             KEYS / 'sije-calendar.txt': '캘린더 맞추기', HOME / '.config' / 'gws' / 'client_secret.json': 'gws',
             HOME / '.llm-council' / 'gemini-key.txt': '카운슬'}
@@ -280,7 +364,7 @@ def office():
     row('사무실', '백업 엑셀', '정상' if any(p.exists() for p in bk) else '문제', next((p.name for p in bk if p.exists()), '오늘 · 어제 것이 없음'))
     db = fsdb.open_db(fsdb.KEY_PROD)
     events = [(d.id, d.to_dict()) for d in db.collection('events').stream()]
-    want = {pdf_sync.target_path(WORK_ROOT, e) for _, e in events if e.get('date')}
+    want = set(pdf_sync.targets(WORK_ROOT, events).values())   # 겹치는 이름을 가른 뒤의 자리(기록장 #95)
     have = set((WORK_ROOT / f'{pdf_sync.SEASON}년 PDF (휴대폰용)').rglob('*.pdf'))
     miss, extra = len(want - have), len(have - want)
     row('사무실', 'PDF = 날짜 있는 행사', '정상' if not miss and not extra else '확인',
