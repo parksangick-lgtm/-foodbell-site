@@ -4,7 +4,7 @@ import { splitRows, matchRow, todayISO } from './list-model.js';
 import { takeBundle, pickTemplate, NOTES_KEY } from '../docs/handoff.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchEvents, listTemplates, createFromTemplate,
-} from './store.js?v=3';
+} from './store.js?v=4';
 
 const $ = (id) => document.getElementById(id);
 let filter = '확정';

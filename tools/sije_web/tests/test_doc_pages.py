@@ -1476,6 +1476,28 @@ def test_daily_board_prunes_old_days(pc, repo_url, custom_token, test_db, made, 
     assert 'yday' in entries
 
 
+def test_daily_board_prunes_old_marks(pc, repo_url, custom_token, test_db, made, share_key, share_marks):
+    """지난 칸을 치울 때 게시판에 없는 일정표의 직원 확인 기록도 지운다 — 어제 것은 남긴다 (사장님 2026-11-06 '지난 것은 삭제')."""
+    today = datetime.date.today()
+    test_db.collection('share').document(share_key).update({
+        'entries.old3': {'date': (today - datetime.timedelta(days=3)).isoformat(), 'rows': []},
+        'entries.yday': {'date': (today - datetime.timedelta(days=1)).isoformat(), 'rows': []},
+    })
+    for sid, name in (('old3', '가짜하나'), ('yday', '가짜둘'), ('gone', '가짜셋')):   # gone — 이미 게시판에 없는 일정표
+        share_marks.document(f'{sid}~{name}').set({'sid': sid, 'name': name, 'at': firestore.SERVER_TIMESTAMP})
+    assert len(list(share_marks.list_documents())) == 3                          # 치우기 전에는 셋 다 있다 (대조)
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
+    wait_board(test_db, share_key, lambda e: doc_id in e and 'old3' not in e)
+    left = set()
+    for _ in range(40):
+        left = {d.id for d in share_marks.list_documents()}
+        if left == {'yday~가짜둘'}:
+            break
+        time.sleep(0.5)
+    assert left == {'yday~가짜둘'}
+
+
 def test_daily_board_keeps_other_entries(pc, repo_url, custom_token, test_db, made, share_key):
     """다른 기기가 올린 다른 일정표 칸은 그대로 — 게시판을 통째로 덮지 않고 칸 하나씩 고친다."""
     tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()

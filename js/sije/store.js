@@ -215,7 +215,15 @@ export async function publishShare(id, entry) {
   const args = [new fs.FieldPath('entries', id), entry ? { ...entry, at: fs.serverTimestamp() } : fs.deleteField()];
   for (const other of old) args.push(new fs.FieldPath('entries', other), fs.deleteField());
   await fs.updateDoc(ref, ...args);
+  if (old.length) dropOldMarks(key, new Set([id, ...Object.keys(seen).filter((k) => !old.includes(k))])).catch(() => {});
   return true;
+}
+
+// 지난 칸을 치울 때 게시판에 없는 일정표의 직원 확인 기록도 지운다(사장님 2026-11-06 '지난 것은 삭제') — 직원 화면이
+// 열 때마다 기록 전부를 받으므로 쌓이지 않게. 못 지우면 다음에 지난 칸을 치울 때 다시 지운다.
+async function dropOldMarks(key, keep) {
+  const marks = await fs.getDocs(fs.collection(db, 'share', key, 'marks'));
+  await Promise.all(marks.docs.filter((m) => !keep.has(m.data().sid)).map((m) => fs.deleteDoc(m.ref)));
 }
 
 // 직원 확인 (2026-11-05 설계 3-4) — 게시판의 이 일정표 한 장(at · names)과 확인 기록 중 이 일정표 것을 바로 읽어
