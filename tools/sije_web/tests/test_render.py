@@ -1,9 +1,13 @@
 """인쇄 그리기 → PDF 시험 — A4 한 장, 잘린 글자 0, 핵심 글자 그대로. PDF 는 시험 임시 폴더에만 만든다."""
+import concurrent.futures
+import io
+import urllib.request
+
 import pymupdf
 import pytest
 
-from conftest import fake_event, fake_jpeg
-from tools.sije_web.render_pdf import TooLong, clipped_words, render_pdf
+from conftest import ROOT, fake_event, fake_jpeg
+from tools.sije_web.render_pdf import TooLong, _QuietHandler, clipped_words, render_pdf
 
 
 def pdf_text(path) -> str:
@@ -65,3 +69,35 @@ def test_image_is_drawn_in_memo(tmp_path, repo_url):
     assert render_pdf(fake_event(), [fake_jpeg()], out, repo_url) == 1
     with pymupdf.open(out) as doc:
         assert len(doc[0].get_images()) >= 1
+
+
+class _Writes:
+    def __init__(self):
+        self.sizes = []
+
+    def write(self, data):
+        self.sizes.append(len(data))
+
+
+def test_server_writes_big_files_in_64kb_pieces():
+    """시험 · PDF 서버(serve_repo)는 64KB 넘는 파일을 한 번에 쓰지 않는다 — 한 번에 쓰면 노트북(Avast)에서 열 번에 한 번쯤
+    연결이 끊겨, 그런 파일이 하나뿐인 일정표 시험만 20초 · 30초 시간 초과가 났다 (2026-11-05, 기록장 #84)."""
+    out = _Writes()
+    _QuietHandler.copyfile(None, io.BytesIO(b'x' * 200_000), out)
+    assert sum(out.sizes) == 200_000
+    assert max(out.sizes) <= 64 * 1024
+
+
+def test_server_sends_daily_schedule_whole_every_time(repo_url):
+    """같은 고장을 실제 서버로 — 80KB 일정표 화면을 동시에 6개씩 100번 받아 모두 끝까지 온다
+    (노트북에서 고치기 전: 200번 중 35번 ConnectionResetError, 하나마다 5초 넘게 멈춤)."""
+    want = (ROOT / 'daily-schedule.html').read_bytes()
+    assert len(want) > 64 * 1024   # 이 시험은 64KB 넘는 파일이어야 뜻이 있다
+
+    def get(i):
+        with urllib.request.urlopen(f'{repo_url}daily-schedule.html?n={i}', timeout=10) as r:
+            return r.read()
+
+    with concurrent.futures.ThreadPoolExecutor(6) as ex:
+        bodies = list(ex.map(get, range(100)))
+    assert [len(b) for b in bodies if b != want] == []

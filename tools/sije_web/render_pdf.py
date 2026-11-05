@@ -26,6 +26,12 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def copyfile(self, source, outputfile):
+        """64KB 씩 나눠 보낸다. 원래 것(shutil.copyfileobj, 윈도우 1MB)은 파일을 한 번에 써서, 노트북(Avast)에서 64KB 넘는
+        파일(daily-schedule.html 80KB)의 연결이 열 번에 한 번쯤 끊겼다 — 일정표 시험만 시간 초과 (2026-11-05, 기록장 #84)."""
+        while chunk := source.read(64 * 1024):
+            outputfile.write(chunk)
+
 
 @contextlib.contextmanager
 def serve_repo(root: Path):
