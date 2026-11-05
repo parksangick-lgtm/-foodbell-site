@@ -27,14 +27,20 @@ def current_key(db) -> str | None:
 
 
 def new_key(db) -> str:
-    """새 암호로 게시판을 만들고(옛 게시판의 일정을 옮겨서) config/share 를 바꾼 뒤 옛 게시판을 지운다."""
+    """새 암호로 게시판을 만들고(옛 게시판의 일정 · 직원 확인 기록을 옮겨서) config/share 를 바꾼 뒤 옛 게시판을 지운다.
+    확인 기록(marks)은 옛 게시판을 지워도 저장소가 같이 안 지워 준다 — 그만둔 직원이 옛 링크로 이름 · 시각을 못 보게 같이 옮기고 지운다."""
     old = current_key(db)
     old_ref = db.collection('share').document(old) if old else None
     old_snap = old_ref.get() if old_ref else None
     entries = (old_snap.to_dict() or {}).get('entries', {}) if old_snap and old_snap.exists else {}
+    marks = list(old_ref.collection('marks').stream()) if old_ref else []
     key = secrets.token_urlsafe(24)
+    new_ref = db.collection('share').document(key)
     batch = db.batch()
-    batch.set(db.collection('share').document(key), {'entries': entries})
+    batch.set(new_ref, {'entries': entries})
+    for m in marks:
+        batch.set(new_ref.collection('marks').document(m.id), m.to_dict())
+        batch.delete(m.reference)
     batch.set(_config(db), {'key': key})
     if old_ref:
         batch.delete(old_ref)

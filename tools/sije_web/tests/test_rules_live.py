@@ -1,8 +1,11 @@
 """보안 규칙 시험 — 시험 프로젝트에 실제 요청(Firestore REST + ID 토큰)을 보내 허락 · 거부를 본다."""
 import uuid
+from datetime import datetime, timezone
+from urllib.parse import quote
 
 import pytest
 import requests
+from firebase_admin import firestore
 
 from conftest import fake_event as make_fake_event
 from tools.sije_web.staff_sheets import staff_view
@@ -191,13 +194,25 @@ def test_own_allow_and_viewer_doc_readable_others_not(base, id_token):
 
 # ---------- 직원 게시판 (today.html — 로그인 없이 암호로 읽는 한 장) ----------
 
+def marks_of(test_db, key):
+    """그 게시판의 확인 기록 전부(관리자 열쇠) — {문서 이름: 칸}."""
+    return {s.id: s.to_dict() for s in test_db.collection('share').document(key).collection('marks').stream()}
+
+
+def drop_marks(test_db, key):
+    """그 게시판의 확인 기록을 관리자 열쇠로 지운다 — 저장소는 게시판을 지워도 아래 묶음(marks)을 같이 지우지 않는다."""
+    for s in test_db.collection('share').document(key).collection('marks').stream():
+        s.reference.delete()
+
+
 @pytest.fixture
 def board(test_db):
-    """시험용 게시판 한 장 — 이름(암호)은 시험마다 새로, 끝나면 지운다."""
+    """시험용 게시판 한 장 — 이름(암호)은 시험마다 새로, 끝나면 확인 기록(marks)까지 지운다."""
     key = 'rules-' + uuid.uuid4().hex[:8]
     ref = test_db.collection('share').document(key)
     ref.set({'entries': {}})
     yield key
+    drop_marks(test_db, key)
     ref.delete()
 
 
@@ -260,3 +275,95 @@ def test_share_update_only_entries(base, board, id_token):
     owner = id_token(ALLOWED, allowed=True)
     assert patch(base, f'share/{board}', owner, 'x', '몰래').status_code == 403   # entries 아닌 칸은 막히고
     assert patch_entries(base, f'share/{board}', owner).status_code == 200       # entries 는 된다 (대조)
+
+
+# ---------- 직원 확인 기록 (share/{key}/marks — today.html 이름 단추, 설계 2026-11-04 3-6 · 5절) ----------
+
+SID = 'docrules'
+NAMES = ['가짜갑', '가짜을']   # 가짜 담당 이름
+
+
+@pytest.fixture
+def mark_board(test_db, board):
+    """담당 이름 목록(names)이 있는 일정표 한 칸을 올린 시험용 게시판 — 정리는 board 가 한다(marks 포함)."""
+    test_db.collection('share').document(board).set({'entries': {SID: {'date': '2026-10-22', 'names': NAMES}}})
+    return board
+
+
+def put_mark(base, key, sid, name, token=None, *, doc=None, extra=None, phone_time=False):
+    """확인 기록 한 장을 쓴다 (documents:commit) — 화면의 confirmMark 와 같은 모양: 문서 이름 sid~name, 칸 sid · name · at.
+    at 은 서버 시각(updateTransforms REQUEST_TIME). doc · extra · phone_time 은 막혀야 하는 모양을 만들 때만 준다."""
+    doc = doc or f'{sid}~{name}'
+    fields = {'sid': {'stringValue': sid}, 'name': {'stringValue': name}, **(extra or {})}
+    path = base.split('/v1/', 1)[1]   # projects/…/databases/(default)/documents
+    write = {'update': {'name': f'{path}/share/{key}/marks/{doc}', 'fields': fields}}
+    if phone_time:
+        fields['at'] = {'timestampValue': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}
+    else:
+        write['updateTransforms'] = [{'fieldPath': 'at', 'setToServerValue': 'REQUEST_TIME'}]
+    return call('POST', f'{base}:commit', token, json={'writes': [write]})
+
+
+def mark_url(base, key, doc):
+    return f'{base}/share/{key}/marks/{quote(doc)}'
+
+
+def test_mark_signed_out_listed_name_server_time(base, mark_board, test_db):
+    r = put_mark(base, mark_board, SID, NAMES[0])
+    assert r.status_code == 200, r.text
+    saved = marks_of(test_db, mark_board)
+    assert list(saved) == [f'{SID}~{NAMES[0]}']
+    assert set(saved[f'{SID}~{NAMES[0]}']) == {'sid', 'name', 'at'}
+
+
+def test_mark_rewrite_same_doc_allowed(base, mark_board, test_db):
+    """'다시 확인' 단추 — 같은 문서를 서버 시각으로 다시 쓴다 (update)."""
+    doc = f'{SID}~{NAMES[1]}'
+    assert put_mark(base, mark_board, SID, NAMES[1]).status_code == 200
+    first = marks_of(test_db, mark_board)[doc]['at']
+    r = put_mark(base, mark_board, SID, NAMES[1])
+    assert r.status_code == 200, r.text
+    assert marks_of(test_db, mark_board)[doc]['at'] >= first
+
+
+DENIED_MARKS = {
+    '목록에 없는 이름': dict(name='가짜병'),
+    '다른 칸이 더 있음': dict(extra={'memo': {'stringValue': '몰래'}}),
+    '휴대폰 시각': dict(phone_time=True),
+    '문서 이름과 칸 다름': dict(name=NAMES[1], doc=f'{SID}~{NAMES[0]}'),
+    '없는 게시판': dict(no_board=True),
+    '다른 일정표 id': dict(sid='docother'),
+}
+
+
+@pytest.mark.parametrize('case', list(DENIED_MARKS))
+def test_mark_denied_signed_out(base, mark_board, test_db, case):
+    kw = dict(DENIED_MARKS[case])
+    key = 'rules-' + uuid.uuid4().hex[:8] if kw.pop('no_board', False) else mark_board
+    try:
+        r = put_mark(base, key, kw.pop('sid', SID), kw.pop('name', NAMES[0]), **kw)
+        assert r.status_code == 403, r.text
+        assert marks_of(test_db, key) == {}
+    finally:
+        if key != mark_board:   # 없는 게시판 — 혹시 써졌으면 지운다 (board 고정물이 모르는 이름)
+            drop_marks(test_db, key)
+
+
+def test_mark_delete_only_owner(base, mark_board, test_db, id_token):
+    doc = f'{SID}~{NAMES[0]}'
+    assert put_mark(base, mark_board, SID, NAMES[0]).status_code == 200
+    assert call('DELETE', mark_url(base, mark_board, doc)).status_code == 403          # 로그인 없으면 막히고
+    assert doc in marks_of(test_db, mark_board)
+    r = call('DELETE', mark_url(base, mark_board, doc), id_token(ALLOWED, allowed=True))
+    assert r.status_code == 200, r.text                                                # 사장님은 된다
+    assert marks_of(test_db, mark_board) == {}
+
+
+def test_marks_readable_without_login(base, mark_board, test_db):
+    doc = f'{SID}~{NAMES[0]}'
+    test_db.collection('share').document(mark_board).collection('marks').document(doc).set(
+        {'sid': SID, 'name': NAMES[0], 'at': firestore.SERVER_TIMESTAMP})
+    listed = call('GET', f'{base}/share/{mark_board}/marks')
+    assert listed.status_code == 200, listed.text                                      # 목록도 되고
+    assert [d['name'].rsplit('/', 1)[1] for d in listed.json().get('documents', [])] == [doc]
+    assert call('GET', mark_url(base, mark_board, doc)).status_code == 200            # 한 장도 된다

@@ -6,7 +6,7 @@ import { NOTES_KEY, putBundle, eventToStatement, eventToQuote, eventToWorksheet 
 import { renderSheet, fitToA4 } from './sheet-render.js?v=6';   // sije-print.html 과 같은 번호
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,
-} from './store.js?v=2';
+} from './store.js?v=3';
 
 const $ = (id) => document.getElementById(id);
 const id = new URLSearchParams(location.search).get('id');

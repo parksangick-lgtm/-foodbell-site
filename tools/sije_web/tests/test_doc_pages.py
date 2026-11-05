@@ -1522,6 +1522,129 @@ def test_today_updates_live(pc, browser, repo_url, custom_token, test_db, made, 
         ctx.close()
 
 
+# ---------- 직원 확인 — 사장님 쪽 (설계 docs/superpowers/specs/2026-11-04-staff-confirm-design.md 3-2 · 3-4, 2026-11-05) ----------
+
+@pytest.fixture
+def share_marks(test_db, share_key):
+    """그 게시판의 직원 확인 기록 묶음(share/{암호}/marks) — 시험 앞뒤로 비운다(시험이 넣은 기록을 남기지 않는다)."""
+    col = test_db.collection('share').document(share_key).collection('marks')
+
+    def clear():
+        for d in col.list_documents():
+            d.delete()
+    clear()
+    yield col
+    clear()
+
+
+def wait_confirm(page, text, timeout=20_000):
+    """날짜 아래 직원 확인 줄(.day-confirm)의 글자가 text 가 될 때까지 — 안 되면 그때 글자를 보여 준다."""
+    try:
+        page.wait_for_function('(t) => document.querySelector(".day-confirm")?.textContent === t', arg=text, timeout=timeout)
+    except Exception:
+        raise AssertionError(f'확인 줄이 {text!r} 가 안 됨: {page.evaluate("document.querySelector(\'.day-confirm\')?.textContent")!r}')
+
+
+def test_daily_board_gets_staff_names(pc, repo_url, custom_token, test_db, made, share_key):
+    """게시판 한 장에 담당 이름 목록(names) — 모든 줄(취소 · 연기 포함)의 담당 칸을 점 · 빗금 · 빈칸으로 나누고 괄호 안은 빼서,
+    나온 차례대로 한 번씩. 직원 화면의 이름 단추와 보안 규칙이 이 목록을 쓴다."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    pc.click('tr.addrow button')
+    edit_cell(pc, 'tr.item:nth-child(1) [data-f="staff"]', '가짜하나.가짜둘 (보조 가짜넷)')
+    edit_cell(pc, 'tr.item:nth-child(1) [data-f="work"]', '가짜동 상차림')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="staff"]', '가짜셋/가짜하나')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="work"]', '가짜동 제사상')
+    mark(pc, 2, '취소')
+    pc.click('#btn-edit')
+    names = ['가짜하나', '가짜둘', '가짜셋']
+    assert pc.evaluate('window.FoodbellDoc.share().names') == names
+    entries = wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('names') == names)
+    assert [r['state'] for r in entries[doc_id]['rows']] == ['', '취소']
+
+
+def test_daily_reopen_writes_board_only_when_changed(pc, repo_url, custom_token, test_db, made, share_key):
+    """다시 열기만 하면 게시판 한 장을 다시 쓰지 않아 at(고친 시각)이 그대로 — 열 때마다 찍히면 직원 모두가 '고친 뒤 안 봄' 이 된다.
+    올라간 것과 내용이 다르면(이름 목록이 없는 옛 한 장) 열기만 해도 다시 쓰고, 칸을 고치면 새로 찍힌다 (설계 3-2)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fill_work(pc)
+    wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('at') is not None)
+    pc.wait_for_timeout(2_000)                                     # 편집을 끝내며 올린 것이 다 들어갈 때까지
+    first = board(test_db, share_key)[doc_id]['at']
+    open_doc(pc, repo_url, DAILY, doc_id)                           # 다시 열기 — 11-05 전에는 여기서 at 이 새로 찍혔다
+    pc.wait_for_timeout(4_000)
+    assert board(test_db, share_key)[doc_id]['at'] == first
+    test_db.collection('share').document(share_key).update({f'entries.{doc_id}.names': firestore.DELETE_FIELD})   # 11-05 전에 올라간 한 장처럼
+    open_doc(pc, repo_url, DAILY, doc_id)
+    entries = wait_board(test_db, share_key, lambda e: 'names' in e.get(doc_id, {}))
+    second = entries[doc_id]['at']
+    assert second > first
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 고친 상차림')
+    pc.click('#btn-edit')
+    entries = wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('rows', [{}])[0].get('work') == '가짜동 고친 상차림')
+    assert entries[doc_id]['at'] > second
+
+
+def test_daily_confirm_line_updates_live(pc, repo_url, custom_token, test_db, made, share_key, share_marks):
+    """사장님 한 줄 밑에 '직원 확인 1/2 · 가짜둘 HH:MM · 아직: 가짜하나' — 직원이 누르면(확인 기록이 생기면) 새로고침 없이 바뀌고,
+    사장님이 고치면 그 전 확인은 '(고친 뒤 안 봄)'. 담당을 비우면 줄이 없어진다 (설계 3-4)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="staff"]', '가짜하나 · 가짜둘')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    wait_confirm(pc, '직원 확인 0/2 · 아직: 가짜하나 · 가짜둘')
+    # 고친 것이 다 올라간 뒤에 확인 — 담당만 친 한 장이 먼저 올라가 줄이 뜨고, 일까지 친 한 장이 나중에 올라가면(at 이 확인보다 뒤)
+    # 그 확인은 '고친 뒤 안 봄' 이 맞다 (전체 시험에서 실제로 그렇게 갈렸다)
+    wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('rows', [{}])[0].get('work') == '가짜동 상차림')
+    pc.wait_for_timeout(2_000)
+    ref = share_marks.document(f'{doc_id}~가짜둘')
+    ref.set({'sid': doc_id, 'name': '가짜둘', 'at': firestore.SERVER_TIMESTAMP})   # 직원이 이름 단추를 누른 것처럼 (관리자 열쇠)
+    at = ref.get().to_dict()['at']
+    hhmm = pc.evaluate('(t) => new Date(t).toTimeString().slice(0, 5)', at.timestamp() * 1000)
+    wait_confirm(pc, f'직원 확인 1/2 · 가짜둘 {hhmm} · 아직: 가짜하나')
+    assert pc.locator('.day-confirm').is_visible()
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 고친 상차림')
+    pc.click('#btn-edit')
+    wait_confirm(pc, '직원 확인 0/2 · 아직: 가짜하나 · 가짜둘(고친 뒤 안 봄)')
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="staff"]', '')                  # 담당이 비면(names 가 빈 목록) 줄이 없다
+    pc.click('#btn-edit')
+    wait_confirm(pc, '')
+    assert pc.locator('.day-confirm').is_hidden()
+
+
+def test_daily_confirm_line_only_on_screen(pc, repo_url, custom_token, test_db, made, share_key, tmp_path):
+    """확인 줄은 사장님 화면에서만 — 인쇄 · 저장 HTML(serialize) · 복사 글 · 직원 사진(카드)에는 없다.
+    다른 기기 고침으로 표를 다시 그려도(load) 줄이 남는다 (설계 3-4)."""
+    pc.context.grant_permissions(['clipboard-read', 'clipboard-write'])
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="staff"]', '가짜하나')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    line = '직원 확인 0/1 · 아직: 가짜하나'
+    wait_confirm(pc, line)
+    assert pc.locator('.day-confirm').is_visible()                 # 화면에는 보인다 (대조)
+    pc.emulate_media(media='print')
+    assert pc.locator('.day-confirm').is_hidden()
+    pc.emulate_media(media='screen')
+    saved = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert '가짜하나' in saved and '직원 확인' not in saved
+    pc.evaluate('(h) => window.FoodbellDoc.load(h)', saved)         # 표를 통째로 다시 그려도
+    assert pc.locator('.day-confirm').inner_text() == line
+    pc.click('#btn-copy')
+    pc.locator('#btn-copy', has_text='복사됨').wait_for(timeout=5_000)
+    text = pc.evaluate('navigator.clipboard.readText()')
+    assert '가짜하나' in text and '직원 확인' not in text
+    watch_shots(pc, 'root.textContent')
+    save_pages(pc, tmp_path)
+    shot = pc.evaluate('window.__shots')[0]
+    assert '가짜하나' in shot and '직원 확인' not in shot
+
+
 def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_token, made):
     """사장님 일정표 화면(편집 완료 상태)에서도 장소를 누르면 지도(새 창), 번호를 누르면 전화 — 사장님 10-21 저녁
     ('지도는 안되고있어' 캡처가 일정표 화면이었다). 편집 중 · 저장 · 직원 사진에는 링크가 없다."""

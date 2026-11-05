@@ -68,6 +68,18 @@ service cloud.firestore {
         && request.resource.data.entries is map
         && request.resource.data.entries.size() <= 40;
     }
+    // 직원 확인 (today.html 의 이름 단추, 2026-11-05 설계 docs/superpowers/specs/2026-11-04-staff-confirm-design.md 3-6).
+    // 문서 이름 = 일정표id~이름. 그 일정표의 담당 이름 목록(names)에 있는 이름만, 서버 시각으로만 적는다(휴대폰 시계로 못 꾸밈).
+    // 게시판에 그 일정표가 없거나 names 가 없으면 규칙이 오류로 끝나 거부된다(의도). 지우기는 사장님만.
+    match /share/{key}/marks/{mark} {
+      allow read: if true;
+      allow create, update: if exists(/databases/$(database)/documents/share/$(key))
+        && request.resource.data.keys().hasOnly(['sid', 'name', 'at'])
+        && request.resource.data.at == request.time
+        && mark == request.resource.data.sid + '~' + request.resource.data.name
+        && request.resource.data.name in get(/databases/$(database)/documents/share/$(key)).data.entries[request.resource.data.sid].names;
+      allow delete: if allowed();
+    }
 
     // 담당자 보기 (sije-view.html) — 쓰기는 관리 도구만. 암호(= 문서 이름)를 아는 사람이 그 한 장만 읽는다(목록 규칙 없음).
     match /staffSheets/{key} {

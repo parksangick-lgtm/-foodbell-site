@@ -175,34 +175,76 @@ export function removeDoc(id) {
 // ---------- 직원 게시판 (today.html, 2026-10-21) — 일일 일정표의 사진에 있는 글자를 일정표마다 한 칸씩 ----------
 // 게시판 이름(암호)은 config/share 에 있다(사장님만 읽음, tools/sije_web/share_link.py 가 만든다). 없으면 아직 안 만든 것 — 아무것도 안 한다.
 // 칸 하나씩 고친다 — 다른 기기가 다른 일정표 칸을 동시에 고쳐도 지워지지 않게. 어제보다 지난 날짜 칸은 같은 고침에서 지운다.
+// 올리기 전에 게시판을 읽어, 올라간 것과 at 을 빼고 같으면 쓰지 않는다 — 열기만 해도 at 이 새로 찍혀 직원 모두가 '고친 뒤 안 봄' 이
+// 되지 않게 (2026-11-05 직원 확인 설계 3-2). 오타 하나라도 다르면 쓴다(사장님 결정).
 let shareKey = null;    // 약속: 암호 또는 null — 못 읽으면(끊김) 다음에 다시 읽는다
-let shareSeen = null;   // 약속: 처음 읽은 게시판의 칸들 (지난 날짜 칸을 찾을 때 본다)
 const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-export async function publishShare(id, entry) {
+function readShareKey() {
   if (!shareKey) {
     shareKey = fs.getDoc(fs.doc(db, 'config', 'share')).then((s) => (s.exists() ? s.data().key : null))
       .catch((e) => { shareKey = null; throw e; });
   }
-  const key = await shareKey;
+  return shareKey;
+}
+
+// 값이 같은지 — 칸(이름표) 순서는 따지지 않고, 줄(목록) 순서는 따진다
+function same(a, b) {
+  if (a === b) return true;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x, i) => same(x, b[i]));
+  }
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every((k) => k in b && same(a[k], b[k]));
+}
+
+export async function publishShare(id, entry) {
+  const key = await readShareKey();
   if (!key) return false;
   const ref = fs.doc(db, 'share', key);
-  if (!shareSeen) shareSeen = fs.getDoc(ref).then((s) => ({ ...(s.data()?.entries || {}) }), () => ({}));
-  const seen = await shareSeen;
+  const seen = await fs.getDoc(ref).then((s) => s.data()?.entries || {}, () => ({}));
   const y = new Date();
   y.setDate(y.getDate() - 1);
   const yday = isoDay(y);
-  const args = [new fs.FieldPath('entries', id), entry ? { ...entry, at: fs.serverTimestamp() } : fs.deleteField()];
-  for (const [other, e] of Object.entries(seen)) {
-    if (other !== id && typeof e?.date === 'string' && e.date < yday) {
-      args.push(new fs.FieldPath('entries', other), fs.deleteField());
-      delete seen[other];
-    }
+  const old = Object.keys(seen).filter((other) => other !== id && typeof seen[other]?.date === 'string' && seen[other].date < yday);
+  if (entry && !old.length && seen[id]) {
+    const { at, ...have } = seen[id];
+    if (same(have, entry)) return true;           // 올라간 것과 같다 — at 을 새로 찍지 않는다
   }
-  if (entry) seen[id] = entry;
-  else delete seen[id];
+  const args = [new fs.FieldPath('entries', id), entry ? { ...entry, at: fs.serverTimestamp() } : fs.deleteField()];
+  for (const other of old) args.push(new fs.FieldPath('entries', other), fs.deleteField());
   await fs.updateDoc(ref, ...args);
   return true;
+}
+
+// 직원 확인 (2026-11-05 설계 3-4) — 게시판의 이 일정표 한 장(at · names)과 확인 기록 중 이 일정표 것을 바로 읽어
+// cb({ at, names, marks: [{ name, at }] }) (시각은 ms 숫자), 게시판에 그 한 장이 없으면 cb(null). 암호가 없거나 못 읽으면 부르지 않는다.
+// 게시판은 서버 시각 대기 중인 at 도 '지금' 으로 친다 — 사장님이 방금 고친 것이 바로 '고친 뒤 안 봄' 으로 보이게.
+// 돌려주는 함수를 부르면 끊는다.
+export function watchConfirm(id, cb) {
+  const stops = [];
+  let off = false;
+  let entry;   // 약속: 아직 못 받음 = undefined, 없음 = null
+  let marks;
+  const send = () => { if (entry !== undefined && marks !== undefined) cb(entry && { ...entry, marks }); };
+  const ms = (t) => (t ? t.toMillis() : null);
+  readShareKey().then((key) => {
+    if (!key || off) return;
+    stops.push(fs.onSnapshot(fs.doc(db, 'share', key), (snap) => {
+      const e = snap.data({ serverTimestamps: 'estimate' })?.entries?.[id];
+      entry = e ? { at: ms(e.at), names: e.names || [] } : null;
+      send();
+    }, () => {}));
+    stops.push(fs.onSnapshot(fs.query(fs.collection(db, 'share', key, 'marks'), fs.where('sid', '==', id)), (snap) => {
+      marks = snap.docs.map((d) => ({ name: d.data().name, at: ms(d.data().at) }));
+      send();
+    }, () => {}));
+  }, () => {});
+  return () => {
+    off = true;
+    stops.forEach((s) => s());
+  };
 }
 
 export function watchImages(id, cb) {

@@ -33,6 +33,17 @@ button.day-btn[aria-pressed="true"]{background:var(--primary); border-color:var(
 .dayhead{font-family:'Gowun Batang',serif; font-weight:700; font-size:20px; margin:14px 0 6px}
 .lunar{font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif; font-size:14px; font-weight:500; color:var(--ink-mute); margin-left:8px; white-space:nowrap}
 .note{margin:8px 0; padding:8px 12px; background:var(--band); border-left:3px solid var(--gold); font-size:15px; overflow-wrap:anywhere}
+/* 직원 확인 칸 (11-05, 설계 docs/superpowers/specs/2026-11-04-staff-confirm-design.md 3-3) — 이름을 누르면 그 일정표를 봤다고 남긴다 */
+#confirm{margin:12px 0 0; font-size:15px}
+#confirm p{margin:0 0 8px}
+.cf-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+button.cf{min-height:44px; max-width:100%; padding:8px 14px; font:inherit; font-size:15px; font-weight:600; color:var(--primary); background:var(--white); border:1px solid var(--primary); border-radius:8px; overflow-wrap:anywhere; cursor:pointer}
+button.cf.go{background:var(--primary); color:var(--white)}
+button.cf:disabled{opacity:.55; cursor:default}
+button.cf-other{min-height:44px; padding:8px 4px; font:inherit; font-size:14px; color:var(--ink-mute); background:none; border:0; text-decoration:underline; cursor:pointer}
+.cf-done{display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--primary)}
+.cf-done svg{flex:none}
+#confirm .cf-err{margin:8px 0 0; color:var(--primary)}
 #cards{display:grid; gap:12px; margin-top:12px}
 article.card{background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px}
 .card .head{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin:0}
@@ -65,6 +76,7 @@ a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--
     <h2 class="dayhead"><span id="day-label"></span><span class="lunar" id="day-lunar"></span></h2>
     <p class="note" id="day-order" hidden></p>
     <p class="note" id="day-memo" hidden></p>
+    <div id="confirm" hidden></div>
     <div id="cards"></div>
   </section>
   <details id="install">
@@ -77,7 +89,8 @@ a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--
   </details>
 </main>
 <script type="module">
-import { watchShare } from './js/sije/share-store.js?v=2';   // sije-view.html 과 같은 주소 — share-store.js 를 고치면 둘 다 올린다
+import { watchShare, watchMarks, confirmMark } from './js/sije/share-store.js?v=3';   // sije-view.html 과 같은 주소 — share-store.js 를 고치면 둘 다 올린다
+import { confirmState } from './js/docs/confirm.js?v=1';
 
 const CHANGED = '링크가 바뀌었습니다. 단톡방 공지의 새 링크를 눌러 주세요.';
 const EMPTY = '올라온 일정이 없습니다. 단톡방의 일정표 사진을 확인해 주세요.';
@@ -205,6 +218,94 @@ function render() {
   note('day-order', e.order ? `순번: ${e.order}` : '');
   note('day-memo', e.memo ? `전달 메모: ${e.memo}` : '');
   $('cards').replaceChildren(...(e.rows || []).map(card));
+  renderConfirm();
+}
+
+/* 직원 '확인' 칸 (11-05, 설계 docs/superpowers/specs/2026-11-04-staff-confirm-design.md 3-3) — 이름 단추를 누르면 그 일정표를 봤다고
+   share/{암호}/marks 에 적고 이름을 이 브라우저에 기억한다. 끊겨 있으면 저장소가 기기에 들고 있다가 연결되면 올린다.
+   그 일정표에 이름 목록(names)이 없으면(names 가 생기기 전에 올라간 옛 게시판) 칸을 숨긴다 */
+const NAME_STORE = 'foodbell-today-name';
+const CHECK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+let myName = null;      // 못 읽으면 다시 고르게 — 못 쓰면 이 화면에서만 기억
+try { myName = localStorage.getItem(NAME_STORE); } catch {}
+let marks = null;       // 확인 기록 전부 — 처음 받기 전에는 칸을 숨긴다
+let choosing = false;   // '다른 이름' 을 눌러 이름 단추를 보는 중
+let failed = null;      // { sid, text } — 끊김이 아닌 실패, 다음에 누를 때까지 한 번
+const late = {};        // 기록(일정표id~이름)마다 서버 답 기다림 — 타이머, 2초 넘으면 true
+const ms = (v) => (typeof v?.toMillis === 'function' ? v.toMillis() : typeof v === 'number' ? v : null);
+const hhmm = (t) => { const d = new Date(t); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+
+function button(cls, text, onClick) {
+  const b = el('button', cls, text);
+  b.type = 'button';
+  b.addEventListener('click', onClick);
+  return b;
+}
+function cfRow(...kids) {
+  const d = el('div', 'cf-row');
+  d.append(...kids);
+  return d;
+}
+
+/* 이름 단추 · [확인] · [다시 확인] — 누르는 것 = 확인 + 이름 기억 */
+function press(name) {
+  const sid = picked;
+  myName = name;
+  choosing = false;
+  failed = null;
+  try { localStorage.setItem(NAME_STORE, name); } catch {}
+  confirmMark(key, sid, name).catch((err) => {
+    failed = { sid, text: `확인을 올리지 못했습니다 (${err?.code || err?.message || err})` };
+    renderConfirm();
+  });
+  renderConfirm();
+}
+
+function renderConfirm() {
+  const box = $('confirm');
+  const e = entries[picked];
+  if (!e || !Array.isArray(e.names) || !e.names.length || !marks) {
+    box.hidden = true;
+    return;
+  }
+  // 게시판 칸의 at 은 저장소 시각 — ms 로 바꿔 넘긴다
+  const st = confirmState({ at: ms(e.at), names: e.names }, marks.filter((m) => m.sid === picked));
+  const id = `${picked}~${myName}`;
+  const other = () => button('cf-other', '다른 이름', () => { choosing = true; renderConfirm(); });
+  const kids = [];
+  if (!st.pending.includes(myName) && late[id] !== undefined) {
+    clearTimeout(late[id]);
+    delete late[id];
+  }
+  if (!myName || !e.names.includes(myName) || choosing) {
+    kids.push(el('p', '', '이 일정표를 확인하셨으면 본인 이름을 눌러 주세요'),
+      cfRow(...e.names.map((n) => button('cf', n, () => press(n)))));
+  } else if (st.pending.includes(myName)) {
+    // 눌렀는데 아직 서버에 안 감 — 2초까지는 조용히(단추만 잠금), 그 뒤 '연결되면 올라갑니다'
+    if (late[id] === true) kids.push(el('p', 'cf-wait', '연결되면 올라갑니다'));
+    else {
+      late[id] ??= setTimeout(() => { late[id] = true; renderConfirm(); }, 2000);
+      const b = button('cf go', `${myName} 님 — 확인`, () => {});
+      b.disabled = true;
+      kids.push(cfRow(b));
+    }
+  } else if (st.stale.includes(myName)) {
+    kids.push(cfRow(el('span', '', '일정이 바뀌었습니다 —'), button('cf go', '다시 확인', () => press(myName))));
+  } else {
+    const done = st.done.find((d) => d.name === myName);
+    if (done) {
+      const s = el('span', 'cf-done');
+      s.insertAdjacentHTML('afterbegin', CHECK);
+      s.append(`확인함 · ${hhmm(done.at)}`);
+      kids.push(cfRow(s, other()));
+    } else {
+      kids.push(cfRow(button('cf go', `${myName} 님 — 확인`, () => press(myName)), other()));
+    }
+  }
+  if (failed?.sid === picked) kids.push(el('p', 'cf-err', failed.text));
+  box.replaceChildren(...kids);
+  box.hidden = false;
 }
 
 function gone() {
@@ -246,6 +347,13 @@ else {
     entries = got;
     render();
   }, gone);
+  watchMarks(key, (got) => {
+    marks = got;
+    if (entries[picked]) renderConfirm();
+  }, () => {
+    marks = null;      // 기록을 못 읽으면 상태를 알 수 없으니 칸을 숨긴다
+    renderConfirm();
+  });
 }
 </script>
 <script>

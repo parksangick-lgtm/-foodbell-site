@@ -6,8 +6,8 @@ import { putBundle, takeBundle, quoteToEvent, eventQuoteToEvent, quoteToStatemen
 import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
-  idToken, recentDocs,
-} from '../sije/store.js?v=2';   // 판 번호 — 옛 store.js 저장본과 섞이면 새 이름을 못 찾아 서류가 통째로 안 뜬다(2026-11-03 최종 검토). store.js 를 고치면 올린다
+  idToken, recentDocs, watchConfirm,
+} from '../sije/store.js?v=3';   // 판 번호 — 옛 store.js 저장본과 섞이면 새 이름을 못 찾아 서류가 통째로 안 뜬다(2026-11-03 최종 검토). store.js 를 고치면 올린다
 
 const D = window.FoodbellDoc;
 const { title, noun } = KINDS[D.kind];
@@ -446,7 +446,13 @@ onUser(async (user) => {
   document.body.dataset.role = role;
   if (role === 'owner') sweepDrops();   // 지난번 창을 닫아 남은 빈 새 서류
   if (docId) {
-    stop = watchDoc(docId, onDoc, onError);
+    const offDoc = watchDoc(docId, onDoc, onError);
+    // 직원 확인 줄 — 화면이 showConfirm 을 내줄 때만(일일 일정표), 주인만. 로그인이 바뀌면 줄도 비운다
+    const offConfirm = role === 'owner' && D.showConfirm ? watchConfirm(docId, D.showConfirm) : null;
+    stop = () => {
+      offDoc();
+      if (offConfirm) { offConfirm(); D.showConfirm(null); }
+    };
   } else if (incoming && !incoming.used) {
     incoming.used = true;                 // 로그인 알림이 두 번 와도 한 장만
     makeNew(incoming);

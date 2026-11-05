@@ -277,6 +277,10 @@ body:not(.editing) tr.addrow{display:none !important}
 .day-stats{font-size:14.5px; color:var(--ink-mute); margin:-.3rem 0 .6rem}
 .day-stats:empty{display:none}
 @media print{ .day-stats{display:none} }
+/* 직원 확인 줄 — '직원 확인 2/4 · 박○○ 07:12 · 아직: 김○○'. 사장님 한 줄 밑, 주인 화면에서만 — 사진 · 인쇄 · 복사 글 · 저장에는 없다 (2026-11-05 설계 3-4) */
+.day-confirm{font-size:14.5px; color:var(--ink-mute); margin:-.3rem 0 .6rem; overflow-wrap:anywhere}
+.day-confirm:empty{display:none}
+@media print{ .day-confirm{display:none} }
 
 /* 순번 · 전달 메모 — 비어 있으면 보기 · 사진 · 인쇄에서 숨긴다 */
 .order{display:flex; gap:.8rem; align-items:baseline; padding:.45rem .8rem; margin:0 0 .6rem; border-left:3px solid var(--gold); background:var(--band)}
@@ -476,6 +480,7 @@ import { pageGroups } from './js/docs/paging.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
 import { parseOrder } from './js/docs/order-text.js?v=4';
 import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W, SHOT_H } from './js/docs/cards.js?v=3';
+import { staffNames, confirmState, confirmLine } from './js/docs/confirm.js?v=1';
 
 const SITE = 'https://foodbell.kr/';
 const PAGE_URL = 'https://foodbell.kr/daily-schedule.html';
@@ -552,7 +557,19 @@ function recalc() {
   if (!stats) { stats = el('p', 'day-stats'); sheet.querySelector('.day')?.after(stats); }   // 옛 일정표의 저장 HTML 에는 없다
   stats.textContent = count ? `${active}건 · 금액 합계 ${fmt(sum)}원` + (missing ? ` · 금액 빠진 줄 ${missing}` : '')
     + Object.entries(held).filter(([, n]) => n).map(([s, n]) => ` · ${s} ${n}`).join('') : '';
+  drawConfirm();   // load() 가 표를 새로 그려도 직원 확인 줄이 남게
   return count;
+}
+
+/* 직원 확인 줄 — 공통 부품(doc-page.js)이 직원 게시판의 이 일정표 한 장과 확인 기록을 바로 읽어 showConfirm 으로 넘긴다(주인만, 2026-11-05 설계 3-4).
+   받은 것을 기억해 두고 사장님 한 줄 밑에 그린다. 칸은 늘 두고(저장 HTML 이 열 때마다 달라지지 않게) 글자만 바꾼다 — 저장(serialize)은 글자를 비운다 */
+let confirmInfo = null;   // 약속: { at, names, marks } 또는 null
+const hhmm = (ms) => { const d = new Date(ms); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+function drawConfirm() {
+  let p = sheet.querySelector('.day-confirm');
+  if (!p) { p = el('p', 'day-confirm'); (sheet.querySelector('.day-stats') || sheet.querySelector('.day'))?.after(p); }
+  p.textContent = confirmInfo && confirmInfo.names && confirmInfo.names.length
+    ? confirmLine(confirmState(confirmInfo, confirmInfo.marks), hhmm) : '';
 }
 
 /* 메모 칸의 줄들 — 붙여넣은 주문 글의 줄바꿈은 그대로, 빈 줄은 뺀다 */
@@ -610,6 +627,7 @@ function serialize() {
   each(c.querySelectorAll('.rowctl, tr.addrow, .btn-open'), (n) => n.remove());
   each(c.querySelectorAll('td.meet.folded'), (n) => n.classList.remove('folded'));
   each(c.querySelectorAll('.day-stats'), (n) => { n.textContent = ''; });   // 사장님 한 줄은 그릴 때마다 계산 — 저장 HTML 에는 없다
+  each(c.querySelectorAll('.day-confirm'), (n) => { n.textContent = ''; }); // 직원 확인 줄도 화면에서만
   each(c.querySelectorAll('[contenteditable]'), (n) => n.removeAttribute('contenteditable'));
   each(c.querySelectorAll('[data-shot-hide]'), (n) => n.removeAttribute('data-shot-hide'));
   // 사진으로 채우기의 노란 표시는 저장하지 않는다 — 다른 기기 · 직원 게시판 · 인쇄 프로그램에 안 가게
@@ -1200,8 +1218,12 @@ window.FoodbellDoc = {
     if (!parseDay(getText('date'))) return null;
     const rows = rowsData();
     if (!rows.length) return null;
-    return { date: ymd(), label: label(), lunar: getText('lunar'), order: getText('order'), memo: getText('memo'), rows };
+    // 담당 이름 목록 — 모든 줄(연기 · 취소 포함)의 담당 칸을 나눠 나온 차례대로 한 번씩. 직원 화면의 이름 단추 · 보안 규칙이 쓴다 (2026-11-05 설계 3-2)
+    const names = [...new Set(rows.flatMap((r) => staffNames(r.staff)))];
+    return { date: ymd(), label: label(), lunar: getText('lunar'), order: getText('order'), memo: getText('memo'), rows, names };
   },
+  // 직원 확인 줄 — 공통 부품이 게시판 한 장 { at, names, marks } 또는 null 을 넘긴다(주인만). 위 drawConfirm
+  showConfirm(info) { confirmInfo = info; drawConfirm(); },
   editing() { return body.classList.contains('editing'); },
   onSave: null,
 };
@@ -1211,6 +1233,6 @@ fillFresh();
 // 인터넷이 없어도 한 번 열어 본 목록 · 서류가 열리게 (sw.js)
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
-<script type="module" src="js/docs/doc-page.js?v=15"></script>
+<script type="module" src="js/docs/doc-page.js?v=16"></script>
 </body>
 </html>

@@ -326,7 +326,7 @@ def test_ensure_view_key_never_overwrites_existing_key(pc, test_db, event_id):
     ref = test_db.collection('events').document(event_id)
     ref.update({'viewKey': 'k' * 32})
     # 화면(sheet-page.js)과 같은 주소로 — 번호가 다르면 store.js 가 한 번 더 실려 로그인 안 된 새 저장소가 된다
-    got = pc.evaluate("(id) => import('./js/sije/store.js?v=2').then((m) => m.ensureViewKey(id, () => 'x'.repeat(32)))", event_id)
+    got = pc.evaluate("(id) => import('./js/sije/store.js?v=3').then((m) => m.ensureViewKey(id, () => 'x'.repeat(32)))", event_id)
     assert got == 'k' * 32
     assert ref.get().to_dict()['viewKey'] == 'k' * 32
 

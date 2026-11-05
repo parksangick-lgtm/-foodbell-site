@@ -1,5 +1,7 @@
 """직원 게시판 관리 도구 시험 — 시험 프로젝트에서 암호를 새로 만들고 바꾼다. 끝나면 쓸 수 있는 게시판 하나를 남긴다
 (다른 시험 · 화면이 config/share 의 암호를 쓴다)."""
+import datetime
+
 from tools.sije_web import fsdb, share_link
 
 
@@ -14,6 +16,24 @@ def test_new_moves_entries_and_removes_old(test_db):
     assert not board.document(first).get().exists                      # 옛 링크는 더 안 열린다
     assert board.document(second).get().get('entries') == {'docmove': {'date': '2026-10-22', 'label': '가짜일'}}
     board.document(second).update({'entries': {}})                      # 다음 시험을 위해 비워 둔다
+
+
+def test_new_moves_marks_and_removes_old(test_db):
+    """직원 확인 기록(share/{암호}/marks)도 새 게시판으로 옮기고 옛 것은 지운다 — 옛 게시판을 지워도 그 아래 묶음은
+    저장소가 같이 안 지워서, 그만둔 직원이 옛 링크로 이름 · 시각을 볼 수 있었다 (설계 2026-11-04 3-6)."""
+    first = share_link.new_key(test_db)
+    board = test_db.collection('share')
+    board.document(first).set({'entries': {'docmark': {'date': '2026-11-06', 'names': ['가짜하나']}}})
+    at = datetime.datetime(2026, 11, 5, 7, 12, tzinfo=datetime.timezone.utc)
+    mark = {'sid': 'docmark', 'name': '가짜하나', 'at': at}
+    board.document(first).collection('marks').document('docmark~가짜하나').set(mark)
+    second = share_link.new_key(test_db)
+    try:
+        assert list(board.document(first).collection('marks').list_documents()) == []   # 옛 링크로는 안 보인다
+        assert board.document(second).collection('marks').document('docmark~가짜하나').get().to_dict() == mark
+    finally:
+        board.document(second).collection('marks').document('docmark~가짜하나').delete()
+        board.document(second).update({'entries': {}})                  # 다음 시험을 위해 비워 둔다
 
 
 def test_show_without_board_prints_on_korean_console(monkeypatch):
