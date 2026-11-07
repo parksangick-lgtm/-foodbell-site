@@ -17,7 +17,8 @@ export function newViewKey() {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-// 카톡으로 보내는 세 줄 — '[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 시제 내역서 (보기만)' · 링크 · 안내.
+// 카톡으로 보내는 두 줄 — '[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 시제 내역서 (보기만)' · 링크.
+// (셋째 줄 '행사 전날부터 당일까지 열려요.' 는 2026-11-07 날짜 제한을 없애며 뺌)
 export function viewLinkText(ev, link) {
   let when = '';
   if (ev.date) {
@@ -26,7 +27,7 @@ export function viewLinkText(ev, link) {
     when = `${m}월 ${d}일 (${day})` + (ev.time ? ` ${ev.time}` : '') + ' ';
   }
   const place = (ev.titlePlace || '').trim() || (ev.place || '').trim();
-  return `[푸드벨] ${when}${place} 시제 내역서 (보기만)\n${link}\n행사 전날부터 당일까지 열려요.`;
+  return `[푸드벨] ${when}${place} 시제 내역서 (보기만)\n${link}`;
 }
 
 // 맨 위 큰 줄 = 주소 + 행사일 — 날짜를 고치면 이 줄도 따라 바뀐다.

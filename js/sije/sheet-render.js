@@ -1,7 +1,7 @@
 // 시제행사 내역서 — 행사 하나를 A4 한 장 모양으로 그린다.
 // 웹 화면(편집) · 웹 인쇄 · 사무실 PC 의 PDF 가 모두 이 그리기를 쓴다 — 그래서 셋이 똑같이 나온다.
 // 칸 배치 · 너비 · 글자 크기는 지금 엑셀 내역서(_만들기 프로그램\jobsheet.py)와 같다.
-import { formatDateText } from './model.js?v=1';   // 부르는 곳 모두 같은 주소 — 고치면 전부 올린다
+import { formatDateText } from './model.js?v=2';   // 부르는 곳 모두 같은 주소 — 고치면 전부 올린다
 import { dashTelsIn } from '../docs/phone.js';
 
 // 엑셀 열 너비(pt): 구분 · 번호 · 품목 · 수량 · 비고 · 준비 | 가운데 틈 | 오른쪽 같은 6칸

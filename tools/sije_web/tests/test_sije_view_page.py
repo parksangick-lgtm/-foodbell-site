@@ -9,7 +9,7 @@ import pytest
 from tools.sije_web.staff_sheets import staff_view
 from conftest import fake_event
 
-MISSING = '지금은 볼 수 없는 내역서예요. 행사 전날부터 당일까지 열려요. 링크가 맞는지 사장님께 여쭤 주세요.'
+MISSING = '지금은 볼 수 없는 내역서예요. 링크를 막 받았으면 5분쯤 뒤에 다시 열어 주세요. 그래도 안 보이면 링크가 맞는지 사장님께 여쭤 주세요.'
 KAKAO_UA = ('Mozilla/5.0 (Linux; Android 14; SM-S921N Build/UP1A.231005.007; wv) AppleWebKit/537.36 '
             '(KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36;KAKAOTALK 2410550')
 

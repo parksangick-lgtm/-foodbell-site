@@ -2,7 +2,7 @@
 // 화면 코드는 이 파일만 부르고 파이어베이스를 직접 부르지 않는다.
 // 오프라인 저장을 켜 둔다: 열어 본 적 있는 행사는 인터넷 없이도 열리고, 고친 것은 연결되면 올라간다.
 import { SDK, projectConfig } from './firebase-config.js';
-import { newEventFromTemplate } from './model.js?v=1';   // 부르는 곳 모두 같은 주소 — 고치면 전부 올린다
+import { newEventFromTemplate } from './model.js?v=2';   // 부르는 곳 모두 같은 주소 — 고치면 전부 올린다
 // 이 파일을 고치면 부르는 곳(doc-page.js · list-page.js · sheet-page.js · 시험 test_sheet_page.py)의 store.js?v= 를 같이 올린다
 
 const CDN = `https://www.gstatic.com/firebasejs/${SDK}`;

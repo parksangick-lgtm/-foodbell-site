@@ -1,12 +1,12 @@
 // 시제행사 내역서 화면 (sije-sheet.html?id=…) — PC 편집 · 휴대폰 빠른 고치기 · 인쇄 · 그림 붙이기
 // 저장 버튼 없음: 칸을 떠나면 그 칸만 저장된다. 인터넷이 끊겨도 기기에 들고 있다가 연결되면 올라간다.
 // 판 번호(?v=) — model.js · store.js 는 부르는 곳 모두 같은 주소여야 한 번만 실린다(시험 doc-page-imports.test.mjs). 고치면 부르는 곳 전부 올린다
-import { itemsBySide, newViewKey, viewLinkText } from './model.js?v=1';
-import { NOTES_KEY, putBundle, eventToStatement, eventToQuote, eventToWorksheet } from '../docs/handoff.js?v=6';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
-import { renderSheet, fitToA4 } from './sheet-render.js?v=6';   // sije-print.html 과 같은 번호
+import { itemsBySide, newViewKey, viewLinkText } from './model.js?v=2';
+import { NOTES_KEY, putBundle, eventToStatement, eventToQuote, eventToWorksheet } from '../docs/handoff.js?v=7';   // 새 export — 옛 사본이 오면 화면이 멈춘다 (기록장 #78)
+import { renderSheet, fitToA4 } from './sheet-render.js?v=7';   // sije-print.html 과 같은 번호
 import {
   initStore, onUser, signIn, signInForTest, watchEvent, updateField, ensureViewKey, addImage, watchImages, atMost,
-} from './store.js?v=4';
+} from './store.js?v=5';
 
 const $ = (id) => document.getElementById(id);
 const id = new URLSearchParams(location.search).get('id');

@@ -96,7 +96,10 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
             log.exception('옵시디언 차례 실패 (다음 차례에 다시)')
     if sheets is not None:
         try:
-            out = staff_sheets.sync_staff_sheets(sheets, datetime.date.today())
+            staff_file = state_file.with_name(f'{state_file.stem}-staff.json')
+            staff = load_state(staff_file)
+            out = staff_sheets.sync_staff_sheets(sheets, staff)
+            save_state(staff_file, staff)
             for d in out['written']:
                 log.info('담당자 내역서 올림: %s', d)
             for d in out['removed']:

@@ -1,10 +1,10 @@
 // 시제행사 목록 화면 (sije-list.html) — 로그인 · 상태 버튼 · 검색 · 새 행사
-import { formatDateText } from './model.js?v=1';   // model.js · store.js 는 부르는 곳 모두 같은 주소(판 번호) — 고치면 전부 올린다
+import { formatDateText } from './model.js?v=2';   // model.js · store.js 는 부르는 곳 모두 같은 주소(판 번호) — 고치면 전부 올린다
 import { splitRows, matchRow, todayISO } from './list-model.js';
 import { takeBundle, pickTemplate, NOTES_KEY } from '../docs/handoff.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchEvents, listTemplates, createFromTemplate,
-} from './store.js?v=4';
+} from './store.js?v=5';
 
 const $ = (id) => document.getElementById(id);
 let filter = '확정';

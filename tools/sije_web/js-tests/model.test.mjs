@@ -67,11 +67,11 @@ test('담당자 링크 암호는 32글자 base64url 이고 매번 다르다', ()
   assert.notEqual(a, b);
 });
 
-test('담당자 링크 공유 글은 세 줄', () => {
+test('담당자 링크 공유 글은 두 줄 — 날짜 제한 안내 없음(2026-11-07)', () => {
   const link = 'https://foodbell.kr/sije-view.html#' + 'a'.repeat(32);
   const ev = { date: '2026-10-31', time: '10시', titlePlace: '가짜동 1-1', place: '가짜동 1-1 뒷산' };
   assert.equal(viewLinkText(ev, link),
-    `[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 시제 내역서 (보기만)\n${link}\n행사 전날부터 당일까지 열려요.`);
+    `[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 시제 내역서 (보기만)\n${link}`);
   assert.equal(viewLinkText({ ...ev, titlePlace: '' }, link).split('\n')[0],
     '[푸드벨] 10월 31일 (토) 10시 가짜동 1-1 뒷산 시제 내역서 (보기만)');
   assert.equal(viewLinkText({ ...ev, date: '', time: '' }, link).split('\n')[0],
