@@ -1,11 +1,13 @@
 """서류 잇기(3단계) 시험 — 버튼으로 한 번 옮겨 담기. 시험 프로젝트 · 가짜 자료만, 만든 서류는 끝나면 지운다.
 도우미 · 준비물은 2단계 test_doc_pages.py 의 것을 그대로 쓴다."""
+import datetime
 import time
 from urllib.parse import quote
 
 import pytest
 
 from test_doc_pages import ALLOWED, made, new_doc, open_list, pc, set_text, wait_db, wait_view  # noqa: F401 (준비물)
+from test_doc_pages import WEEK, daily_new, day_label, mark, text_of
 
 STATEMENT_DONE = '**/statement.html?id=*'
 SHEET_DONE = '**/sije-sheet.html?id=*'
@@ -388,3 +390,69 @@ def test_sheet_just_edited_amount_goes_to_statement(pc, repo_url, custom_token, 
     doc = wait_db(test_db.collection('docs').document(opened_doc_id(pc, made)), lambda s: s.exists).to_dict()
     assert doc['total'] == '770,000'                                           # 700,000 + 세액 10%
     wait_db(test_db.collection('events').document(event_id), lambda s: s.get('amount') == '700,000원')
+
+
+# ---------- 일정표 → 알바비 지급내역서 (2026-11-18 보완 12번) ----------
+
+PAY_DONE = '**/staff-pay.html?id=*'
+PAY_ROWS = """trs => trs.map((tr) => {
+    const t = (sel) => tr.querySelector(sel).textContent.replace(/\\s+/g, ' ').trim();
+    return { date: t('[data-f="date"]'), event: t('[data-f="event"]'), name: t('[data-f="name"]'), tel: t('[data-f="tel"]'),
+             acct: t('[data-f="acct"]'), pay: t('[data-k="pay"]'), raw: tr.querySelector('[data-k="pay"]').getAttribute('data-raw') };
+})"""
+
+
+def past_pay(test_db, made, rows, days_ago):
+    """지난 지급내역서 한 장을 시험 프로젝트에 바로 넣는다 — rows = [(이름, 전화, 은행 · 계좌)], 고친 시각은 days_ago 날 전."""
+    trs = ''.join(
+        f'<tr class="item"><td class="c" data-k="no"></td><td class="event"><span data-f="date"></span><span data-f="event"></span></td>'
+        f'<td class="who"><b data-f="name">{n}</b><span data-f="tel">{t}</span></td><td data-k="pay"></td>'
+        f'<td class="acct" data-f="acct">{a}</td><td class="memo-cell"><span data-f="memo"></span></td></tr>' for n, t, a in rows)
+    ref = test_db.collection('docs').document()
+    ref.set({'kind': 'staff-pay', 'html': f'<table class="stmt pay"><tbody>{trs}</tbody></table>',
+             'label': '가짜 지난 지급', 'issue': '가짜 지난 지급', 'total': '', 'count': '',
+             'updatedAt': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_ago)})
+    made.append(ref.id)
+
+
+def test_daily_to_staff_pay(pc, repo_url, custom_token, test_db, made):
+    """일정표 → 알바비 지급내역서: 그날 담당 이름마다 한 줄(나온 차례대로 한 번씩 · 취소 줄의 담당은 뺌) · 지급일과 줄 날짜 = 일정표 날짜,
+    일당 · 행사는 빈칸. 전화 · 계좌는 지난 지급내역서에서 같은 이름(빈칸 무시)의 가장 최근 값 — 빈 값은 건너뛴다.
+    지난 지급내역서에 없는 이름은 비움(대조). 이름 · 전화는 주소에 안 실린다. 만들기 줄은 인쇄에 안 나온다."""
+    past_pay(test_db, made, [('가짜 일', '010-0000-0001', '가짜은행 111-0001')], days_ago=2)   # 옛것 — 이름에 빈칸
+    past_pay(test_db, made, [('가짜일', '010-0000-0002', '')], days_ago=1)                     # 최근 것 — 계좌가 비어 옛것에서
+    urls = track_urls(pc)
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    for _ in range(2):
+        pc.click('tr.addrow button')
+    pc.evaluate("""() => {
+        const v = [{ staff: '가짜일 · 가짜이', work: '가짜 시제' }, { staff: '가짜삼, 가짜일', work: '가짜 제사' }, { staff: '가짜사', work: '가짜 평토상' }];
+        document.querySelectorAll('tr.item').forEach((tr, i) => { for (const [f, t] of Object.entries(v[i])) tr.querySelector(`[data-f="${f}"]`).textContent = t; });
+        document.querySelector('tr.item [data-f="work"]').dispatchEvent(new Event('input', { bubbles: true }));
+    }""")
+    mark(pc, 3, '취소')                                                       # 그날 일을 안 했다 — 알바비 줄에서 뺀다
+    pc.click('#btn-edit')
+    assert pc.locator('#doc-make-staff-pay').is_visible()
+    pc.emulate_media(media='print')
+    assert not pc.locator('#doc-make-staff-pay').is_visible()                  # 인쇄에 안 나온다
+    pc.emulate_media(media='screen')
+    asked = answer_next(pc)
+    pc.click('#doc-make-staff-pay')
+    pc.wait_for_url(PAY_DONE, timeout=20_000)
+    wait_view(pc, 'doc')
+    assert asked == ['이 일정표 내용으로 새 알바비 지급내역서를 만들까요?']
+    pay_id = opened_doc_id(pc, made)
+    day = datetime.date.today() + datetime.timedelta(days=1)                  # 새 일정표는 내일 날짜
+    rows = pc.eval_on_selector_all('tr.item', PAY_ROWS)
+    assert [r['name'] for r in rows] == ['가짜일', '가짜이', '가짜삼'], rows
+    assert text_of(pc, '[data-k="paydate"]') == day_label(day)
+    for r in rows:
+        assert r['date'] == f'{day.month}/{day.day} ({WEEK[day.weekday()]})', r
+        assert r['event'] == '' and r['pay'] == '' and r['raw'] in (None, '0'), r   # 일당 · 행사는 사장님이 넣는다
+    assert (rows[0]['tel'], rows[0]['acct']) == ('010-0000-0002', '가짜은행 111-0001')   # 전화는 최근 것, 빈 계좌는 건너뛰고 옛것
+    assert [(r['tel'], r['acct']) for r in rows[1:]] == [('', ''), ('', '')]           # 대조 — 지난 지급내역서에 없는 이름
+    doc = wait_db(test_db.collection('docs').document(pay_id), lambda s: s.exists and '가짜삼' in s.get('html')).to_dict()
+    assert doc['kind'] == 'staff-pay' and doc['count'] == '3명' and '가짜사' not in doc['html']
+    for secret in ('가짜일', '가짜이', '가짜삼', '010-0000'):                  # 주소에 이름 · 전화 없음
+        assert not any(secret in u or quote(secret) in u for u in urls), (secret, urls)

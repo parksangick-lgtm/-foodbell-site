@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   parseWhen, parseAmount, monthDay, wonText, pickTemplate,
   quoteToEvent, quoteToStatement, quoteToWorksheet, eventToStatement, eventToQuote, eventToWorksheet, eventQuoteToEvent, putBundle, takeBundle,
+  scheduleToPay,
 } from '../../../js/docs/handoff.js';
 
 const NO_DATE = '날짜를 읽지 못했습니다 — 직접 넣어 주세요';
@@ -213,4 +214,20 @@ test('eventQuoteToEvent — 못 읽은 날짜 · 금액은 비우고 알림, 장
   assert.deepEqual([r.fields.date, r.fields.time, r.fields.amount, r.fields.place, r.fields.titlePlace], ['', '', '', '', '']);
   assert.equal(r.fields.blank, true);
   assert.deepEqual(r.notes, [NO_DATE, NO_AMOUNT]);
+});
+
+const NO_NAMES = '담당 이름을 읽지 못했습니다 — 직접 넣어 주세요';
+
+test('scheduleToPay — 일정표 → 알바비 지급내역서 (그날 날짜 · 담당 이름 그대로, 2026-11-18 보완 12번)', () => {
+  assert.deepEqual(scheduleToPay({ date: '2026-11-19', names: ['가짜일', '가짜이', '가짜삼'] }), {
+    fields: { date: '2026-11-19', names: ['가짜일', '가짜이', '가짜삼'] },
+    notes: [],
+  });
+});
+
+test('scheduleToPay — 날짜를 못 읽음 · 담당 이름 0명이면 비우고 알림', () => {
+  assert.deepEqual(scheduleToPay({ date: '', names: ['가짜일'] }), { fields: { date: '', names: ['가짜일'] }, notes: [NO_DATE] });
+  assert.deepEqual(scheduleToPay({ date: '2026-11-19', names: [] }),
+    { fields: { date: '2026-11-19', names: [] }, notes: [NO_NAMES] });
+  assert.deepEqual(scheduleToPay({}), { fields: { date: '', names: [] }, notes: [NO_DATE, NO_NAMES] });
 });

@@ -422,7 +422,8 @@ def test_today_confirm_offline_then_online(ctx, phone, repo_url, test_db, key, m
 
 
 def test_today_confirm_refused_says_why_once(ctx, phone, repo_url, test_db, key, marks):
-    """끊긴 사이 사장님이 담당을 바꿔 그 이름이 목록에서 빠지면 규칙이 거절 — '확인을 올리지 못했습니다 (이유)' 한 줄, 기록은 없다."""
+    """끊긴 사이 사장님이 담당을 바꿔 그 이름이 목록에서 빠지면 규칙이 거절 — 한국어 한 줄 '확인을 올리지 못했습니다 — 사장님께 알려 주세요',
+    원문 코드는 뒤 괄호에 작게(14px 아래로는 안 내림), 기록은 없다 (11-18 보완 4번 — 영어 코드만 나왔다)."""
     put(test_db, key, docA=named())
     open_today(phone, repo_url, f'#{key}')
     box = confirm_box(phone)
@@ -435,7 +436,10 @@ def test_today_confirm_refused_says_why_once(ctx, phone, repo_url, test_db, key,
         ctx.set_offline(False)
     box.locator('.cf-err').wait_for(timeout=60_000)
     name_button(box, '가짜둘').wait_for(timeout=20_000)                 # 바뀐 담당의 이름 단추
-    assert box.locator('.cf-err').all_inner_texts() == ['확인을 올리지 못했습니다 (permission-denied)']
+    assert box.locator('.cf-err').all_inner_texts() == ['확인을 올리지 못했습니다 — 사장님께 알려 주세요 (permission-denied)']
+    assert box.locator('.cf-err .cf-code').inner_text() == '(permission-denied)'
+    sizes = phone.eval_on_selector_all('#confirm .cf-err, #confirm .cf-err *', 'es => es.map((e) => parseFloat(getComputedStyle(e).fontSize))')
+    assert min(sizes) >= 14, sizes
     assert not marks.document('docA~가짜하나').get().exists
 
 
@@ -480,3 +484,99 @@ def test_today_confirm_fits_phone(phone, repo_url, test_db, key, marks):
         assert m['buttons'] and min(m['buttons']) >= 44, (state, m['buttons'])
         assert min(m['fonts']) >= 14, (state, m['fonts'])
         assert set(m['weights']) <= {'400', '600', '700'}, (state, m['weights'])
+
+
+# ---------- 11-18 보완 (C:\dev\vibe-study\handoff\2026-11-18-일정표-보완목록.md 3 · 9 · 10번) ----------
+
+def test_today_call_map_buttons_44px(phone, repo_url, test_db, key):
+    """3번 — [전화] · [지도] 단추도 누르는 자리 44px 이상 (40px 이었다)."""
+    put(test_db, key, docA=entry(day(0), [row(1, place='가짜공원', tel='010-0000-1234', work='가짜 상차림')]))
+    open_today(phone, repo_url, f'#{key}')
+    cards(phone)
+    hs = phone.eval_on_selector_all('a.btn-call, a.btn-map', 'els => els.map((a) => a.getBoundingClientRect().height)')
+    assert len(hs) == 2 and min(hs) >= 44, hs
+
+
+SEEN = 'foodbell-today-seen'
+
+
+def flags(page):
+    """카드마다 머리의 '바뀜' · '새 일' 표시 글자 (없으면 빈 글자)."""
+    return page.eval_on_selector_all('article.card', "cs => cs.map((c) => c.querySelector('.head .chg')?.textContent || '')")
+
+
+def test_today_marks_what_changed_since_confirm(browser, phone, repo_url, test_db, key, marks):
+    """9번 — 확인할 때 그 일정표의 줄을 이 휴대폰에 기억해 두고(게시판에 없는 일정표 것은 지움), '일정이 바뀌었습니다' 가 되면
+    줄 번호로 맞대어 내용이 다른 카드에 '바뀜', 기억에 없는 번호의 카드에 '새 일'. 다시 확인하면 표시가 사라진다.
+    대조: 같은 이름 · 같은 '다시 확인' 상태라도 기억이 없거나 못 읽는 새 창에는 표시가 없다."""
+    first = [row(1, staff='가짜하나 · 가짜둘', work='가짜 상차림'), row(2, place='가짜공원', work='가짜 제사상'),
+             row(3, work='가짜 평토상')]
+    put(test_db, key, docA=entry(day(0), first, names=NAMES, at=PAST))
+    open_today(phone, repo_url, f'#{key}')
+    box = confirm_box(phone)
+    name_button(box, '가짜하나').wait_for(timeout=20_000)
+    phone.evaluate(f"localStorage.setItem('{SEEN}', JSON.stringify({{gone: [{{no: 1}}]}}))")   # 게시판에 없는 일정표의 옛 기억
+    name_button(box, '가짜하나').click()
+    box.locator('.cf-done').wait_for(timeout=20_000)
+    wait_mark(marks, 'docA', '가짜하나')
+    assert flags(phone) == ['', '', '']
+    seen = phone.evaluate(f"JSON.parse(localStorage.getItem('{SEEN}'))")
+    assert list(seen) == ['docA'] and [r['no'] for r in seen['docA']] == [1, 2, 3]
+
+    second = [first[0], row(2, place='가짜공원 2주차장', work='가짜 제사상'), first[2], row(4, work='가짜 새 일')]
+    put(test_db, key, docA=entry(day(0), second, names=NAMES, at=firestore.SERVER_TIMESTAMP))   # 사장님이 고쳐 올린 것처럼
+    name_button(box, '다시 확인').wait_for(timeout=20_000)
+    assert flags(phone) == ['', '바뀜', '', '새 일']
+    tag = phone.evaluate("""() => ({ fonts: [...document.querySelectorAll('.chg')].map((e) => parseFloat(getComputedStyle(e).fontSize)),
+        over: [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).length })""")
+    assert min(tag['fonts']) >= 14 and tag['over'] == 0, tag
+
+    other = browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    try:
+        p2 = other.new_page()
+        errors = []
+        p2.on('pageerror', lambda e: errors.append(str(e)))
+        open_today(p2, repo_url, f'#{key}')
+        confirm_box(p2)
+        p2.evaluate("localStorage.setItem('foodbell-today-name', '가짜하나')")
+        open_today(p2, repo_url, f'#{key}')
+        name_button(confirm_box(p2), '다시 확인').wait_for(timeout=20_000)
+        assert flags(p2) == ['', '', '', '']                               # 기억 없음
+        p2.evaluate(f"localStorage.setItem('{SEEN}', '{{깨짐')")
+        open_today(p2, repo_url, f'#{key}')
+        name_button(confirm_box(p2), '다시 확인').wait_for(timeout=20_000)
+        assert flags(p2) == ['', '', '', '']                               # 기억을 못 읽음
+        assert errors == [], errors
+    finally:
+        other.close()
+
+    name_button(box, '다시 확인').click()
+    box.locator('.cf-done').wait_for(timeout=20_000)
+    assert flags(phone) == ['', '', '', '']
+    seen = phone.evaluate(f"JSON.parse(localStorage.getItem('{SEEN}'))")
+    assert [r['no'] for r in seen['docA']] == [1, 2, 3, 4]
+
+
+EDITED_AT = """(t) => { const d = new Date(t); return [`${d.getMonth() + 1}월 ${d.getDate()}일`, d.toTimeString().slice(0, 5)]; }"""
+
+
+def test_today_shows_last_edit_time(phone, repo_url, test_db, key):
+    """10번 — 날짜 아래 '18:42 고침'(게시판 칸의 at = 사장님이 마지막으로 고친 서버 시각). 오늘이 아니면 '1월 1일 09:00 고침' 처럼
+    날짜를 붙이고, at 이 없는 옛 칸은 그 줄이 없다."""
+    put(test_db, key, docA=entry(day(0), [row(1, work='가짜오늘')], at=firestore.SERVER_TIMESTAMP),
+        docB=entry(day(2), [row(1, work='가짜모레')], at=PAST), docC=entry(day(3), [row(1, work='가짜글피')]))
+    at = test_db.collection('share').document(key).get().to_dict()['entries']['docA']['at']
+    open_today(phone, repo_url, f'#{key}')
+    phone.locator('#cards', has_text='가짜오늘').wait_for(timeout=20_000)
+    _, hm = phone.evaluate(EDITED_AT, at.timestamp() * 1000)
+    edited = phone.locator('#day-edited')
+    assert edited.is_visible() and edited.inner_text().strip() == f'{hm} 고침'
+    assert edited.evaluate('(e) => parseFloat(getComputedStyle(e).fontSize)') >= 14
+    days = phone.locator('button.day-btn')
+    days.nth(1).click()
+    phone.locator('#cards', has_text='가짜모레').wait_for(timeout=5_000)
+    md_, hm = phone.evaluate(EDITED_AT, PAST.timestamp() * 1000)
+    assert edited.inner_text().strip() == f'{md_} {hm} 고침'
+    days.nth(2).click()
+    phone.locator('#cards', has_text='가짜글피').wait_for(timeout=5_000)
+    assert edited.is_hidden()

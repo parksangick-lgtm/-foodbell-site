@@ -19,7 +19,7 @@
      10-24 검토 반영: 카드에 출발 줄 (설계 docs/superpowers/specs/2026-10-24-daily-schedule-review-fixes-design.md). 지도 링크 칸은 10-30 뺌 — [지도]는 늘 장소 검색 -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" media="print" onload="this.media='all'">
 <style>
-:root{--cream:#F7F2E9; --white:#FFFFFF; --ink:#120C06; --ink-mute:#6B5E48; --primary:#6E1E2B; --gold:#B08D57; --border:#E2D6BF; --band:#F1EADB}
+:root{--cream:#F7F2E9; --white:#FFFFFF; --ink:#120C06; --ink-mute:#6B5E48; --primary:#6E1E2B; --gold:#B08D57; --border:#E2D6BF; --band:#F1EADB; --line-strong:#CBBB9C}
 *{box-sizing:border-box}
 body{margin:0; background:var(--cream); color:var(--ink); font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif; line-height:1.6; font-size:17px}
 main{max-width:560px; margin:0 auto; padding:24px 16px 48px}
@@ -32,6 +32,7 @@ button.day-btn{min-height:44px; padding:8px 14px; font:inherit; font-size:15px; 
 button.day-btn[aria-pressed="true"]{background:var(--primary); border-color:var(--primary); color:#fff}
 .dayhead{font-family:'Gowun Batang',serif; font-weight:700; font-size:20px; margin:14px 0 6px}
 .lunar{font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif; font-size:14px; font-weight:500; color:var(--ink-mute); margin-left:8px; white-space:nowrap}
+#day-edited{margin:-2px 0 8px; font-size:14px; color:var(--ink-mute)}
 .note{margin:8px 0; padding:8px 12px; background:var(--band); border-left:3px solid var(--gold); font-size:15px; overflow-wrap:anywhere}
 /* 직원 확인 칸 (11-05, 설계 docs/superpowers/specs/2026-11-04-staff-confirm-design.md 3-3) — 이름을 누르면 그 일정표를 봤다고 남긴다 */
 #confirm{margin:12px 0 0; font-size:15px}
@@ -44,8 +45,9 @@ button.cf-other{min-height:44px; padding:8px 4px; font:inherit; font-size:14px; 
 .cf-done{display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--primary)}
 .cf-done svg{flex:none}
 #confirm .cf-err{margin:8px 0 0; color:var(--primary)}
+#confirm .cf-code{font-size:14px; color:var(--ink-mute)}
 #cards{display:grid; gap:12px; margin-top:12px}
-article.card{background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px}
+article.card{background:var(--white); border:1px solid var(--line-strong); border-radius:10px; padding:12px 14px}
 .card .head{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin:0}
 .card .no{font-weight:700; color:var(--primary)}
 .card .time{font-weight:700}
@@ -56,7 +58,9 @@ article.card{background:var(--white); border:1px solid var(--border); border-rad
 /* 연기 · 취소 — 머리 맨 앞에 표시, 나머지 줄은 흐리게 (사장님 10-24 저녁) */
 .card .state{padding:0 8px; border-radius:4px; background:var(--primary); color:#fff; font-size:15px; font-weight:700}
 .card.off .line{opacity:.55}
-a.btn-call, a.btn-map{flex:none; display:inline-flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:8px; font-weight:600; text-decoration:none; white-space:nowrap}
+/* 확인한 뒤 바뀐 카드 — '바뀜' · '새 일' (11-18 보완 9번), 연기 · 취소 표시와 같은 자리 · 크기, 테두리만 */
+.card .chg{padding:0 8px; border:1px solid var(--primary); border-radius:4px; color:var(--primary); font-size:15px; font-weight:700}
+a.btn-call, a.btn-map{flex:none; display:inline-flex; align-items:center; min-height:44px; padding:6px 14px; border-radius:8px; font-weight:600; text-decoration:none; white-space:nowrap}
 a.btn-call{background:var(--primary); color:#fff}
 a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--primary)}
 /* 홈 화면 아이콘 설치 안내 — 접혀 있다가 누르면 펼쳐진다 (10-24 검토 반영) */
@@ -74,6 +78,7 @@ a.btn-map{background:var(--white); color:var(--primary); border:1px solid var(--
   <nav id="days" aria-label="날짜"></nav>
   <section id="sheet" hidden>
     <h2 class="dayhead"><span id="day-label"></span><span class="lunar" id="day-lunar"></span></h2>
+    <p id="day-edited" hidden></p>
     <p class="note" id="day-order" hidden></p>
     <p class="note" id="day-memo" hidden></p>
     <div id="confirm" hidden></div>
@@ -215,6 +220,11 @@ function render() {
   const e = entries[picked];
   $('day-label').textContent = e.label || e.date;
   $('day-lunar').textContent = e.lunar || '';
+  // 마지막으로 고친 시각 — 게시판 칸의 at(서버 시각). 오늘이 아니면 날짜를 붙이고, at 이 없는 옛 칸은 줄을 숨긴다 (11-18 보완 10번)
+  const at = edited(e);
+  const d = new Date(at);
+  const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  note('day-edited', !at ? '' : iso(d) === today ? `${hm} 고침` : `${d.getMonth() + 1}월 ${d.getDate()}일 ${hm} 고침`);
   note('day-order', e.order ? `순번: ${e.order}` : '');
   note('day-memo', e.memo ? `전달 메모: ${e.memo}` : '');
   $('cards').replaceChildren(...(e.rows || []).map(card));
@@ -248,15 +258,47 @@ function cfRow(...kids) {
   return d;
 }
 
-/* 이름 단추 · [확인] · [다시 확인] — 누르는 것 = 확인 + 이름 기억 */
+/* 무엇이 바뀌었나 (11-18 보완 9번) — 확인할 때 그 일정표의 줄들을 이 휴대폰에 기억해 두고({ 일정표id: rows }, 게시판에 없는 일정표 것은 지움),
+   '일정이 바뀌었습니다' 일 때 줄 번호(no)로 맞대어 내용이 다른 카드에 '바뀜', 기억에 없는 번호에 '새 일'.
+   기억이 없거나 못 읽으면 표시 없이 지금처럼 */
+const SEEN_STORE = 'foodbell-today-seen';
+function readSeen() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SEEN_STORE));
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  } catch { return {}; }
+}
+function remember(sid) {
+  const seen = readSeen();
+  for (const id of Object.keys(seen)) if (!(id in entries)) delete seen[id];
+  seen[sid] = entries[sid]?.rows || [];
+  try { localStorage.setItem(SEEN_STORE, JSON.stringify(seen)); } catch {}
+}
+const sig = (r) => JSON.stringify(Object.keys(r || {}).sort().map((k) => [k, r[k]]));   // 칸 순서가 달라도 같은 줄은 같게
+function showChanges(stale) {
+  const rows = entries[picked]?.rows || [];
+  const before = stale ? readSeen()[picked] : null;
+  const old = Array.isArray(before) ? new Map(before.map((r) => [r?.no, sig(r)])) : null;
+  [...$('cards').children].forEach((c, i) => {
+    c.querySelector('.chg')?.remove();
+    const r = rows[i];
+    if (!old || !r) return;
+    const text = !old.has(r.no) ? '새 일' : old.get(r.no) !== sig(r) ? '바뀜' : '';
+    if (text) c.querySelector('.head').insertBefore(el('span', 'chg', text), c.querySelector('.head .no'));
+  });
+}
+
+/* 이름 단추 · [확인] · [다시 확인] — 누르는 것 = 확인 + 이름 기억 + 그 판 기억 */
+const REFUSED = '확인을 올리지 못했습니다 — 사장님께 알려 주세요';   // 11-18 보완 4번 — 영어 코드만 나왔다. 원문 코드는 뒤 괄호에 작게
 function press(name) {
   const sid = picked;
   myName = name;
   choosing = false;
   failed = null;
   try { localStorage.setItem(NAME_STORE, name); } catch {}
+  remember(sid);
   confirmMark(key, sid, name).catch((err) => {
-    failed = { sid, text: `확인을 올리지 못했습니다 (${err?.code || err?.message || err})` };
+    failed = { sid, code: String(err?.code || err?.message || err || '') };
     renderConfirm();
   });
   renderConfirm();
@@ -267,6 +309,7 @@ function renderConfirm() {
   const e = entries[picked];
   if (!e || !Array.isArray(e.names) || !e.names.length || !marks) {
     box.hidden = true;
+    showChanges(false);
     return;
   }
   // 게시판 칸의 at 은 저장소 시각 — ms 로 바꿔 넘긴다
@@ -303,9 +346,14 @@ function renderConfirm() {
       kids.push(cfRow(button('cf go', `${myName} 님 — 확인`, () => press(myName)), other()));
     }
   }
-  if (failed?.sid === picked) kids.push(el('p', 'cf-err', failed.text));
+  if (failed?.sid === picked) {
+    const p = el('p', 'cf-err', REFUSED);
+    if (failed.code) p.append(' ', el('span', 'cf-code', `(${failed.code})`));
+    kids.push(p);
+  }
   box.replaceChildren(...kids);
   box.hidden = false;
+  showChanges(!!myName && st.stale.includes(myName));
 }
 
 function gone() {

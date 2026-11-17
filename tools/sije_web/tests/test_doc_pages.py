@@ -236,6 +236,29 @@ def test_icon_opens_list_sorted_by_updated(pc, repo_url, custom_token, test_db, 
     assert ('2명' if kind == 'staff-pay' else '가짜동 새 문중') in row
 
 
+def test_daily_list_sorted_by_schedule_date(pc, repo_url, custom_token, test_db, made):
+    """일정표 목록만 일정 날짜 순 — 늦은 날짜가 위, 날짜를 못 읽는 것은 맨 위, 같은 날짜면 최근에 고친 것이 위 (2026-11-18 보완 6번).
+    전에는 고친 순이라 지난주 일정표를 고치면 맨 위로 왔다. 다른 서류 목록이 고친 순 그대로인 것은 test_icon_opens_list_sorted_by_updated."""
+    utc = datetime.timezone.utc
+    seeds = {                                                       # (구분값, 고친 시각) — 고친 순이면 nov10 · nov19b · nov19a · nodate
+        'nov10': ('2026년 11월 10일 (화)', datetime.datetime(2026, 11, 17, 5, tzinfo=utc)),
+        'nov19a': ('2026년 11월 19일 (목)', datetime.datetime(2026, 11, 15, 5, tzinfo=utc)),
+        'nov19b': ('2026년 11월 19일 (목)', datetime.datetime(2026, 11, 16, 5, tzinfo=utc)),
+        'nodate': ('날짜 미정', datetime.datetime(2026, 11, 1, 5, tzinfo=utc)),
+    }
+    ids = {}
+    for name, (lab, upd) in seeds.items():
+        ids[name] = 'docs-' + uuid.uuid4().hex[:8]
+        test_db.collection('docs').document(ids[name]).set(dict(kind='daily-schedule', html='<p>가짜</p>', label=lab, issue=lab,
+                                                                 total='', count='1건', updatedAt=upd))
+        made.append(ids[name])
+    open_list(pc, repo_url, DAILY, custom_token(ALLOWED, allowed=True))
+    for i in ids.values():
+        pc.locator(f'#doc-rows .doc-row[data-id="{i}"]').wait_for(timeout=20_000)
+    shown = [i for i in pc.eval_on_selector_all('#doc-rows .doc-row', 'els => els.map(e => e.dataset.id)') if i in ids.values()]
+    assert shown == [ids['nodate'], ids['nov19b'], ids['nov19a'], ids['nov10']]
+
+
 @pytest.mark.parametrize(PAGE_ARGS, PAGES)
 def test_new_doc_creates_one_and_opens_it(pc, repo_url, custom_token, test_db, made, kind, file, noun, title, send,
                                           label, edit_sel):
@@ -858,10 +881,10 @@ def test_daily_weekday_follows_date(pc, repo_url, custom_token, test_db, made):
     assert text_of(pc, '[data-k="dow"]') == '(수)'
     edit_cell(pc, '[data-k="date"]', '2026년 2월 30일')            # 없는 날
     assert text_of(pc, '[data-k="dow"]') == ''
-    edit_cell(pc, '[data-k="date"]', '10월 21일')                  # 연도 없음
+    edit_cell(pc, '[data-k="date"]', '날짜 미정')                  # 못 읽는 날짜 (연도 없는 날짜는 11-18 부터 읽는다 — test_daily_date_without_year_reads_nearest_day)
     assert text_of(pc, '[data-k="dow"]') == ''
     pc.click('#btn-edit')
-    wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('label') == '10월 21일')   # 목록 이름은 적힌 그대로
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('label') == '날짜 미정')   # 목록 이름은 적힌 그대로
 
 
 def test_daily_lunar_follows_date(pc, repo_url, custom_token, made):
@@ -1458,7 +1481,7 @@ def test_daily_unreadable_date_not_on_board(pc, repo_url, custom_token, test_db,
     fill_work(pc)
     wait_board(test_db, share_key, lambda e: doc_id in e)                         # 날짜를 읽으면 올라간다 (대조)
     pc.click('#btn-edit')
-    edit_cell(pc, '[data-k="date"]', '10월 21일')                                  # 연도 없음 — 못 읽는 날짜
+    edit_cell(pc, '[data-k="date"]', '날짜 미정')                                  # 못 읽는 날짜 (연도 없는 날짜는 11-18 부터 읽는다)
     pc.click('#btn-edit')
     wait_board(test_db, share_key, lambda e: doc_id not in e)
 
@@ -1665,6 +1688,106 @@ def test_daily_confirm_line_only_on_screen(pc, repo_url, custom_token, test_db, 
     save_pages(pc, tmp_path)
     shot = pc.evaluate('window.__shots')[0]
     assert '가짜하나' in shot and '직원 확인' not in shot
+
+
+# ---------- 직원 확인 — 사장님 쪽 읽기 실패 (2026-11-18 보완 4번, 기록장 #121) ----------
+# 전에는 못 읽으면(watchConfirm 이 오류를 삼킴) 확인 줄이 조용히 사라져 '아직 아무도 안 봄' 과 구별이 안 됐다 — 11-05 '작동 안 돼'.
+
+CONFIRM_FAIL = '직원 확인 기록을 읽지 못했습니다'
+
+
+def test_daily_confirm_error_line_only_on_screen(pc, repo_url, custom_token, test_db, made, share_key, tmp_path):
+    """공통 부품이 '못 읽음'(showConfirm({ error })) 을 넘기면 확인 줄 자리에 '직원 확인 기록을 읽지 못했습니다 (오류 이름)' —
+    화면에서만, 인쇄 · 저장 HTML(serialize) · 직원 사진(카드)에는 없다. 표를 다시 그려도(load) 남는다."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="staff"]', '가짜하나')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    wait_confirm(pc, '직원 확인 0/1 · 아직: 가짜하나')                 # 읽히면 정상 줄 (대조)
+    wait_board(test_db, share_key, lambda e: e.get(doc_id, {}).get('rows', [{}])[0].get('work') == '가짜동 상차림')
+    pc.wait_for_timeout(2_000)                                     # 고친 것이 다 올라가 정상 줄이 더 안 바뀔 때까지
+    fail = f'{CONFIRM_FAIL} (permission-denied)'
+    pc.evaluate("window.FoodbellDoc.showConfirm({ error: 'permission-denied' })")
+    wait_confirm(pc, fail)
+    assert pc.locator('.day-confirm').is_visible()
+    pc.emulate_media(media='print')
+    assert pc.locator('.day-confirm').is_hidden()
+    pc.emulate_media(media='screen')
+    saved = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert '가짜하나' in saved and CONFIRM_FAIL not in saved
+    watch_shots(pc, 'root.textContent')
+    save_pages(pc, tmp_path)
+    shot = pc.evaluate('window.__shots')[0]
+    assert '가짜하나' in shot and CONFIRM_FAIL not in shot
+    pc.evaluate('(h) => window.FoodbellDoc.load(h)', saved)         # 표를 통째로 다시 그려도
+    assert pc.locator('.day-confirm').inner_text() == fail
+
+
+# 파이어베이스 저장소 모듈(firebase-firestore.js)을 감싸 사장님 화면의 읽기 하나만 거부(permission-denied)로 끝나게 한다.
+# 시험 프로젝트 규칙으로는 주인의 읽기 거부를 일으킬 수 없다 — config/share 는 주인이 읽을 수 있고 게시판 · 확인 기록은 누구나 읽는다.
+# 규칙을 옛것으로 올리는 것은 이 시험이 하지 않는다. 감싼 것 말고는 진짜 모듈이 그대로 돈다(store.js → doc-page.js → 화면).
+#   config = 암호(config/share) 읽기 거부 · board = 게시판 한 장 듣기 거부 · marks = 확인 기록 듣기 거부 · nokey = 암호가 없음(오류 아님)
+FS_SHIM = """
+import * as real from '__REAL__';
+export * from '__REAL__';
+const mode = '__MODE__';
+const seen = (m) => { (globalThis.__fsShim ||= []).push(m); };
+const denied = () => Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' });
+const marksQueries = new WeakSet();
+export function query(base, ...more) {
+  const q = real.query(base, ...more);
+  if (String(base && base.path).endsWith('/marks')) marksQueries.add(q);
+  return q;
+}
+export function getDoc(ref) {
+  if (ref && ref.path === 'config/share' && mode === 'config') { seen(mode); return Promise.reject(denied()); }
+  if (ref && ref.path === 'config/share' && mode === 'nokey') { seen(mode); return Promise.resolve({ exists: () => false, data: () => undefined }); }
+  return real.getDoc(ref);
+}
+export function onSnapshot(ref, next, error) {
+  const hit = mode === 'marks' ? marksQueries.has(ref)
+    : mode === 'board' && ref && ref.type === 'document' && String(ref.path).startsWith('share/');
+  if (!hit) return real.onSnapshot(ref, next, error);
+  seen(mode);
+  setTimeout(() => error(denied()), 0);
+  return () => {};
+}
+"""
+
+
+@pytest.mark.parametrize('mode', ['config', 'board', 'marks', 'nokey'])
+def test_daily_confirm_read_error_shows_line(browser, repo_url, custom_token, test_db, made, share_key, mode):
+    """사장님 화면이 확인 기록을 못 읽으면(암호 · 게시판 칸 · 확인 기록 셋 중 어느 것이든 오류) 확인 줄 자리에
+    '직원 확인 기록을 읽지 못했습니다 (permission-denied)'. 암호가 아예 없으면(게시판을 안 만든 상태) 오류가 아니라 아무것도 안 그린다 (대조 —
+    담당 이름이 있어 암호가 있었다면 '직원 확인 0/1 · …' 이 떴을 일정표)."""
+    # 서비스워커가 모듈을 받으면 가로채기가 안 보여서 막는다. 시험 도우미 new_ctx 는 그대로 두고 여기서만 따로 연다
+    ctx = browser.new_context(viewport={'width': 1280, 'height': 900}, service_workers='block')
+    try:
+        pg = ctx.new_page()
+        errors = []
+        pg.on('pageerror', lambda e: errors.append(str(e)))
+
+        def shim(route):
+            body = FS_SHIM.replace('__REAL__', route.request.url + '?real').replace('__MODE__', mode)
+            route.fulfill(status=200, content_type='text/javascript', headers={'Access-Control-Allow-Origin': '*'}, body=body)
+        pg.route(lambda url: url.endswith('/firebase-firestore.js'), shim)
+        daily_new(pg, repo_url, custom_token(ALLOWED, allowed=True), made)
+        pg.click('#btn-edit')
+        edit_cell(pg, 'tr.item [data-f="staff"]', '가짜하나')
+        edit_cell(pg, 'tr.item [data-f="work"]', '가짜동 상차림')
+        pg.click('#btn-edit')
+        pg.wait_for_function('(m) => (window.__fsShim || []).includes(m)', arg=mode, timeout=20_000)   # 감싼 모듈이 그 읽기를 정말 받았다
+        if mode == 'nokey':
+            pg.wait_for_timeout(3_000)
+            wait_confirm(pg, '')
+            assert pg.locator('.day-confirm').is_hidden()
+        else:
+            wait_confirm(pg, f'{CONFIRM_FAIL} (permission-denied)')
+            assert pg.locator('.day-confirm').is_visible()
+        assert errors == [], errors
+    finally:
+        ctx.close()
 
 
 def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_token, made):
@@ -2077,6 +2200,402 @@ def test_daily_new_asks_when_same_date_exists(pc, repo_url, custom_token, test_d
     wait_db(test_db.collection('docs').document(third), lambda s: s.exists)
 
 
+# ---------- 11-18 일정표 보완 (보완목록 1 · 2 · 13번) ----------
+
+UNREAD = '날짜를 못 읽어 직원 화면에 올라가지 않습니다'
+
+
+def nearest_day(month, day):
+    """연도 없이 친 날짜 — 오늘 포함 가까운 앞날(오늘보다 지났으면 다음 해)."""
+    t = datetime.date.today()
+    d = datetime.date(t.year, month, day)
+    return d if d >= t else datetime.date(t.year + 1, month, day)
+
+
+def test_daily_date_without_year_reads_nearest_day(pc, repo_url, custom_token, test_db, made, no_daily):
+    """연도 없는 날짜('11월 19일' · '11/19')는 오늘 포함 가까운 앞날로, 두 자리 연도('26년 …')는 적힌 대로 읽고,
+    칸을 떠나면 '2026년 11월 19일' 꼴로 고쳐 적는다 — 요일 · 음력이 따라온다. 전에는 못 읽어 직원 화면에서 그 일정표가 빠졌다."""
+    today = datetime.date.today()
+    tomorrow = today + datetime.timedelta(days=1)
+    past = today - datetime.timedelta(days=1)
+    if (past.month, past.day) == (2, 29):                          # 다음 해에 없는 날은 피한다
+        past -= datetime.timedelta(days=1)
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    for typed, want in [
+        (f'{tomorrow.month}월 {tomorrow.day}일', tomorrow),
+        (f'{today.month}/{today.day}', today),                                     # 오늘도 앞날에 든다
+        (f'{past.month}월 {past.day}일', nearest_day(past.month, past.day)),       # 지난 날 → 다음 해
+        (f'{tomorrow.year % 100}년 {tomorrow.month}월 {tomorrow.day}일', tomorrow),  # 두 자리 연도는 적힌 대로
+        (f'{tomorrow.year}.{tomorrow.month}.{tomorrow.day}', tomorrow),            # 전부터 읽던 꼴도 그대로 읽는다
+    ]:
+        edit_cell(pc, '[data-k="date"]', typed)
+        got = text_of(pc, '[data-k="date"]') + ' ' + text_of(pc, '[data-k="dow"]')
+        assert got == day_label(want), (typed, got)
+        assert text_of(pc, '[data-k="lunar"]').startswith('음력 '), typed
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: s.get('label') == day_label(tomorrow))
+
+
+def test_daily_unreadable_date_warns_on_screen_only(pc, repo_url, custom_token, test_db, made, no_daily, tmp_path):
+    """그래도 못 읽는 날짜면 날짜 아래 한 줄 — 화면에서만. 인쇄 · 저장 HTML(serialize) · 직원 사진(카드)에는 없다.
+    읽히는 날짜로 고치면 줄이 없어진다(대조)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    warn = pc.locator('.day-warn')
+    set_text(pc, '[data-k="date"]', '2월 30일')                     # 없는 날 — 어느 해로도 못 읽는다
+    assert warn.is_hidden()                                        # 날짜 칸에서 치는 동안은 안 띄운다
+    pc.keyboard.press('Tab')
+    assert warn.is_visible()                                       # 칸을 떠나면 바로
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜동 상차림')
+    pc.click('#btn-edit')
+    assert warn.count() == 1 and warn.is_visible() and warn.inner_text().strip() == UNREAD
+    pc.emulate_media(media='print')
+    assert warn.is_hidden()
+    pc.emulate_media(media='screen')
+    saved = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert '가짜동 상차림' in saved and UNREAD not in saved
+    snap = wait_db(test_db.collection('docs').document(doc_id), lambda s: '가짜동 상차림' in (s.to_dict() or {}).get('html', ''))
+    assert UNREAD not in snap.get('html')
+    watch_shots(pc, 'root.textContent')
+    save_pages(pc, tmp_path)
+    shot = pc.evaluate('window.__shots')[0]
+    assert '가짜동 상차림' in shot and UNREAD not in shot
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(datetime.date.today() + datetime.timedelta(days=1)))   # 읽히는 날짜로 고치면
+    assert warn.is_hidden()
+
+
+def test_daily_date_change_asks_when_same_date_exists(pc, repo_url, custom_token, test_db, made, no_daily):
+    """날짜 칸을 떠날 때 날짜가 바뀌었고 다른 일정표에 같은 날짜가 있으면 묻는다 — 취소 = 칸에 들어오기 전 날짜로, 확인 = 그대로.
+    같은 날짜가 없으면 · 안 바꾸고 떠나면 묻지 않는다 (10-21 같은 날 일정표 넷과 같은 뿌리, 보완목록 2번)."""
+    token = custom_token(ALLOWED, allowed=True)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    later = tomorrow + datetime.timedelta(days=1)
+    first = daily_new(pc, repo_url, token, made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="memo"]', '가짜 메모 1')                # 안 고친 새 일정표는 떠날 때 지운다 (10-26)
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(first), lambda s: s.get('label') == day_label(tomorrow))
+    pc.click('#btn-list')
+    wait_view(pc, 'list')
+    pc.locator(f'#doc-rows .doc-row[data-id="{first}"]').wait_for(timeout=15_000)
+    new_doc(pc, made)                                              # 둘째 — 같은 내일이지만 new_doc 이 '그래도 새로 만들기'
+    asked, answer = [], {'ok': False}
+
+    def on_dialog(d):
+        asked.append(d.message)
+        if answer['ok']:
+            d.accept()
+        else:
+            d.dismiss()
+
+    def asked_by(n, wait=4_000):
+        """물음이 n 개가 될 때까지(아니면 wait ms) — 저장소 목록을 읽고 묻는 것이라 칸을 떠난 뒤 조금 늦다."""
+        for _ in range(wait // 250):
+            if len(asked) >= n:
+                break
+            pc.wait_for_timeout(250)
+        return list(asked)
+
+    pc.on('dialog', on_dialog)
+    try:
+        pc.click('#btn-edit')
+        edit_cell(pc, '[data-k="date"]', kr_date(later))            # 같은 날짜가 없는 날 → 묻지 않는다 (대조)
+        assert asked_by(1) == []
+        edit_cell(pc, '[data-k="date"]', kr_date(tomorrow))         # 첫째와 같은 날 → 묻는다 · 취소 → 되돌림
+        got = asked_by(1)
+        assert got == [f'{day_label(tomorrow)} 일정표가 이미 있습니다.\n\n[확인] 이 날짜 그대로 두기\n[취소] 원래 날짜로 되돌리기'], got
+        pc.locator('[data-k="date"]', has_text=kr_date(later)).wait_for(timeout=5_000)
+        assert text_of(pc, '[data-k="dow"]') == day_label(later).split(' ')[-1]
+        answer['ok'] = True
+        edit_cell(pc, '[data-k="date"]', kr_date(tomorrow))         # 다시 → 확인 → 그대로
+        assert len(asked_by(2)) == 2
+        pc.wait_for_timeout(500)
+        assert text_of(pc, '[data-k="date"]') == kr_date(tomorrow)
+        pc.click('[data-k="date"]')                                 # 안 바꾸고 떠나면 묻지 않는다
+        pc.keyboard.press('Tab')
+        assert len(asked_by(3)) == 2
+    finally:
+        pc.remove_listener('dialog', on_dialog)
+
+
+def test_daily_date_check_skips_itself_and_unreadable_list(pc, repo_url, custom_token, made):
+    """같은 날짜 찾기는 이 일정표(주소의 ?id=)를 빼고 본다 · 목록을 못 읽으면 묻지 않고 넘어간다(편집을 막지 않게).
+    목록은 recentDocs 를 바꿔 끼워 정한다 — 다른 일정표에 있으면 묻는 것도 대조로 같이 본다."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    d2, d3, d4 = (datetime.date.today() + datetime.timedelta(days=n) for n in (2, 3, 4))
+    asked = []
+
+    def on_dialog(d):
+        asked.append(d.message)
+        d.dismiss()
+
+    def give(rows):
+        pc.evaluate('(rows) => { window.FoodbellDoc.recentDocs = () => Promise.resolve(rows); }', rows)
+
+    pc.on('dialog', on_dialog)
+    try:
+        pc.click('#btn-edit')
+        give([{'id': doc_id, 'doc': {'label': day_label(d2)}}])     # 같은 날짜는 자기 자신뿐
+        edit_cell(pc, '[data-k="date"]', kr_date(d2))
+        pc.wait_for_timeout(1_500)
+        assert asked == [] and text_of(pc, '[data-k="date"]') == kr_date(d2)
+        give([{'id': 'other-fake', 'doc': {'label': day_label(d3)}}])   # 다른 일정표에 있으면 묻는다 (대조)
+        edit_cell(pc, '[data-k="date"]', kr_date(d3))
+        pc.locator('[data-k="date"]', has_text=kr_date(d2)).wait_for(timeout=5_000)   # 취소 → 되돌림
+        assert len(asked) == 1
+        pc.evaluate("() => { window.FoodbellDoc.recentDocs = () => Promise.reject(new Error('가짜 끊김')); }")   # 목록을 못 읽으면
+        edit_cell(pc, '[data-k="date"]', kr_date(d4))
+        pc.wait_for_timeout(1_500)
+        assert len(asked) == 1 and text_of(pc, '[data-k="date"]') == kr_date(d4)
+    finally:
+        pc.remove_listener('dialog', on_dialog)
+
+
+def test_daily_toolbar_text_is_14px_on_pc(pc, repo_url, custom_token, made):
+    """PC 폭 도구 단추 글자도 14px — 글자는 14px 이상 (휴대폰 폭은 전부터 14px, 보완목록 13번)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    sizes = pc.locator('.toolbar button:visible').evaluate_all('(bs) => bs.map((b) => getComputedStyle(b).fontSize)')
+    assert sizes and set(sizes) == {'14px'}, sizes
+
+
+# ---------- 11-18 일정표 보완 (보완목록 5 · 7 · 8번) ----------
+
+def name_buttons(page):
+    """편집 중 담당 칸 아래 이름 단추들의 글자."""
+    return page.eval_on_selector_all('.staff-pick button', 'bs => bs.map((b) => b.textContent)')
+
+
+def pick_name(page, name, tap=False):
+    """이름 단추 하나를 누른다(tap 이면 손가락으로)."""
+    b = page.locator('.staff-pick button').filter(has_text=re.compile(f'^{name}$'))
+    b.tap() if tap else b.click()
+
+
+def fake_recent(page, staff_cells):
+    """최근 일정표 목록을 가짜로 — 담당 칸 글자들이 든 일정표 한 장. 서버는 안 읽는다."""
+    html = ''.join(f'<b data-f="staff">{s}</b>' for s in staff_cells)
+    page.evaluate('(html) => { window.FoodbellDoc.recentDocs = () => Promise.resolve([{ id: "fake", doc: { html } }]); }', html)
+
+
+def sizes_of(page, sel):
+    """보이는 단추마다 (높이, 글자 크기 px, 왼쪽, 오른쪽)."""
+    return page.locator(sel).evaluate_all("""(bs) => bs.map((b) => { const r = b.getBoundingClientRect();
+        return [r.height, parseFloat(getComputedStyle(b).fontSize), r.left, r.right]; })""")
+
+
+def test_daily_staff_name_buttons_fill_staff_cell(pc, repo_url, custom_token, test_db, made):
+    """편집 중 담당 칸을 누르면 그 칸 아래에 최근 일정표들의 담당 이름 단추 — 담당 글자를 staffNames 로 나눠 한 번씩(괄호 '(보조)' 는 뗌).
+    누르면 칸 끝에 ' · ' 로 이어 넣고(비었으면 이름만) 칸은 닫히지 않는다. 이미 칸에 있는 이름은 다시 안 넣는다.
+    목록은 처음 한 번만 읽는다. 칸을 떠나면 단추가 없어지고, 저장 HTML · 인쇄에는 없다 (보완목록 5번)."""
+    token = custom_token(ALLOWED, allowed=True)
+    first = daily_new(pc, repo_url, token, made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="staff"]', '가짜일 · 가짜이(보조)')
+    pc.click('#btn-edit')
+    wait_db(test_db.collection('docs').document(first), lambda s: '가짜이(보조)' in (s.to_dict() or {}).get('html', ''))
+    pc.click('#btn-list')
+    wait_view(pc, 'list')
+    pc.locator(f'#doc-rows .doc-row[data-id="{first}"]').wait_for(timeout=15_000)
+    doc_id = new_doc(pc, made)
+    pc.evaluate("""() => { const r = window.FoodbellDoc.recentDocs; window.__reads = 0;
+        window.FoodbellDoc.recentDocs = (n) => { window.__reads++; return r(n); }; }""")
+    pc.click('#btn-edit')
+    assert pc.locator('.staff-pick').count() == 0                  # 담당 칸을 누르기 전에는 없다
+    staff = pc.locator('tr.item [data-f="staff"]')
+    staff.click()
+    pc.locator('.staff-pick button').filter(has_text=re.compile('^가짜이$')).wait_for(timeout=15_000)
+    names = name_buttons(pc)
+    assert '가짜일' in names and '가짜이' in names and '가짜이(보조)' not in names and len(names) == len(set(names)), names
+    assert pc.locator('tr.item td.crew .staff-pick').count() == 1
+    for h, px, _, _ in sizes_of(pc, '.staff-pick button'):
+        assert h >= 44 and px >= 14, (h, px)
+    pick_name(pc, '가짜이')
+    assert staff.text_content() == '가짜이'                         # 비었으면 이름만
+    assert pc.evaluate('document.activeElement?.dataset.f') == 'staff' and pc.locator('.staff-pick').count() == 1   # 칸이 안 닫힌다
+    pick_name(pc, '가짜일')
+    assert staff.text_content() == '가짜이 · 가짜일'
+    pick_name(pc, '가짜이')                                        # 이미 있는 이름은 다시 안 넣는다
+    assert staff.text_content() == '가짜이 · 가짜일'
+    html = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert '가짜이 · 가짜일' in html and 'staff-pick' not in html
+    pc.emulate_media(media='print')
+    assert pc.locator('.staff-pick').is_hidden()
+    pc.emulate_media(media='screen')
+    pc.keyboard.press('Tab')                                       # 칸을 떠나면 없어진다
+    assert pc.locator('.staff-pick').count() == 0
+    pc.click('tr.addrow button')
+    pc.click('tr.item:nth-child(2) [data-f="staff"]')              # 다른 줄 담당 칸 — 목록은 다시 안 읽는다
+    pc.locator('tr.item:nth-child(2) .staff-pick button').first.wait_for(timeout=15_000)
+    assert pc.evaluate('window.__reads') == 1
+    pc.click('#btn-edit')
+    assert pc.locator('.staff-pick').count() == 0
+    snap = wait_db(test_db.collection('docs').document(doc_id), lambda s: '가짜이 · 가짜일' in (s.to_dict() or {}).get('html', ''))
+    assert 'staff-pick' not in snap.get('html')
+
+
+def test_daily_staff_name_buttons_hidden_without_names(pc, repo_url, custom_token, made):
+    """이름 목록이 비거나 못 읽으면 담당 칸을 눌러도 단추 줄이 없다 — 칸은 손으로 그대로 친다."""
+    token = custom_token(ALLOWED, allowed=True)
+    for fake in ('() => Promise.resolve([])', "() => Promise.reject(new Error('가짜 끊김'))"):
+        daily_new(pc, repo_url, token, made)
+        pc.evaluate(f'() => {{ window.FoodbellDoc.recentDocs = {fake}; }}')
+        pc.click('#btn-edit')
+        pc.click('tr.item [data-f="staff"]')
+        pc.wait_for_timeout(1_000)
+        assert pc.locator('.staff-pick').count() == 0, fake
+        pc.keyboard.type('가짜손')
+        assert text_of(pc, 'tr.item [data-f="staff"]') == '가짜손', fake
+
+
+def test_daily_new_edit_buttons_fit_phone(phone, repo_url, custom_token, made):
+    """390px 휴대폰 카드 모양: 담당 이름 단추 줄 · 줄 옮기기 단추가 화면 밖으로 넘치지 않고, 단추는 44px · 14px 이상.
+    손가락으로 이름을 눌러도 담당 칸이 안 닫힌다 (보완목록 5 · 8번). 연락처 단추까지 나오는 갤럭시 크롬 모양으로 잰다."""
+    phone.add_init_script('navigator.contacts = { select: async () => [] };')
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    assert phone.evaluate('document.documentElement.clientWidth') == 390
+    fake_recent(phone, ['가짜일 · 가짜이 · 가짜삼', '가짜사 · 가짜오', '가짜육칠팔', '가짜구 · 가짜십 · 가짜십일', '가짜십이번'])
+    phone.click('#btn-edit')
+    phone.click('tr.addrow button')
+    phone.tap('tr.item:nth-child(1) [data-f="staff"]')
+    phone.locator('.staff-pick button').first.wait_for(timeout=15_000)
+    assert len(name_buttons(phone)) == 10
+    pick_name(phone, '가짜오', tap=True)
+    assert text_of(phone, 'tr.item [data-f="staff"]') == '가짜오'
+    assert phone.evaluate('document.activeElement?.dataset.f') == 'staff' and phone.locator('.staff-pick').count() == 1
+    assert phone.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth')
+    for sel in ('.staff-pick button', 'tr.item .btn-move'):
+        got = sizes_of(phone, sel)
+        assert got, sel
+        for h, px, left, right in got:
+            assert h >= 44 and px >= 14 and left >= 0 and right <= 390, (sel, h, px, left, right)
+    assert phone.locator('tr.item:nth-child(1) .btn-contacts').count() == 1
+
+
+def test_daily_row_memo_enter_makes_new_line(pc, repo_url, custom_token, test_db, made, share_key, tmp_path):
+    """줄마다의 메모 칸에서만 Enter = 줄바꿈(칸은 안 닫힘) — 글자 '\\n' 으로 들어가 저장 · 다시 열기 · 직원 게시판 · 사진 카드 ·
+    인쇄에서 두 줄로 나온다. 다른 칸(장소) · 맨 위 전달 메모에서 Enter 는 전처럼 칸을 닫고 줄바꿈이 안 들어간다 (보완목록 7번)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 상차림')
+    for sel in ('tr.item [data-f="place"]', '[data-k="memo"]'):     # 대조 — 전처럼 칸을 닫는다
+        set_text(pc, sel, '가짜 글')
+        pc.keyboard.press('Enter')
+        assert pc.evaluate('document.activeElement?.matches("[data-edit]")') is False, sel
+        assert pc.locator(sel).first.text_content() == '가짜 글', sel
+    memo = pc.locator('tr.item [data-f="memo"]')
+    memo.click()
+    pc.keyboard.type('첫 줄')
+    pc.keyboard.press('Enter')
+    assert pc.evaluate('document.activeElement?.dataset.f') == 'memo'   # 칸이 안 닫힌다
+    pc.keyboard.type('둘째 줄')
+    assert memo.text_content() == '첫 줄\n둘째 줄'
+    assert memo.evaluate('(e) => e.querySelectorAll("div, br").length') == 0
+    pc.keyboard.press('Tab')
+    pc.click('#btn-edit')
+    assert memo.inner_text() == '첫 줄\n둘째 줄'                     # 화면에서 두 줄
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: '첫 줄\n둘째 줄' in (s.to_dict() or {}).get('html', ''))
+    wait_board(test_db, share_key, lambda e: [r.get('memo') for r in e.get(doc_id, {}).get('rows', [])] == ['첫 줄\n둘째 줄'])
+    open_doc(pc, repo_url, DAILY, doc_id)                          # 다시 열어도 두 줄
+    memo.filter(has_text='둘째 줄').wait_for(timeout=15_000)
+    assert memo.text_content() == '첫 줄\n둘째 줄' and memo.inner_text() == '첫 줄\n둘째 줄'
+    pc.emulate_media(media='print')
+    assert memo.inner_text() == '첫 줄\n둘째 줄'                     # 인쇄에서도 두 줄
+    pc.emulate_media(media='screen')
+    watch_shots(pc, "root.querySelector('article.card .txt.memo').innerText")
+    save_pages(pc, tmp_path)
+    assert pc.evaluate('window.__shots')[0] == '첫 줄\n둘째 줄'      # 보내는 사진 카드에서도 두 줄
+
+
+def move(page, row, way):
+    """편집 중 그 줄의 [위로](up) · [아래로](down) 를 누른다."""
+    page.click(f'tr.item:nth-child({row}) .btn-move[data-move="{way}"]')
+
+
+def works(page):
+    return page.eval_on_selector_all('tr.item [data-f="work"]', 'es => es.map((e) => e.textContent)')
+
+
+def move_blocked(page):
+    """줄마다 [위로] · [아래로] 를 못 누르는지."""
+    return page.eval_on_selector_all('tr.item', """trs => trs.map((tr) => ['up', 'down'].map((w) =>
+        tr.querySelector(`.btn-move[data-move="${w}"]`).disabled))""")
+
+
+def test_daily_row_moves_up_and_down(pc, repo_url, custom_token, test_db, made):
+    """편집 중 줄마다 [위로] · [아래로] — 그 줄의 칸 · 연기/취소 표시 · 장례 칸 접힘이 함께 가고 번호는 다시 매긴다. 다시 열어도 그대로.
+    맨 윗줄 [위로] · 맨 아랫줄 [아래로] 는 못 누른다. 보낸 적 없는 일정표는 묻지 않는다. 저장 HTML · 인쇄 · 보기 화면에는 단추가 없다 (보완목록 8번)."""
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    pc.click('tr.addrow button')
+    pc.click('tr.addrow button')
+    for n, w in enumerate(('가짜 하나', '가짜 둘', '가짜 셋'), 1):
+        edit_cell(pc, f'tr.item:nth-child({n}) [data-f="work"]', w)
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="hall"]', '가짜장례식장')   # 2번 줄만 장례 칸이 펼쳐짐
+    mark(pc, 2, '연기')
+    assert move_blocked(pc) == [[True, False], [False, False], [False, True]]
+    for h, px, _, _ in sizes_of(pc, 'tr.item .btn-move'):
+        assert h >= 44 and px >= 14, (h, px)
+    asked = []
+    pc.on('dialog', lambda d: (asked.append(d.message), d.dismiss()))
+    move(pc, 2, 'up')
+    assert works(pc) == ['가짜 둘', '가짜 하나', '가짜 셋']
+    assert badges(pc) == ['연기', '', '']
+    assert pc.eval_on_selector_all('tr.item td.c', 'tds => tds.map((td) => td.firstChild.textContent)') == ['1', '2', '3']
+    assert pc.eval_on_selector_all('tr.item td.meet', 'tds => tds.map((td) => td.classList.contains("folded"))') == [False, True, True]
+    assert move_blocked(pc) == [[True, False], [False, False], [False, True]]
+    move(pc, 1, 'down')
+    move(pc, 2, 'down')
+    assert works(pc) == ['가짜 하나', '가짜 셋', '가짜 둘'] and badges(pc) == ['', '', '연기']
+    assert asked == []                                             # 보낸 적 없으면 묻지 않는다
+    html = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert 'btn-move' not in html
+    pc.emulate_media(media='print')
+    assert pc.locator('tr.item .btn-move').first.is_hidden()
+    pc.emulate_media(media='screen')
+    pc.click('#btn-edit')
+    assert pc.locator('.btn-move').count() == 0
+    order = ('가짜 하나', '가짜 셋', '가짜 둘')
+
+    def in_order(html):
+        at = [html.find(w) for w in order]
+        return -1 not in at and at == sorted(at)
+    snap = wait_db(test_db.collection('docs').document(doc_id), lambda s: in_order((s.to_dict() or {}).get('html', '')))
+    assert 'btn-move' not in snap.get('html')
+    open_doc(pc, repo_url, DAILY, doc_id)                          # 다시 열어도 그대로
+    pc.locator('tr.item td.c .state').first.wait_for(timeout=15_000)
+    assert works(pc) == list(order) and badges(pc) == ['', '', '연기']
+
+
+def test_daily_row_move_asks_once_when_already_sent(pc, repo_url, custom_token, made):
+    """이미 직원에게 보낸 일정표('보냄 · N차')면 옮기기 전에 묻는다 — 취소면 그대로, 확인하면 옮기고
+    이 화면을 연 동안은 다시 묻지 않는다 (보완목록 8번 — 보낸 사진 · 직원 화면의 'N번' 이 달라진다)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    pc.click('tr.addrow button')
+    edit_cell(pc, 'tr.item:nth-child(1) [data-f="work"]', '가짜 하나')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="work"]', '가짜 둘')
+    pc.evaluate("() => { document.querySelector('[data-k=\"sent\"]').textContent = '1'; }")   # 한 번 보낸 일정표처럼 (보내기는 test_daily_send_count_and_stamp)
+    asked, answer = [], {'ok': False}
+
+    def on_dialog(d):
+        asked.append(d.message)
+        d.accept() if answer['ok'] else d.dismiss()
+
+    pc.on('dialog', on_dialog)
+    try:
+        move(pc, 2, 'up')
+        assert asked == ['이미 보낸 사진과 번호가 달라집니다. 옮길까요?'] and works(pc) == ['가짜 하나', '가짜 둘']   # 취소 → 그대로
+        answer['ok'] = True
+        move(pc, 2, 'up')
+        assert len(asked) == 2 and works(pc) == ['가짜 둘', '가짜 하나']
+        move(pc, 2, 'up')                                          # 한 번 확인했으면 다시 묻지 않는다
+        assert len(asked) == 2 and works(pc) == ['가짜 하나', '가짜 둘']
+    finally:
+        pc.remove_listener('dialog', on_dialog)
+
+
 # ---------- 10-28 종합 점검 — 10-26 최종 점검에서 찾고 남겨 둔 작은 결함 4개 ----------
 
 def pdf_words(page):
@@ -2441,3 +2960,160 @@ def test_daily_photo_bad_file_not_sent(pc, repo_url, custom_token, made):
     pc.wait_for_timeout(500)
     assert posts == []
     assert pc.locator('.btn-photo').is_enabled()
+
+
+# ---------- 확정 행사 불러오기 (2026-11-18 보완 11번) ----------
+# 시험 프로젝트 events 에 가짜 행사(conftest.fake_event 모양, 이름 · 번호 모두 가짜)를 넣고, 끝나면 이 시험이 넣은 것만 지운다.
+# 날짜는 시험 날 기준 먼 앞날 — 다른 시험이 넣는 행사(목록 시험은 오늘 ~ 19일 뒤)와 겹치지 않게.
+
+EVENTS_BTN = '.btn-events'
+
+
+@pytest.fixture
+def put_events(test_db):
+    """put_events(**칸) → 가짜 행사 한 건을 넣고 그 id. 끝나면 넣은 것만 지운다."""
+    from conftest import fake_event
+    ids = []
+
+    def put(**over):
+        doc_id = f'daily-ev-{uuid.uuid4().hex[:12]}'
+        test_db.collection('events').document(doc_id).set(fake_event(**over))
+        ids.append(doc_id)
+        return doc_id
+    yield put
+    for i in ids:
+        test_db.collection('events').document(i).delete()
+
+
+def ev_day(offset):
+    return datetime.date.today() + datetime.timedelta(days=offset)
+
+
+def test_daily_events_button_owner_editing_only(pc, repo_url, custom_token, made):
+    """'확정 행사 불러오기' 단추 — 편집 중 · 주인만, 줄 추가 행 안('줄 추가' 바로 아래). 44px · 14px 이상, 줄을 더해도 하나.
+    저장 HTML(serialize) · 인쇄에는 없다. 주인이 아니면 넣지 않는다 — 자리 표시를 viewer 로 바꾸고 편집을 켜면 없고,
+    owner 로 되돌리면 있다(대조). 실제 보기 명단은 편집을 못 켠다(test_daily_viewer_sees_list_and_doc_without_edit)."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    btn = pc.locator(EVENTS_BTN)
+    assert btn.count() == 0                                         # 편집 전에는 없다
+    # viewer 표시면 편집 단추가 숨는다(docs.css) — 단추를 글로 누른다(공통 부품의 속 자리는 owner 라 막지 않는다)
+    pc.evaluate("document.body.dataset.role = 'viewer'; document.getElementById('btn-edit').click()")
+    pc.locator('tr.addrow').wait_for()
+    pc.wait_for_timeout(300)
+    assert btn.count() == 0
+    pc.evaluate("document.getElementById('btn-edit').click(); document.body.dataset.role = 'owner'")
+    pc.click('#btn-edit')
+    btn.wait_for(timeout=10_000)
+    assert btn.count() == 1 and btn.inner_text().strip() == '확정 행사 불러오기'
+    assert btn.evaluate("(b) => !!b.closest('tr.addrow') && b.previousElementSibling?.textContent === '줄 추가 (일 하나)'")
+    (h, px, _, _), = sizes_of(pc, EVENTS_BTN)
+    assert h >= 44 and px >= 14, (h, px)
+    pc.click('tr.addrow button')                                    # 줄을 더해도 하나 · '줄 추가' 는 여전히 첫 단추
+    assert pc.locator('tr.item').count() == 2 and btn.count() == 1
+    saved = pc.evaluate('window.FoodbellDoc.serialize()')
+    assert 'btn-events' not in saved and '확정 행사' not in saved
+    pc.emulate_media(media='print')
+    assert btn.is_hidden()
+    pc.emulate_media(media='screen')
+
+
+def test_daily_events_fill_confirmed_new_only(pc, repo_url, custom_token, test_db, made, put_events):
+    """일정표 날짜와 같은 날의 행사 중 상태 '확정' 이고 이 일정표에 아직 없는 것만 빈 줄부터 — 미확정 · 다른 날은 안 온다.
+    이미 있음 = 지금 있는 줄과 장소가 같거나(빈칸 무시) 연락처 번호가 같다(숫자만 맞댐). 칸 맞추기: 담당·차량 → 담당 · 차량('1호차' 꼴만 차량),
+    출발 시간 → 출발, 시간 → 시간, 주소(없으면 장소) → 장소, 고객 + 연락처 → 연락처, 상차림 + 산신제 → 행사 내용, 금액 → 단가,
+    식사 · 도착 시간 · 꼭 지킬 것 · 메모 → 메모 줄마다. 채우면 저장된다. 다시 누르면 '불러올 확정 행사가 없습니다'(대조).
+    손님 이름 · 번호는 콘솔 · 주소에 안 찍는다."""
+    day = ev_day(321)
+    iso = day.isoformat()
+    put_events(date=iso, time='10시', titlePlace='가짜동 7-1', place='가짜동 7-1 뒷산', customer='가짜 문중 하나',
+               contacts=['010-0000-0071', '010-0000-0072'], staffCar='가짜담당 · 1호차', setting='7치 1상', sansinje='있음',
+               amount='360만 VAT별도', meal='20인분', departTime='07시', arriveTime='09시 30분',
+               mustDo='가짜 지킬 것 하나\n가짜 지킬 것 둘', memo='가짜 메모')
+    put_events(date=iso, time='11시', titlePlace='가짜동 7-2', contacts=['010-0000-0073'])      # 장소가 이미 있음
+    put_events(date=iso, time='12시', titlePlace='가짜동 7-5', contacts=['010-0000-0075'])      # 연락처가 이미 있음
+    put_events(date=iso, time='13시', titlePlace='가짜동 7-3', status='미확정')                  # 미확정
+    put_events(date=ev_day(322).isoformat(), titlePlace='가짜동 7-4')                           # 다른 날
+    logs = []
+    pc.on('console', lambda m: logs.append(m.text))
+    doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(day))
+    edit_cell(pc, 'tr.item [data-f="place"]', '가짜동7-2')                                      # 빈칸만 다르다
+    pc.click('tr.addrow button')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="tel"]', '상주 010 0000 0075')                  # 작대기 없이 빈칸으로
+    pc.click('tr.addrow button')                                                                # 3번 줄 — 비워 둔다
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, '1줄 불러왔습니다')
+    assert pc.locator('tr.item').count() == 3
+
+    def cell(f):
+        return pc.locator(f'tr.item:nth-child(3) [data-f="{f}"]').evaluate('e => e.textContent')
+    got = {f: cell(f) for f in ['staff', 'car', 'leave', 'time', 'place', 'tel', 'work', 'people', 'price', 'memo']}
+    assert got == {'staff': '가짜담당', 'car': '1호차', 'leave': '07시', 'time': '10시', 'place': '가짜동 7-1',
+                   'tel': '가짜 문중 하나 010-0000-0071 / 010-0000-0072', 'work': '7치 1상 · 산신제 있음', 'people': '',
+                   'price': '3,600,000원', 'memo': '식사 20인분\n도착 09시 30분\n가짜 지킬 것 하나\n가짜 지킬 것 둘\n가짜 메모'}, got
+    assert text_of(pc, 'tr.item:nth-child(3) [data-k="amt"]') == '3,600,000원'
+    assert (text_of(pc, 'tr.item:nth-child(1) [data-f="place"]'), text_of(pc, 'tr.item:nth-child(2) [data-f="place"]')) == ('가짜동7-2', '')
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: '가짜동 7-1' in (s.to_dict() or {}).get('html', ''))
+    pc.click(EVENTS_BTN)                                                                        # 다시 — 이제 다 있다
+    wait_toast(pc, '불러올 확정 행사가 없습니다')
+    assert pc.locator('tr.item').count() == 3
+    seen = '\n'.join(logs) + pc.url
+    assert '010-0000-0071' not in seen and '가짜 문중 하나' not in seen, seen
+
+
+# 내역서 금액 칸에 실제로 있는 꼴(js/docs/handoff.js parseAmount 주석 · 스킬의 '실제 값' 절) → (단가 칸, 금액 칸).
+# 일정표 손 입력 · 사진으로 채우기와 같은 규칙: 숫자로 읽히면 'N원', 단위 없는 숫자는 적힌 그대로 → '단위를 적어 주세요'.
+EV_AMOUNTS = [
+    ('360만 VAT별도', '3,600,000원', '3,600,000원'),
+    ('132만원(입금가)', '1,320,000원', '1,320,000원'),
+    ('1,200,000원 (1자상)', '1,200,000원 (1자상)', ''),
+    ('2.145.000', '2.145.000', '단위를 적어 주세요(예: 25만)'),
+    ('170', '170', '단위를 적어 주세요(예: 25만)'),
+    ('600,000원', '600,000원', '600,000원'),
+]
+
+
+def test_daily_events_amount_shapes(pc, repo_url, custom_token, made, put_events):
+    """금액 꼴마다 단가 칸 · 금액 칸에 무엇이 들어가는지. 줄은 시간 순(1시 → 6시), 빈 줄이 모자라면 더한다."""
+    day = ev_day(323)
+    for i, (amount, _, _) in enumerate(EV_AMOUNTS, 1):
+        put_events(date=day.isoformat(), time=f'{i}시', titlePlace=f'가짜금액 {i}', contacts=[f'010-0000-01{i:02d}'],
+                   amount=amount)
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(day))
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, f'{len(EV_AMOUNTS)}줄 불러왔습니다')
+    got = [(text_of(pc, f'tr.item:nth-child({n}) [data-f="place"]'), text_of(pc, f'tr.item:nth-child({n}) [data-f="price"]'),
+            text_of(pc, f'tr.item:nth-child({n}) [data-k="amt"]')) for n in range(1, len(EV_AMOUNTS) + 1)]
+    print('\n금액 꼴 → 단가 칸 | 금액 칸')
+    for (amount, _, _), (_, price, amt) in zip(EV_AMOUNTS, got):
+        print(f'  {amount!r} → {price!r} | {amt!r}')
+    assert got == [(f'가짜금액 {i}', price, amt) for i, (_, price, amt) in enumerate(EV_AMOUNTS, 1)], got
+
+
+def test_daily_events_unreadable_date_and_read_error(pc, repo_url, custom_token, made):
+    """날짜를 못 읽으면 읽지 않고 '날짜를 못 읽어 불러오지 못했습니다'. 읽으면 일정표 날짜를 YYYY-MM-DD 로 한 번 묻는다(그날 행사 없음 →
+    '불러올 확정 행사가 없습니다'). 읽기가 실패하면 '확정 행사를 읽지 못했습니다 (오류 이름)' — 일정표는 그대로.
+    실패는 화면에 넘긴 eventsOn 을 가짜로 바꿔 일으킨다(시험 프로젝트 규칙으로는 주인의 events 읽기 거부를 못 만든다)."""
+    day = ev_day(324)
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, 'tr.item [data-f="work"]', '가짜 일')
+    pc.evaluate("""() => { const D = window.FoodbellDoc, real = D.eventsOn; window.__evCalls = [];
+        D.eventsOn = (d) => { window.__evCalls.push(d); return real(d); }; }""")
+    edit_cell(pc, '[data-k="date"]', '날짜 미정')
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, '날짜를 못 읽어 불러오지 못했습니다')
+    pc.wait_for_timeout(500)
+    assert pc.evaluate('window.__evCalls') == []
+    edit_cell(pc, '[data-k="date"]', kr_date(day))
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, '불러올 확정 행사가 없습니다')
+    assert pc.evaluate('window.__evCalls') == [day.isoformat()]
+    before = pc.evaluate('window.FoodbellDoc.serialize()')
+    pc.evaluate("""() => { window.FoodbellDoc.eventsOn = () => Promise.reject(Object.assign(new Error('가짜'), { code: 'unavailable' })); }""")
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, '확정 행사를 읽지 못했습니다 (unavailable)')
+    assert pc.evaluate('window.FoodbellDoc.serialize()') == before

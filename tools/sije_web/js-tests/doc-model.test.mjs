@@ -1,7 +1,7 @@
 // js/docs/doc-model.js 시험 — 실행: node --test "tools/sije_web/js-tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { KINDS, sortDocs, editedText, rowCells, filterDocs } from '../../../js/docs/doc-model.js';
+import { KINDS, sortDocs, listOrder, editedText, rowCells, filterDocs } from '../../../js/docs/doc-model.js';
 
 test('서류 여섯 종류의 목록 제목과 이름', () => {
   assert.deepEqual(KINDS, {
@@ -27,6 +27,38 @@ test('목록은 최근에 고친 순, 방금 이 기기에서 만든 것(시각 
     { id: 'c', doc: {} },
   ];
   assert.deepEqual(sortDocs(rows).map((r) => r.id), ['c', 'b', 'a']);
+});
+
+// 일정표 목록만 일정 날짜 순 (2026-11-18 보완 6번) — 지난주 일정표를 고쳐도 맨 위로 오지 않게.
+// 날짜는 목록 줄의 label('2026년 11월 19일 (목)')에서 4자리 연도 · 월 · 일로 읽는다. 못 읽으면 맨 위, 같은 날짜면 최근에 고친 것이 위.
+const at = (iso) => ({ toDate: () => new Date(iso) });   // 저장소 Timestamp 모양
+const DAYS = [
+  { id: 'nov10', doc: { label: '2026년 11월 10일 (화)', updatedAt: at('2026-11-17T09:00:00Z') } },   // 지난 날짜를 가장 늦게 고침
+  { id: 'nov19a', doc: { label: '2026년 11월 19일 (목)', updatedAt: at('2026-11-15T09:00:00Z') } },
+  { id: 'nodate', doc: { label: '날짜 미정', updatedAt: at('2026-11-01T09:00:00Z') } },
+  { id: 'nov19b', doc: { label: '2026년 11월 19일 (목)', updatedAt: at('2026-11-16T09:00:00Z') } },
+  { id: 'dec1', doc: { label: '2026년 12월 1일 (화)', updatedAt: at('2026-11-02T09:00:00Z') } },        // 월이 한 자리 · 두 자리 섞여도
+  { id: 'y2025', doc: { label: '2025년 12월 31일 (수)', updatedAt: at('2026-11-18T09:00:00Z') } },
+];
+
+test('일정표 목록은 일정 날짜 순 — 늦은 날짜가 위, 못 읽는 날짜는 맨 위, 같은 날짜면 최근에 고친 것이 위', () => {
+  assert.deepEqual(listOrder('daily-schedule', DAYS).map((r) => r.id), ['nodate', 'dec1', 'nov19b', 'nov19a', 'nov10', 'y2025']);
+});
+
+test('일정표 목록 — 방금 만든 것(고친 시각 없음)은 같은 날짜 안에서 맨 위, 받은 줄 묶음은 그대로 둔다', () => {
+  const rows = [
+    { id: 'old', doc: { label: '2026년 11월 19일 (목)', updatedAt: at('2026-11-16T09:00:00Z') } },
+    { id: 'fresh', doc: { label: '2026년 11월 19일 (목)' } },
+  ];
+  assert.deepEqual(listOrder('daily-schedule', rows).map((r) => r.id), ['fresh', 'old']);
+  assert.deepEqual(rows.map((r) => r.id), ['old', 'fresh']);
+});
+
+test('다른 서류 목록은 지금처럼 최근에 고친 순 (대조)', () => {
+  for (const kind of ['sije-quote', 'event-quote', 'sije-worksheet', 'statement', 'staff-pay']) {
+    assert.deepEqual(listOrder(kind, DAYS).map((r) => r.id), sortDocs(DAYS).map((r) => r.id), kind);
+  }
+  assert.deepEqual(sortDocs(DAYS).map((r) => r.id), ['y2025', 'nov10', 'nov19b', 'nov19a', 'dec1', 'nodate']);
 });
 
 test('고친 시각 글자 — 오늘은 시:분, 같은 해는 월 일, 다른 해는 연도까지', () => {

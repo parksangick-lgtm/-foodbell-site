@@ -144,6 +144,17 @@ export function eventToWorksheet(ev) {
   };
 }
 
+// 일일 일정표 → 알바비 지급내역서 (2026-11-18 보완 12번). src = 일정표 화면의 handoff() 값 { date: 'YYYY-MM-DD'(못 읽으면 ''), names: 그날 담당 이름 }.
+// 일당 · 행사는 안 옮긴다(사장님이 넣는다). 전화 · 계좌는 받는 화면이 지난 지급내역서에서 이어받는다.
+export function scheduleToPay(src) {
+  const date = src.date || '';
+  const names = src.names || [];
+  const notes = [];
+  if (!date) notes.push(NO_DATE);
+  if (!names.length) notes.push('담당 이름을 읽지 못했습니다 — 직접 넣어 주세요');
+  return { fields: { date, names }, notes };
+}
+
 export function putBundle(storage, to, built, now) {
   storage.setItem(KEY, JSON.stringify({ to, at: now, fields: built.fields, notes: built.notes }));
 }

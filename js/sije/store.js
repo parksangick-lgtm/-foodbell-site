@@ -76,6 +76,14 @@ export function watchEvent(id, cb, onError) {
     (snap) => cb(snap.exists() ? snap.data() : null, meta(snap)), onError);
 }
 
+// 날짜 하나(YYYY-MM-DD)의 행사를 한 번 읽는다 — 일일 일정표 '확정 행사 불러오기' (2026-11-18 보완 11번).
+// 듣기(watchEvents — 전체를 계속)가 아니라 누를 때 한 번, 그날 것만: 하루 읽기 한도를 사무실 PC 프로그램과 같이 쓴다(기록장 #123).
+// 조건은 날짜 하나 — 상태('확정')는 받은 뒤 화면이 거른다(그날 행사는 몇 건뿐). 끊겼으면 이 기기에 있는 것으로.
+export async function eventsOn(date) {
+  const snap = await fs.getDocs(fs.query(fs.collection(db, 'events'), fs.where('date', '==', date)));
+  return snap.docs.map((d) => ({ id: d.id, ev: d.data() }));
+}
+
 // 칸 하나만 고친다 (문서 통째로 덮어쓰지 않음 — 다른 기기가 다른 칸을 동시에 고쳐도 안 지워지게)
 export function updateField(id, path, value) {
   return fs.updateDoc(fs.doc(db, 'events', id), { [path]: value, updatedAt: fs.serverTimestamp() });
@@ -227,15 +235,19 @@ async function dropOldMarks(key, keep) {
 }
 
 // 직원 확인 (2026-11-05 설계 3-4) — 게시판의 이 일정표 한 장(at · names)과 확인 기록 중 이 일정표 것을 바로 읽어
-// cb({ at, names, marks: [{ name, at }] }) (시각은 ms 숫자), 게시판에 그 한 장이 없으면 cb(null). 암호가 없거나 못 읽으면 부르지 않는다.
+// cb({ at, names, marks: [{ name, at }] }) (시각은 ms 숫자), 게시판에 그 한 장이 없으면 cb(null). 암호가 없으면 부르지 않는다(게시판을 안 만든 상태 — 오류 아님).
+// 못 읽으면(암호 · 게시판 한 장 · 확인 기록 중 어느 것이든 오류) onError(e) 를 한 번 부르고 그 뒤로는 cb 를 부르지 않는다 —
+// 전에는 오류를 삼켜 사장님 화면의 확인 줄이 조용히 사라졌다(11-05 '작동 안 돼', 기록장 #121 · 2026-11-18 보완 4번).
 // 게시판은 서버 시각 대기 중인 at 도 '지금' 으로 친다 — 사장님이 방금 고친 것이 바로 '고친 뒤 안 봄' 으로 보이게.
 // 돌려주는 함수를 부르면 끊는다.
-export function watchConfirm(id, cb) {
+export function watchConfirm(id, cb, onError = () => {}) {
   const stops = [];
   let off = false;
+  let failed = false;
   let entry;   // 약속: 아직 못 받음 = undefined, 없음 = null
   let marks;
-  const send = () => { if (entry !== undefined && marks !== undefined) cb(entry && { ...entry, marks }); };
+  const send = () => { if (!failed && entry !== undefined && marks !== undefined) cb(entry && { ...entry, marks }); };
+  const fail = (e) => { if (off || failed) return; failed = true; onError(e); };
   const ms = (t) => (t ? t.toMillis() : null);
   readShareKey().then((key) => {
     if (!key || off) return;
@@ -243,12 +255,12 @@ export function watchConfirm(id, cb) {
       const e = snap.data({ serverTimestamps: 'estimate' })?.entries?.[id];
       entry = e ? { at: ms(e.at), names: e.names || [] } : null;
       send();
-    }, () => {}));
+    }, fail));
     stops.push(fs.onSnapshot(fs.query(fs.collection(db, 'share', key, 'marks'), fs.where('sid', '==', id)), (snap) => {
       marks = snap.docs.map((d) => ({ name: d.data().name, at: ms(d.data().at) }));
       send();
-    }, () => {}));
-  }, () => {});
+    }, fail));
+  }).catch(fail);
   return () => {
     off = true;
     stops.forEach((s) => s());

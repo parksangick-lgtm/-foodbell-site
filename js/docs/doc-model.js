@@ -18,6 +18,19 @@ export function sortDocs(rows) {
   return [...rows].sort((a, b) => time(b) - time(a));
 }
 
+// 목록 화면에 그리는 차례 — 일일 일정표만 일정 날짜 순(늦은 날짜가 위), 다른 서류는 sortDocs(최근에 고친 순) 그대로 (사장님 2026-11-18 보완 6번).
+// 날짜는 목록 줄의 label('2026년 11월 19일 (목)')에서 4자리 연도 · 월 · 일로 읽는다. 못 읽는 것은 맨 위(고칠 것이 눈에 띄게),
+// 같은 날짜끼리는 sortDocs 차례 그대로(최근에 고친 것이 위 — sort 는 같은 값의 차례를 지킨다).
+export function listOrder(kind, rows) {
+  const recent = sortDocs(rows);
+  if (kind !== 'daily-schedule') return recent;
+  const day = (r) => {
+    const m = String(r.doc.label || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    return m ? +m[1] * 10000 + +m[2] * 100 + +m[3] : Infinity;
+  };
+  return recent.sort((a, b) => (day(b) - day(a)) || 0);   // 못 읽는 것끼리(무한 − 무한 = NaN)도 같은 자리로
+}
+
 const pad2 = (n) => String(n).padStart(2, '0');
 
 export function editedText(updated, now) {

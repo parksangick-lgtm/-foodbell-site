@@ -785,6 +785,41 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
     summary: function () {
       return { label: getText("issue"), issue: getText("issue"), total: getText("total"), count: getText("count") };
     },
+    /* 3단계 서류 잇기 — 일정표에서 받은 칸 (2026-11-18 보완 12번): 이름마다 한 줄(모자라면 더함) · 지급일과 줄마다 행사 날짜 = 일정표 날짜.
+       일당 · 행사는 비워 둔다(사장님이 넣는다). 전화 · 은행 · 계좌는 지난 지급내역서(past — 최근에 고친 순, 공통 부품이 prefillPast 장까지 읽어 넘김)에서
+       같은 이름(빈칸 무시)의 가장 최근 값 — 빈 값은 건너뛴다. 못 찾으면 비운다 */
+    prefillPast: 50,
+    prefill: function (f, past) {
+      var names = f.names || [], m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(f.date || "");
+      var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : null, dow = d ? " (" + "일월화수목금토"[d.getDay()] + ")" : "";
+      setText("paydate", d ? fmtDateKR(d) + dow : "");
+      var tb = sheet.querySelector("table.stmt tbody");
+      for (var n = sheet.querySelectorAll("tr.item").length; n < names.length; n++) {
+        var row = el("tr", "item"); row.innerHTML = ROW_HTML;
+        tb.insertBefore(row, tb.querySelector("tr.addrow"));
+      }
+      var key = function (s) { return (s || "").replace(/\s+/g, ""); };
+      var known = Object.create(null);   /* 이름(빈칸 뺌) → { tel, acct } — 최근 것부터 보며 빈 값만 다음 것으로 채운다 */
+      (past || []).forEach(function (p) {
+        var t = document.createElement("template");
+        t.innerHTML = (p.doc && p.doc.html) || "";
+        each(t.content.querySelectorAll("tr.item"), function (tr) {
+          var k = key(field(tr, "name"));
+          if (!k) return;
+          var o = known[k] || (known[k] = { tel: "", acct: "" });
+          if (!o.tel) o.tel = field(tr, "tel");
+          if (!o.acct) o.acct = field(tr, "acct");
+        });
+      });
+      each(sheet.querySelectorAll("tr.item"), function (tr, i) {
+        var put = function (k, v) { var e = tr.querySelector('[data-f="' + k + '"]'); if (e) e.textContent = v; };
+        put("date", d ? (d.getMonth() + 1) + "/" + d.getDate() + dow : "");
+        if (i >= names.length) return;
+        var o = known[key(names[i])] || {};
+        put("name", names[i]); put("tel", o.tel || ""); put("acct", o.acct || "");
+      });
+      recalc();
+    },
     editing: function () { return body.classList.contains("editing"); },
     onSave: null
   };
@@ -797,7 +832,7 @@ body.editing .memo [data-ph]:empty::after{content:attr(data-ph)}
 if ("serviceWorker" in navigator) addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
 </script>
 <script type="module">import { readNumber } from './js/docs/amount.js?v=1'; window.readNumber = readNumber;   /* 금액 칸의 '15만' 읽기 */</script>
-<script type="module" src="js/docs/doc-page.js?v=18"></script>
+<script type="module" src="js/docs/doc-page.js?v=19"></script>
 
 
 </body>

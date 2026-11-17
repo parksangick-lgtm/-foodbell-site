@@ -1,13 +1,15 @@
 // 웹 서류 5종 공통 부품 (2단계) — 로그인 · 목록 · 저장(모아서 올리기) · 다른 기기 고침 반영 · 지우기.
 // 화면은 window.FoodbellDoc(연결 고리)만 내주고, 저장소는 ../sije/store.js 로만 부른다.
 // 주소에 ?id= 가 없으면 그 종류의 목록, 있으면 그 서류.
-import { KINDS, sortDocs, editedText, rowCells, filterDocs } from './doc-model.js';
-import { putBundle, takeBundle, quoteToEvent, eventQuoteToEvent, quoteToStatement, quoteToWorksheet, NOTES_KEY as NOTES } from './handoff.js';
+import { KINDS, sortDocs, listOrder, editedText, rowCells, filterDocs } from './doc-model.js?v=2';   // 판 번호 — listOrder 를 더했다(11-18), 고치면 올린다
+import {
+  putBundle, takeBundle, quoteToEvent, eventQuoteToEvent, quoteToStatement, quoteToWorksheet, scheduleToPay, NOTES_KEY as NOTES,
+} from './handoff.js?v=8';   // 새 export(scheduleToPay, 11-18 보완 12번) — 옛 사본이 오면 화면이 멈춘다(기록장 #78). sheet-page.js 는 ?v=7
 import { dashTelsIn } from './phone.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchDocs, watchDoc, createDoc, saveDoc, removeDoc, atMost, myRole, publishShare,
-  idToken, recentDocs, watchConfirm,
-} from '../sije/store.js?v=5';   // 판 번호 — 옛 store.js 저장본과 섞이면 새 이름을 못 찾아 서류가 통째로 안 뜬다(2026-11-03 최종 검토). store.js 를 고치면 올린다
+  idToken, recentDocs, watchConfirm, eventsOn,
+} from '../sije/store.js?v=6';   // 판 번호 — 옛 store.js 저장본과 섞이면 새 이름을 못 찾아 서류가 통째로 안 뜬다(2026-11-03 최종 검토). store.js 를 고치면 올린다
 
 const D = window.FoodbellDoc;
 const { title, noun } = KINDS[D.kind];
@@ -76,12 +78,14 @@ document.querySelector('.sheet').after(delWrap);
 $('doc-del').textContent = `이 ${noun} 지우기`;
 
 // 3단계 서류 잇기 — '이 견적서로 …만들기' 줄 (지우기 위). 누르면 겹치는 칸을 꾸러미로 넘기고 받는 화면을 ?make=1 로 연다.
-const MAKES = { 'sije-quote': ['event', 'statement', 'sije-worksheet'], 'event-quote': ['event', 'statement'] };   // 행사 견적서 → 내역서는 2026-11-01
+const MAKES = { 'sije-quote': ['event', 'statement', 'sije-worksheet'], 'event-quote': ['event', 'statement'],   // 행사 견적서 → 내역서는 2026-11-01
+  'daily-schedule': ['staff-pay'] };   // 일정표 → 알바비 지급내역서 (2026-11-18 보완 12번)
 const MAKE = {
   event: { label: '내역서 만들기', ask: `이 ${noun} 내용으로 새 내역서를 만들까요?`, url: 'sije-list.html?make=1',
     build: D.kind === 'event-quote' ? eventQuoteToEvent : quoteToEvent },   // 행사 견적서는 상 종류가 없어 빈 양식으로
   statement: { label: '거래명세서 만들기', ask: `이 ${noun} 내용으로 새 거래명세서를 만들까요?`, url: 'statement.html?make=1', build: quoteToStatement },
   'sije-worksheet': { label: '작업지시서 만들기', ask: `이 ${noun} 내용으로 새 작업지시서를 만들까요?`, url: 'sije-worksheet.html?make=1', build: quoteToWorksheet },   // 사장님 2026-11-01
+  'staff-pay': { label: '알바비 지급내역서 만들기', ask: `이 ${noun} 내용으로 새 알바비 지급내역서를 만들까요?`, url: 'staff-pay.html?make=1', build: scheduleToPay },
 };
 if (MAKES[D.kind]) {
   const row = document.createElement('div');
@@ -103,8 +107,9 @@ if (MAKES[D.kind]) {
   }
   delWrap.before(row);
 }
-// 받는 쪽(거래명세서 목록 · 시제 견적서 목록(내역서에서, 2026-10-28) · 작업지시서 목록(시제 견적서에서, 2026-11-01)) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
-const incoming = ['statement', 'sije-quote', 'sije-worksheet'].includes(D.kind) && !docId
+// 받는 쪽(거래명세서 목록 · 시제 견적서 목록(내역서에서, 2026-10-28) · 작업지시서 목록(시제 견적서에서, 2026-11-01) ·
+// 알바비 지급내역서 목록(일정표에서, 2026-11-18)) — ?make=1 로 열렸고 1분 안의 꾸러미가 있으면 한 번만 쓴다 (읽으면 늘 지움)
+const incoming = ['statement', 'sije-quote', 'sije-worksheet', 'staff-pay'].includes(D.kind) && !docId
   ? takeBundle(sessionStorage, D.kind, params.get('make') === '1', Date.now()) : null;
 
 const toastEl = document.createElement('div');
@@ -205,6 +210,7 @@ D.onSave = () => {
 // 일일 일정표 '사진으로 채우기' (2026-11-03) — 로그인 표(서버 기능이 주인인지 본다) · 이 종류의 최근 서류 n장(이름 목록)
 D.idToken = idToken;
 D.recentDocs = (n) => recentDocs(D.kind, n);
+D.eventsOn = eventsOn;   // 일일 일정표 '확정 행사 불러오기' (2026-11-18 보완 11번) — 날짜 하나의 시제 행사를 한 번 읽는다
 
 function flush() {
   clearTimeout(timer);
@@ -331,7 +337,7 @@ function rowEl({ id, doc }) {
 // 검색 글상자로 거른 줄만 그린다 — 읽어 온 것 안에서만, 서버에 다시 묻지 않는다 (사장님 2026-11-01 공통 11)
 function drawRows() {
   const shown = filterDocs(lastRows, D.kind, $('doc-search').value);
-  $('doc-rows').replaceChildren(...sortDocs(shown).map(rowEl));
+  $('doc-rows').replaceChildren(...listOrder(D.kind, shown).map(rowEl));   // 일정표만 일정 날짜 순, 다른 서류는 고친 순 (11-18 보완 6번)
   $('doc-empty').textContent = lastRows.length ? '찾는 서류가 없습니다' : '아직 서류가 없습니다';
   $('doc-empty').hidden = shown.length > 0;
 }
@@ -360,10 +366,13 @@ async function makeNew(bundle) {
   const b = $('doc-new');
   b.disabled = true;
   try {
+    // 받는 화면이 prefillPast(장 수)를 내주면 지난 같은 종류 서류(최근에 고친 순)도 prefill 에 넘긴다 — 알바비 지급내역서의 전화 · 계좌 이어받기(11-18 보완 12번).
+    // ?make=1 로 열면 목록을 듣기 전이라 lastRows 가 비어 있어 따로 한 번 읽는다. 3초까지만 기다리고, 못 읽으면 없이 채운다
+    const past = bundle && D.prefillPast ? (await atMost(recentDocs(D.kind, D.prefillPast).catch(() => null))) || [] : [];
     draw(() => {
       D.fresh();
       if (D.inherit) D.inherit(sortDocs(lastRows)[0]?.doc ?? null);   // 가장 최근에 고친 같은 종류 서류에서 이어받기
-      if (bundle) D.prefill(bundle.fields);
+      if (bundle) D.prefill(bundle.fields, past);
     });
     // 같은 날짜 서류가 이미 있으면 묻는다 — sameDoc 은 일일 일정표만 내준다. 취소하면 있는 것을 연다 (사장님 10-24 저녁)
     const same = !bundle && D.sameDoc ? D.sameDoc(sortDocs(lastRows)) : null;
@@ -447,8 +456,10 @@ onUser(async (user) => {
   if (role === 'owner') sweepDrops();   // 지난번 창을 닫아 남은 빈 새 서류
   if (docId) {
     const offDoc = watchDoc(docId, onDoc, onError);
-    // 직원 확인 줄 — 화면이 showConfirm 을 내줄 때만(일일 일정표), 주인만. 로그인이 바뀌면 줄도 비운다
-    const offConfirm = role === 'owner' && D.showConfirm ? watchConfirm(docId, D.showConfirm) : null;
+    // 직원 확인 줄 — 화면이 showConfirm 을 내줄 때만(일일 일정표), 주인만. 로그인이 바뀌면 줄도 비운다.
+    // 못 읽으면 { error: 오류 이름 } 을 넘겨 화면이 '못 읽음' 한 줄을 그린다 — 조용히 사라지지 않게 (11-18 보완 4번)
+    const offConfirm = role === 'owner' && D.showConfirm
+      ? watchConfirm(docId, D.showConfirm, (e) => D.showConfirm({ error: why(e) })) : null;
     stop = () => {
       offDoc();
       if (offConfirm) { offConfirm(); D.showConfirm(null); }
