@@ -2227,6 +2227,7 @@ def test_daily_date_without_year_reads_nearest_day(pc, repo_url, custom_token, t
         (f'{today.month}/{today.day}', today),                                     # 오늘도 앞날에 든다
         (f'{past.month}월 {past.day}일', nearest_day(past.month, past.day)),       # 지난 날 → 다음 해
         (f'{tomorrow.year % 100}년 {tomorrow.month}월 {tomorrow.day}일', tomorrow),  # 두 자리 연도는 적힌 대로
+        (f'{tomorrow.year % 100}.{tomorrow.month}.{tomorrow.day}', tomorrow),      # 점으로 이은 두 자리 연도도 (사장님 11-18)
         (f'{tomorrow.year}.{tomorrow.month}.{tomorrow.day}', tomorrow),            # 전부터 읽던 꼴도 그대로 읽는다
     ]:
         edit_cell(pc, '[data-k="date"]', typed)
@@ -2447,6 +2448,32 @@ def test_daily_staff_name_buttons_hidden_without_names(pc, repo_url, custom_toke
         assert pc.locator('.staff-pick').count() == 0, fake
         pc.keyboard.type('가짜손')
         assert text_of(pc, 'tr.item [data-f="staff"]') == '가짜손', fake
+
+
+def test_daily_staff_names_float_wide_on_pc(pc, repo_url, custom_token, made):
+    """PC 폭에서는 이름 단추를 담당 칸 아래 넓은 상자로 띄워 가로로 늘어놓는다 — 10명이어도 줄 높이가 안 늘고, 한 줄에 여럿,
+    상자는 화면 안, 아래 줄을 덮은 단추도 눌린다. 전에는 좁은 칸에 한 줄에 하나씩 쌓여 줄이 약 480px 늘었다 (사장님 11-18 오후).
+    줄 사이 구분선은 진한 베이지 2px (사장님 11-18 오후 'B')."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fake_recent(pc, ['가짜일 · 가짜이 · 가짜삼', '가짜사 · 가짜오', '가짜육칠팔', '가짜구 · 가짜십 · 가짜십일', '가짜십이번'])
+    pc.click('#btn-edit')
+    pc.click('tr.addrow button')
+    first = pc.locator('tr.item').first
+    before = first.evaluate('(r) => r.getBoundingClientRect().height')
+    pc.click('tr.item:nth-child(1) [data-f="staff"]')
+    pc.locator('.staff-pick button').first.wait_for(timeout=15_000)
+    assert len(name_buttons(pc)) == 10
+    after = first.evaluate('(r) => r.getBoundingClientRect().height')
+    assert after - before < 4, (before, after)
+    tops = {round(t) for t in pc.locator('.staff-pick button').evaluate_all('(bs) => bs.map((b) => b.getBoundingClientRect().top)')}
+    assert 1 < len(tops) <= 3, tops                                  # 10개가 두세 줄 (전에는 10줄)
+    box = pc.locator('.staff-pick').evaluate('(b) => { const r = b.getBoundingClientRect(); return [r.left, r.right, innerWidth]; }')
+    assert box[0] >= 0 and box[1] <= box[2], box
+    pick_name(pc, '가짜십이번')                                      # 둘째 줄 위에 떠 있는 단추
+    assert text_of(pc, 'tr.item [data-f="staff"]') == '가짜십이번'
+    line = pc.locator('tr.item:nth-child(1) td').first.evaluate(
+        '(td) => { const s = getComputedStyle(td); return [s.borderBottomWidth, s.borderBottomColor]; }')
+    assert line == ['2px', 'rgb(168, 145, 106)'], line
 
 
 def test_daily_new_edit_buttons_fit_phone(phone, repo_url, custom_token, made):
@@ -3019,7 +3046,8 @@ def test_daily_events_button_owner_editing_only(pc, repo_url, custom_token, made
 
 def test_daily_events_fill_confirmed_new_only(pc, repo_url, custom_token, test_db, made, put_events):
     """일정표 날짜와 같은 날의 행사 중 상태 '확정' 이고 이 일정표에 아직 없는 것만 빈 줄부터 — 미확정 · 다른 날은 안 온다.
-    이미 있음 = 지금 있는 줄과 장소가 같거나(빈칸 무시) 연락처 번호가 같다(숫자만 맞댐). 칸 맞추기: 담당·차량 → 담당 · 차량('1호차' 꼴만 차량),
+    이미 있음 = 지금 있는 줄과 장소가 같거나 한쪽에 들어 있거나(빈칸 무시 — 덧붙인 글은 아래 _place_with_extra_words_ 시험)
+    연락처 번호가 같다(숫자만 맞댐). 칸 맞추기: 담당·차량 → 담당 · 차량('1호차' 꼴만 차량),
     출발 시간 → 출발, 시간 → 시간, 주소(없으면 장소) → 장소, 고객 + 연락처 → 연락처, 상차림 + 산신제 → 행사 내용, 금액 → 단가,
     식사 · 도착 시간 · 꼭 지킬 것 · 메모 → 메모 줄마다. 채우면 저장된다. 다시 누르면 '불러올 확정 행사가 없습니다'(대조).
     손님 이름 · 번호는 콘솔 · 주소에 안 찍는다."""
@@ -3063,14 +3091,17 @@ def test_daily_events_fill_confirmed_new_only(pc, repo_url, custom_token, test_d
 
 
 # 내역서 금액 칸에 실제로 있는 꼴(js/docs/handoff.js parseAmount 주석 · 스킬의 '실제 값' 절) → (단가 칸, 금액 칸).
-# 일정표 손 입력 · 사진으로 채우기와 같은 규칙: 숫자로 읽히면 'N원', 단위 없는 숫자는 적힌 그대로 → '단위를 적어 주세요'.
+# 다른 서류 잇기와 같은 내역서 규칙(parseAmount): 단위 없는 '170' 은 170만(사장님 11-18), 점 자리 나눔 · 뒤의 (메모) 도 읽는다.
+# 못 읽는 글('협의')은 적힌 그대로. 일정표에 손으로 친 · 사진으로 읽은 '250' 은 여전히 '단위를 적어 주세요'
+# (test_daily_bare_number_price_asks_for_unit · 10-21 결정).
 EV_AMOUNTS = [
     ('360만 VAT별도', '3,600,000원', '3,600,000원'),
     ('132만원(입금가)', '1,320,000원', '1,320,000원'),
-    ('1,200,000원 (1자상)', '1,200,000원 (1자상)', ''),
-    ('2.145.000', '2.145.000', '단위를 적어 주세요(예: 25만)'),
-    ('170', '170', '단위를 적어 주세요(예: 25만)'),
+    ('1,200,000원 (1자상)', '1,200,000원', '1,200,000원'),
+    ('2.145.000', '2,145,000원', '2,145,000원'),
+    ('170', '1,700,000원', '1,700,000원'),
     ('600,000원', '600,000원', '600,000원'),
+    ('협의', '협의', ''),
 ]
 
 
@@ -3091,6 +3122,26 @@ def test_daily_events_amount_shapes(pc, repo_url, custom_token, made, put_events
     for (amount, _, _), (_, price, amt) in zip(EV_AMOUNTS, got):
         print(f'  {amount!r} → {price!r} | {amt!r}')
     assert got == [(f'가짜금액 {i}', price, amt) for i, (_, price, amt) in enumerate(EV_AMOUNTS, 1)], got
+
+
+def test_daily_events_place_with_extra_words_is_same(pc, repo_url, custom_token, made, put_events):
+    """장소에 글자를 덧붙여 적어도 같은 행사 — 줄 장소가 행사 장소 안에 있거나 그 반대면 안 불러온다(빈칸 무시, 사장님 11-18).
+    숫자 중간에서 끊기면 다른 곳이다 — '가짜동 8-1' 줄이 있어도 '가짜동 8-10' 행사는 온다(대조)."""
+    day = ev_day(325)
+    iso = day.isoformat()
+    put_events(date=iso, time='10시', titlePlace='가짜동 8-1 뒷산', place='', contacts=['010-0000-0081'])   # 줄 장소 + 덧붙임
+    put_events(date=iso, time='11시', titlePlace='가짜동 8-2', place='', contacts=['010-0000-0082'])        # 줄 장소 안에 듦
+    put_events(date=iso, time='12시', titlePlace='가짜동 8-10', place='', contacts=['010-0000-0083'])       # 숫자가 이어짐 → 온다
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    pc.click('#btn-edit')
+    edit_cell(pc, '[data-k="date"]', kr_date(day))
+    edit_cell(pc, 'tr.item [data-f="place"]', '가짜동 8-1')
+    pc.click('tr.addrow button')
+    edit_cell(pc, 'tr.item:nth-child(2) [data-f="place"]', '가짜동 8-2 뒷산 묘역')
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, '1줄 불러왔습니다')
+    assert pc.locator('tr.item').count() == 3
+    assert text_of(pc, 'tr.item:nth-child(3) [data-f="place"]') == '가짜동 8-10'
 
 
 def test_daily_events_unreadable_date_and_read_error(pc, repo_url, custom_token, made):
