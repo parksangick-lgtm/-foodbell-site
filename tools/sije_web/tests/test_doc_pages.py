@@ -1314,9 +1314,10 @@ def save_pages(page, out_dir):
     return [d.suggested_filename for d in files], page.evaluate('window.__shotRows'), sizes
 
 
-def test_daily_fifteen_rows_split_into_pages(pc, browser, repo_url, custom_token, made, tmp_path):
-    """하루 15건(밴드에 실제로 있었던 최대) — 사진이 장마다 나뉘고, 어느 장도 A4 비율보다 길지 않다(줄이 잘리지 않음).
-    휴대폰에서 보내도 PC 와 같은 종이(표) 모양 · 같은 장 나눔 (최종 검토 I1 — 휴대폰은 일 하나마다 사진 한 장이었다)."""
+def test_daily_fifteen_rows_one_photo(pc, browser, repo_url, custom_token, made, tmp_path):
+    """하루 15건(밴드에 실제로 있었던 최대)도 사진은 한 장 — 1~15번 카드가 모두 그 한 장에, 폭 1080, 이름은 날짜만(_1 없음).
+    9:16 장마다 나눴더니 직원들이 둘째 장부터 안 넘겨 봤다 (사장님 2026-11-20). 휴대폰에서 보내도 PC 와 같은 그림
+    (최종 검토 I1 — 휴대폰은 일 하나마다 사진 한 장이었다)."""
     doc_id = daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
     for _ in range(14):
@@ -1344,11 +1345,11 @@ def test_daily_fifteen_rows_split_into_pages(pc, browser, repo_url, custom_token
     finally:
         ctx.close()
     for where, (names, shots, sizes) in results.items():
-        assert len(names) >= 2 and names[0].endswith('_1.png') and names[1].endswith('_2.png'), (where, names)
-        assert len(shots) == len(names) and sum(shots, []) == list(range(1, 16)), (where, shots)
-        for w, h in sizes:
-            assert h / w <= 16 / 9 * 1.03, (where, w, h)                 # 한 장 = 휴대폰 화면 비율 (10-24 검토 반영)
-    assert results['휴대폰'][1] == results['PC'][1], results     # 휴대폰도 PC 와 같은 장 나눔
+        assert len(names) == 1 and re.fullmatch(r'\d{4}-\d{2}-\d{2}\.png', names[0]), (where, names)
+        assert shots == [list(range(1, 16))], (where, shots)
+        assert sizes[0][0] == 1080 and sizes[0][1] > 16 / 9 * 1080, (where, sizes)   # 15건이면 9:16 보다 긴 한 장
+    print('\n15건 사진 크기:', {k: v[2] for k, v in results.items()})
+    assert results['휴대폰'][2] == results['PC'][2], results     # 휴대폰도 PC 와 같은 크기
 
 
 def test_daily_viewer_sees_list_and_doc_without_edit(pc, browser, repo_url, custom_token, made):
@@ -2027,8 +2028,8 @@ def test_daily_photo_is_phone_cards(pc, repo_url, custom_token, made, tmp_path):
         assert s not in text, s
 
 
-def test_daily_tall_card_gets_own_page(pc, repo_url, custom_token, made, tmp_path):
-    """메모 40줄짜리 카드는 혼자 한 장(그 장만 9:16 보다 길어도 된다), 앞뒤 카드는 잘리지 않는다."""
+def test_daily_tall_card_stays_in_one_photo(pc, repo_url, custom_token, made, tmp_path):
+    """메모 40줄짜리 카드가 있어도 사진은 한 장 — 앞뒤 카드까지 잘리지 않고 다 들어간다 (사장님 2026-11-20 '한 장으로')."""
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     pc.click('#btn-edit')
     for _ in range(2):
@@ -2039,7 +2040,7 @@ def test_daily_tall_card_gets_own_page(pc, repo_url, custom_token, made, tmp_pat
         trs[0].querySelector('[data-f="work"]').dispatchEvent(new Event('input', { bubbles: true })); }""")
     pc.click('#btn-edit')
     names, shots, sizes = save_pages(pc, tmp_path)
-    assert shots == [[1], [2], [3]] and sizes[1][1] > sizes[0][1], (shots, sizes)
+    assert len(names) == 1 and shots == [[1, 2, 3]] and sizes[0][1] > 16 / 9 * 1080, (names, shots, sizes)
 
 
 def test_daily_send_count_and_stamp(phone, repo_url, custom_token, test_db, made):
