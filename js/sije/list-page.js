@@ -1,6 +1,6 @@
 // 시제행사 목록 화면 (sije-list.html) — 로그인 · 상태 버튼 · 검색 · 새 행사
 import { formatDateText } from './model.js?v=2';   // model.js · store.js 는 부르는 곳 모두 같은 주소(판 번호) — 고치면 전부 올린다
-import { splitRows, matchRow, todayISO } from './list-model.js';
+import { splitRows, matchRow, todayISO, sortTemplates } from './list-model.js?v=2';   // 새 export 를 더하면 판 번호를 올린다 (약한 신호에 옛 사본이 섞이지 않게)
 import { takeBundle, pickTemplate, NOTES_KEY } from '../docs/handoff.js';
 import {
   initStore, onUser, signIn, signInForTest, signOutUser, watchEvents, listTemplates, createFromTemplate,
@@ -85,7 +85,7 @@ async function chooseTemplate(bundle) {
   $('tpl-list').replaceChildren(el('p', 'tpl-wait', '불러오는 중…'));
   dlg.showModal();
   try {
-    const tpls = await listTemplates();
+    const tpls = sortTemplates(await listTemplates());
     $('tpl-list').replaceChildren(...tpls.map((t) => {
       const b = el('button', 'tpl-choice', t.name);
       b.type = 'button';

@@ -128,6 +128,28 @@ def test_blank_template_leaves_header_type_empty(page, repo_url, custom_token, t
         test_db.collection('events').document(new_id).delete()
 
 
+def test_template_dialog_lists_big_tables_first(page, repo_url, custom_token, test_db):
+    """상 종류 고르기 — 큰 상부터, 수량 없는 빈 양식은 맨 끝 (사장님 2026-11-21). 저장소는 이름순(1자 · 45만 · 60만 · 7치)으로 준다.
+    실제 이름의 양식은 시험 프로젝트에 없던 것만 넣고 끝나면 그것만 지운다 (test_handoff 가 쓰는 것을 지우지 않게)."""
+    order = ['1자 고임상', '7치 고임상', '60만원상', '45만원 고급상', '기본상']
+    made = []
+    for name in order:
+        ref = test_db.collection('templates').document(name)
+        if not ref.get().exists:
+            ref.set({'name': name, 'items': TEMPLATE['items']})
+            made.append(ref)
+    try:
+        open_list(page, repo_url, custom_token(ALLOWED, allowed=True))
+        page.locator('#rows .row[data-id="list-a"]').wait_for(timeout=20_000)
+        page.click('#new-event')
+        page.locator('#tpl-list .tpl-choice').first.wait_for(timeout=20_000)
+        shown = page.eval_on_selector_all('#tpl-list .tpl-choice', 'els => els.map(e => e.textContent)')
+        assert [n for n in shown if n in order or n == BLANK['name']] == order + [BLANK['name']]
+    finally:
+        for ref in made:
+            ref.delete()
+
+
 def test_page_has_noindex_and_no_home_link(page, repo_url):
     open_list(page, repo_url)
     assert 'noindex' in page.get_attribute('meta[name="robots"]', 'content')

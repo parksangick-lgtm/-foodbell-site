@@ -1,7 +1,7 @@
 // 시제행사 목록 정렬 · 검색 — 오늘 이후는 가까운 순으로 먼저, 지난 행사는 최근 순으로 아래 / 이름 · 장소 · 전화로 거르기
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { splitRows, matchRow, todayISO } from '../../../js/sije/list-model.js';
+import { splitRows, matchRow, todayISO, sortTemplates } from '../../../js/sije/list-model.js';
 
 const row = (id, date, time = '') => ({ id, ev: { date, time } });
 const ids = (rows) => rows.map((r) => r.id);
@@ -61,4 +61,21 @@ test('matchRow — 빈 검색(공백만)은 전부, 칸이 비어 있어도 죽�
 test('todayISO — 기기 시각(로컬)의 YYYY-MM-DD', () => {
   assert.equal(todayISO(new Date(2026, 10, 1, 23, 59)), '2026-11-01');
   assert.equal(todayISO(new Date(2026, 0, 5)), '2026-01-05');
+});
+
+// 저장소는 문서 이름순(1자 · 45만 · 60만 · 7치 · 빈 양식)으로 준다 — 실제 저장소 2026-11-21 그대로
+const tpl = (name, type) => (type === undefined ? { name } : { name, type });
+const names = (tpls) => tpls.map((t) => t.name);
+
+test('sortTemplates — 상 종류 고르기는 큰 상부터, 수량 없는 빈 양식은 맨 끝 (사장님 2026-11-21)', () => {
+  const fromStore = [tpl('1자 고임상'), tpl('45만원 고급상'), tpl('60만원상'), tpl('7치 고임상'), tpl('기본상'), tpl('빈 양식 (수량 없음)', '')];
+  assert.deepEqual(names(sortTemplates(fromStore)),
+    ['1자 고임상', '7치 고임상', '60만원상', '45만원 고급상', '기본상', '빈 양식 (수량 없음)']);
+  assert.deepEqual(names(fromStore),
+    ['1자 고임상', '45만원 고급상', '60만원상', '7치 고임상', '기본상', '빈 양식 (수량 없음)'], '원본은 안 바뀐다');
+});
+
+test('sortTemplates — 목록에 없는 새 양식은 아는 양식 뒤 · 빈 양식 앞에 이름순', () => {
+  const got = sortTemplates([tpl('빈 양식 (수량 없음)', ''), tpl('나중상'), tpl('기본상'), tpl('가나상'), tpl('1자 고임상')]);
+  assert.deepEqual(names(got), ['1자 고임상', '기본상', '가나상', '나중상', '빈 양식 (수량 없음)']);
 });

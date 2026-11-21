@@ -12,6 +12,18 @@ function byDateDesc(a, b) {
     || (a.ev.time || '').localeCompare(b.ev.time || '');
 }
 
+// 상 종류 고르기 창의 단추 순서 — 큰 상부터 (사장님 2026-11-21). 저장소는 이름순(1자 · 45만 · 60만 · 7치)으로 준다.
+// 여기 없는 새 양식은 그 뒤에 이름순, 수량 없는 빈 양식(type '')은 맨 끝.
+const TEMPLATE_ORDER = ['1자 고임상', '7치 고임상', '60만원상', '45만원 고급상', '기본상'];
+export function sortTemplates(tpls) {
+  const rank = (t) => {
+    if (t.type === '') return TEMPLATE_ORDER.length + 1;
+    const i = TEMPLATE_ORDER.indexOf(t.name);
+    return i === -1 ? TEMPLATE_ORDER.length : i;
+  };
+  return [...tpls].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'ko'));
+}
+
 // 기기 시각(로컬)의 'YYYY-MM-DD'
 export function todayISO(now = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
