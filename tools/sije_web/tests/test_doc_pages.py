@@ -2451,6 +2451,18 @@ def test_daily_staff_name_buttons_hidden_without_names(pc, repo_url, custom_toke
         assert text_of(pc, 'tr.item [data-f="staff"]') == '가짜손', fake
 
 
+def test_daily_staff_name_buttons_skip_hidden_words(pc, repo_url, custom_token, made):
+    """사장님이 지워 달라고 한 글자(장소 · 메모 · 붙은 이름 — 2026-11-22 캡처의 담당 단추)는 최근 일정표 담당 칸에 있어도 단추로 안 나온다.
+    글자가 똑같을 때만 뺀다 — 같은 칸에 함께 적힌 다른 이름('가짜일' · '가짜이')은 그대로 나온다."""
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fake_recent(pc, ['가짜일 · 서병선 · 춘천 · 전달, 일회용', '문수산수목장 용달 · 장진우 · 차준철', '무명가 방이동 픽업 · 가짜이',
+                     '도우미 · 도우미남자1명 · 도우미1명', '서사장 · 최인식박매호 · 도우미2명 · 무지개추모공원'])
+    pc.click('#btn-edit')
+    pc.click('tr.item [data-f="staff"]')
+    pc.locator('.staff-pick button').first.wait_for(timeout=15_000)
+    assert name_buttons(pc) == ['가짜일', '가짜이']
+
+
 def test_daily_staff_names_float_wide_on_pc(pc, repo_url, custom_token, made):
     """PC 폭에서는 이름 단추를 담당 칸 아래 넓은 상자로 띄워 가로로 늘어놓는다 — 10명이어도 줄 높이가 안 늘고, 한 줄에 여럿,
     상자는 화면 안, 아래 줄을 덮은 단추도 눌린다. 전에는 좁은 칸에 한 줄에 하나씩 쌓여 줄이 약 480px 늘었다 (사장님 11-18 오후).
