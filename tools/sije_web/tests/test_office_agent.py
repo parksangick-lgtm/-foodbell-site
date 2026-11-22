@@ -1,5 +1,8 @@
 """사무실 PC 프로그램 시험 — 저장소 · 크롬 없이 한 차례를 흉내 낸다."""
+import json
 import logging
+
+import pytest
 
 from conftest import FakeCalendar, fake_event
 from tools.sije_web import calendar_sync, office_agent
@@ -92,6 +95,66 @@ def test_staff_sheets_failure_does_not_stop_pdf_and_backup(tmp_path):
     office_agent.one_cycle(BrokenSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
                            sheets=BrokenDb())
     assert list((tmp_path / '백업').glob('*시제행사 백업.xlsx'))
+
+
+NUL = b'\x00' * 66   # 2026-11-13 정전 뒤 사무실 PC 의 담당자 기록 파일이 실제로 이 모양이었다
+
+
+class CalmSource(BrokenSource):
+    """바뀐 것 묻기에 준 목록을 그대로 돌려주는 저장소."""
+
+    def __init__(self, docs=()):
+        self.docs = list(docs)
+
+    def changed_since(self, since, kind='events'):
+        return self.docs if kind == 'docs' else []
+
+
+@pytest.mark.parametrize('name', ['s.json', 's-staff.json'])
+def test_broken_state_file_is_put_aside_and_step_starts_fresh(tmp_path, monkeypatch, caplog, name):
+    """0 으로 찬 기록 파일 — 그 차례가 5분마다 실패만 되풀이하지 않고(11-13 ~ 11-14, 387번) 옆으로 치운 뒤
+    빈 기록으로 처음부터 한 번 다시 본다(PDF 는 같은 이름에 다시 만들고, 담당자 내역서는 전체를 다시 본다)."""
+    seen = {}
+
+    def recorder(file, i, out):
+        def run(*a):
+            seen[file] = dict(a[i])
+            a[i]['since'] = 'x'
+            return out
+        return run
+    monkeypatch.setattr(office_agent, 'sync_once', recorder('s.json', 2, {'made': [], 'removed': [], 'failed': [], 'skipped': []}))
+    monkeypatch.setattr(office_agent.staff_sheets, 'sync_staff_sheets', recorder('s-staff.json', 1, {'written': [], 'removed': []}))
+    broken = tmp_path / name
+    broken.write_bytes(NUL)
+    with caplog.at_level(logging.WARNING, logger='t'):
+        office_agent.one_cycle(CalmSource(), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
+                               sheets=object())
+    assert seen == {'s.json': {}, 's-staff.json': {}}
+    assert json.loads(broken.read_text(encoding='utf-8')) == {'since': 'x'}
+    [aside] = tmp_path.glob(f'{name}.broken-*')
+    assert aside.read_bytes() == NUL
+    assert any(name in r.getMessage() for r in caplog.records if r.levelno == logging.WARNING)
+
+
+def test_broken_obsidian_state_does_not_copy_every_note_again(tmp_path, caplog):
+    """옵시디언 기록이 망가지면 '지금부터' 바뀐 일정표만 옮긴다 — 빈 기록으로 처음부터 보면 어느 노트가 프로그램 것인지 몰라
+    있는 노트마다 '… (2).md' 를 한 벌 더 만든다(사무실 볼트에 57개)."""
+    note = tmp_path / '푸드벨-업무' / '일일 일정표' / '2026-11-22 (일).md'
+    note.parent.mkdir(parents=True)
+    note.write_text('먼저 옮긴 것', encoding='utf-8')
+    old = ('d1', {'kind': 'daily-schedule', 'label': '2026년 11월 22일 (일)', 'text': '옛 판',
+                  'updatedAt': '2026-11-21T12:11:08.437000+00:00'})
+    broken = tmp_path / 's-obsidian.json'
+    broken.write_bytes(NUL)
+    with caplog.at_level(logging.WARNING, logger='t'):
+        office_agent.one_cycle(CalmSource([old]), tmp_path, tmp_path / 's.json', 'http://unused/', logging.getLogger('t'),
+                               vault=tmp_path)
+    assert sorted(p.name for p in note.parent.iterdir()) == ['2026-11-22 (일).md']
+    assert note.read_text(encoding='utf-8') == '먼저 옮긴 것'
+    assert json.loads(broken.read_text(encoding='utf-8'))['since'] > old[1]['updatedAt']
+    [aside] = tmp_path.glob('s-obsidian.json.broken-*')
+    assert aside.read_bytes() == NUL
+    assert any('s-obsidian.json' in r.getMessage() for r in caplog.records if r.levelno == logging.WARNING)
 
 
 def test_agent_refuses_missing_work_root(tmp_path):

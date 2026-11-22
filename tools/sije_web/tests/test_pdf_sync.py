@@ -1,4 +1,5 @@
 """사무실 PC 의 PDF 자동 만들기 시험 — 가짜 저장소 · 가짜 그리기로 (파이어베이스 · 크롬 없이)."""
+import os
 from pathlib import Path
 
 import pymupdf
@@ -318,3 +319,14 @@ def test_state_round_trip(tmp_path):
     save_state(tmp_path / 's' / 'state.json', state)
     assert load_state(tmp_path / 's' / 'state.json') == state
     assert load_state(tmp_path / 'none.json') == {}
+
+
+def test_save_state_reaches_disk_before_replacing(tmp_path, monkeypatch):
+    """새 기록을 디스크에 확실히 쓴(fsync) 뒤에 옛 파일과 바꾼다 — 안 그러면 정전 뒤 0 으로 찬 파일이 남는다(2026-11-13 사무실 PC)."""
+    order = []
+    real_replace = Path.replace
+    monkeypatch.setattr(os, 'fsync', lambda fd: order.append('fsync'))
+    monkeypatch.setattr(Path, 'replace', lambda self, target: (order.append('replace'), real_replace(self, target))[1])
+    save_state(tmp_path / 'state.json', {'a': 1})
+    assert order == ['fsync', 'replace']
+    assert load_state(tmp_path / 'state.json') == {'a': 1}

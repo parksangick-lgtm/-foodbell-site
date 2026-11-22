@@ -7,7 +7,9 @@
   · PDF 프로그램의 '옛 코드' 는 저장(커밋) 시각이 아니라 그 프로그램이 부르는 파일을 고친 시각으로 판단한다
 --tests 를 주면 시험 전체(JS + 파이썬, 15분쯤)도 돈다. 서류 시험은 시험 프로젝트를 쓰므로 다른 서류 시험과 겹쳐 돌리지 않는다."""
 import argparse
+import collections
 import datetime
+import difflib
 import glob
 import json
 import os
@@ -326,6 +328,68 @@ def site():
 
 
 # ---------------------------------------------------------------- 6. 사무실 PC 만 — PDF 프로그램 · n8n · 실제 저장소
+def agent_log_row(lines, now, hours=24):
+    """(상태, 설명). 줄 앞 시각으로 최근 24시간의 ERROR 줄과 '기록 파일이 망가져' 줄만 본다 — 시험이 남긴 pytest-of- 줄은 뺀다.
+    '마지막 500줄' 로 보던 때는 하루 몇 줄 쌓이는 기록이라 일주일 지난 오류가 계속 '확인' 이었다(기록장 #131, 2026-11-22).
+    같은 실패가 최근 1시간에 3번 넘으면 '문제' — 그 차례가 5분마다 실패하고 있다(11-13 은 32시간 동안 387번)."""
+    recent = []
+    for l in lines:
+        try:
+            t = datetime.datetime.strptime(l[:19], '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            continue
+        if now - t <= datetime.timedelta(hours=hours) and ('ERROR' in l or '기록 파일이 망가져' in l) and 'pytest-of-' not in l:
+            recent.append((t, l.split(' ', 3)[-1]))
+    if not recent:
+        return '정상', '최근 24시간 없음'
+    hour = collections.Counter(m.split(':')[0] for t, m in recent if now - t <= datetime.timedelta(hours=1))
+    if hour and max(hour.values()) >= 3:
+        m, n = hour.most_common(1)[0]
+        return '문제', f'최근 1시간 {n}번: {m[:100]} — 그 차례가 5분마다 실패하고 있음'
+    return '확인', f'최근 24시간 {len(recent)}줄 — 마지막: {recent[-1][1][:110]}'
+
+
+# 갑자기 꺼졌다가 다시 켜진 기록(System 41, Kernel-Power) — 정전 · 전원 단추 길게 누름. 읽기만 한다 (기록장 #131).
+# PowerButtonTimestamp 가 0 이 아니면 전원 단추로 끈 것. 찾은 것이 없으면 빈 목록을 내서 '측정 실패' 와 가른다.
+SHUT_PS = ("& { try { $e = @(Get-WinEvent -FilterHashtable @{LogName='System'; Id=41; StartTime=(Get-Date).AddDays(-%d)} -ErrorAction Stop); "
+           "[pscustomobject]@{ev=@($e | ForEach-Object { $x = [xml]$_.ToXml(); "
+           "$b = ($x.Event.EventData.Data | Where-Object Name -eq 'PowerButtonTimestamp').'#text'; "
+           "[pscustomobject]@{t=$_.TimeCreated.ToString('o'); button=[bool]($b -and $b -ne '0')} })} "
+           "} catch { if ($_.FullyQualifiedErrorId -like 'NoMatchingEventsFound*') { [pscustomobject]@{ev=@()} } "
+           "else { [pscustomobject]@{err=$_.Exception.Message} } } }")
+
+
+def shutdown_row(got, states):
+    """(상태, 설명). got = SHUT_PS 결과, states = [(사무실 프로그램 기록 파일 이름, 읽히나)].
+    기록 파일이 안 읽히면 '문제', 강제 종료만 있었으면 '확인', 윈도우 기록을 못 읽었으면 '확인'(정상으로 보지 않는다)."""
+    bad = [n for n, ok in states if not ok]
+    if bad:
+        return '문제', f'기록 파일이 안 읽힘: {", ".join(bad)} — 사무실 프로그램이 다음 차례에 치우고 다시 시작한다(5분 뒤 다시 점검)'
+    files = f' · 기록 파일 {len(states)}개 모두 읽힘' if states else ''
+    if not got or got.get('err'):
+        return '확인', '윈도우 기록을 못 읽음 — 측정 실패' + (f' ({got["err"][:60]})' if got and got.get('err') else '') + files
+    ev = got.get('ev') or []
+    ev = [ev] if isinstance(ev, dict) else ev
+    if not ev:
+        return '정상', '7일 안 없음' + files
+    last = max(ev, key=lambda e: e['t'])
+    how = '전원 단추를 길게 눌러 끔' if last.get('button') else '갑자기 꺼짐(정전 등)'
+    return '확인', f'7일 안 {len(ev)}번 — 마지막 {datetime.datetime.fromisoformat(last["t"]):%m-%d %H:%M} 다시 켜짐({how})' + files
+
+
+def shutdowns():
+    d = Path(os.environ.get('LOCALAPPDATA', '')) / 'foodbell-sije'
+    states = []
+    for p in sorted(d.glob('state-sije-admin*.json')):   # PDF · 담당자 내역서 · 옵시디언 (사무실 PC 만 있음)
+        try:
+            json.loads(p.read_text(encoding='utf-8'))
+            states.append((p.name, True))
+        except (OSError, ValueError):
+            states.append((p.name, False))
+    got = ps_json(SHUT_PS % 7, timeout=90)
+    row('PC', '강제 종료(7일)', *shutdown_row(got[0] if got else None, states))
+
+
 def office():
     state = Path(os.environ.get('LOCALAPPDATA', '')) / 'foodbell-sije' / 'state-sije-admin.json'
     if not state.exists():
@@ -349,8 +413,8 @@ def office():
     else:
         row('사무실', 'PDF 프로그램이 새 코드인가', '문제', 'office_agent 가 돌고 있지 않음')
     log = state.parent / 'agent.log'
-    errs = [l for l in log.read_text(encoding='utf-8', errors='replace').splitlines()[-500:] if 'ERROR' in l and 'pytest-of-' not in l] if log.exists() else []
-    row('사무실', 'agent.log 오류(마지막 500줄)', '확인' if errs else '정상', errs[-1][:120] if errs else '없음')
+    lines = log.read_text(encoding='utf-8', errors='replace').splitlines() if log.exists() else []
+    row('사무실', 'agent.log 오류(최근 24시간)', *agent_log_row(lines, datetime.datetime.now()))
     for t in ps_json("Get-ScheduledTask | Where-Object { $_.TaskName -like '*푸드벨*' } | ForEach-Object { $i = $_ | Get-ScheduledTaskInfo; "
                      "[pscustomobject]@{n=$_.TaskName; s=[string]$_.State} }"):
         row('사무실', f'예약 작업 {t["n"]}', '정상' if t['s'] == 'Running' else '확인', t['s'])
@@ -371,6 +435,30 @@ def office():
         f'행사 {len(want)} · PDF {len(have)}' + (f' · 없는 PDF {miss} · 남는 PDF {extra} (방금 고쳤으면 5분 뒤 다시)' if miss or extra else ''))
 
 
+def rules_verdict(live, head, hist, outside='문제'):
+    """(상태, 설명). live = 올라간 규칙, head = 저장본(HEAD), hist = [(짧은 번호, 날짜, 내용)] 최근 것부터.
+    다르면 어느 쪽이 움직였는지 가른다 — 저장본이 앞선 것(올리기 기다림)과 바깥(콘솔)에서 고친 것은 반대 상황이다(기록장 #120)."""
+    norm = lambda t: t.replace('\r\n', '\n').strip()
+    if norm(live) == norm(head):
+        return '정상', ''
+    for h, day, text in hist:
+        if norm(text) == norm(live):
+            d = list(difflib.unified_diff(norm(text).splitlines(), norm(head).splitlines(), lineterm='', n=0))
+            add = sum(l.startswith('+') and not l.startswith('+++') for l in d)
+            rem = sum(l.startswith('-') and not l.startswith('---') for l in d)
+            return '확인', f'실제 = 저장소 {h} 판({day}) · 저장본이 +{add}줄 -{rem}줄 앞섬 — 올리기 기다림'
+    return outside, '저장소 어느 판과도 다름 — 콘솔에서 고쳤을 수 있음'
+
+
+def rules_history(n=30):
+    _, out, _ = git(REPO, 'log', '--format=%h %as', '-n', str(n), '--', 'firestore.rules')
+    hist = []
+    for line in out.splitlines():
+        h, day = line.split(' ', 1)
+        hist.append((h, day, git(REPO, 'show', f'{h}:firestore.rules')[1]))
+    return hist
+
+
 def rules():
     try:
         from tools.sije_web import fsdb  # noqa: F401 — 불러오면 윈도우 인증서를 합친다(백신이 보안 연결을 검사하는 노트북, 기록장 #81)
@@ -389,9 +477,9 @@ def rules():
         s = AuthorizedSession(service_account.Credentials.from_service_account_file(str(key), scopes=['https://www.googleapis.com/auth/cloud-platform']))
         base = 'https://firebaserules.googleapis.com/v1/'
         rs = s.get(base + s.get(f'{base}projects/{project}/releases/cloud.firestore').json()['rulesetName']).json()
-        same = norm(rs['source']['files'][0]['content']) == norm(repo)
-        row('저장소 규칙', f'{name} 프로젝트 = 저장소 파일', '정상' if same else ('확인' if name == '시험' else '문제'),
-            f'올린 때 {rs.get("createTime", "")[:16]}' + ('' if same else ' — 다름'))
+        live = rs['source']['files'][0]['content']
+        state, why = rules_verdict(live, repo, rules_history() if norm(live) != norm(repo) else [], '확인' if name == '시험' else '문제')
+        row('저장소 규칙', f'{name} 프로젝트 = 저장소 파일', state, f'올린 때 {rs.get("createTime", "")[:16]}' + (f' — {why}' if why else ''))
 
 
 # ---------------------------------------------------------------- 7. 시험 (--tests)
@@ -411,7 +499,7 @@ def main():
     ap.add_argument('--tests', action='store_true', help='시험 전체도 돌린다 (15분쯤)')
     a = ap.parse_args()
     t0 = time.time()
-    steps = [pc_and_repos, claude_setup, claude_tools, python_and_keys, desktop, site, office, rules] + ([tests] if a.tests else [])
+    steps = [pc_and_repos, claude_setup, claude_tools, python_and_keys, desktop, site, office, shutdowns, rules] + ([tests] if a.tests else [])
     for step in steps:
         try:
             step()

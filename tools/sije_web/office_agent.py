@@ -36,6 +36,19 @@ def setup_log(path: Path) -> logging.Logger:
     return log
 
 
+def load_or_fresh(p: Path, log: logging.Logger, fresh=None) -> dict:
+    """망가진 기록(정전 뒤 0 으로 찬 파일 등)은 옆으로 치우고 fresh(기본 빈 기록)로 시작한다 — 안 그러면 그 차례가
+    5분마다 실패만 되풀이한다(2026-11-13 ~ 14, 387번). 빈 기록이면 PDF 는 같은 이름에 다시 만들고(지우는 것 없음),
+    담당자 내역서는 전체를 한 번 다시 본다."""
+    try:
+        return load_state(p)
+    except ValueError:   # json 이 못 읽음 · 글자가 깨짐 — 둘 다 ValueError
+        aside = p.with_name(f'{p.name}.broken-{datetime.datetime.now():%Y%m%d-%H%M%S}')
+        p.replace(aside)
+        log.warning('기록 파일이 망가져 옆으로 치우고 다시 시작합니다: %s → %s', p.name, aside.name)
+        return dict(fresh or {})
+
+
 def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: logging.Logger, calendar=None, vault=None, sheets=None):
     """PDF · 백업 · 캘린더 · 옵시디언 · 담당자 내역서는 따로 감싼다 — 하나가 실패해도 나머지는 돈다.
     sheets 는 Firestore db — None 이면 담당자 내역서 차례를 건너뛴다.
@@ -43,7 +56,7 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
     vault 는 옵시디언 볼트 — None 이면(푸드벨-업무 볼트를 못 찾은 PC, 시작할 때 기록에 한 줄) 건너뛴다."""
     result = None
     try:
-        state = load_state(state_file)
+        state = load_or_fresh(state_file, log)
         result = sync_once(source, work_root, state, lambda ev, imgs, out: render_pdf(ev, imgs, out, base_url))
         save_state(state_file, state)
         for p in result['made']:
@@ -88,7 +101,9 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
     if vault is not None:
         try:
             notes_file = state_file.with_name(f'{state_file.stem}-obsidian.json')
-            notes = load_state(notes_file)
+            # 옵시디언은 '지금부터' — 빈 기록으로 처음부터 보면 어느 노트가 프로그램 것인지 몰라 노트마다 '… (2).md' 가 한 벌 더 생긴다
+            now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='microseconds')
+            notes = load_or_fresh(notes_file, log, {'since': now})
             for name in obsidian_copy.sync_notes(source.changed_since(notes.get('since'), 'docs'), vault, notes):
                 log.info('옵시디언 일정표 노트 씀: %s', name)
             save_state(notes_file, notes)
@@ -97,7 +112,7 @@ def one_cycle(source, work_root: Path, state_file: Path, base_url: str, log: log
     if sheets is not None:
         try:
             staff_file = state_file.with_name(f'{state_file.stem}-staff.json')
-            staff = load_state(staff_file)
+            staff = load_or_fresh(staff_file, log)
             out = staff_sheets.sync_staff_sheets(sheets, staff)
             save_state(staff_file, staff)
             for d in out['written']:

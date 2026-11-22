@@ -101,10 +101,14 @@ def load_state(p: Path) -> dict:
 
 
 def save_state(p: Path, state: dict):
+    """새 기록을 디스크에 확실히 쓴(fsync) 뒤에 바꾼다 — 안 그러면 정전 뒤 0 으로 찬 파일이 남는다(2026-11-13 사무실 PC)."""
     p = Path(p)
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_suffix('.tmp')
-    tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding='utf-8')
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(json.dumps(state, ensure_ascii=False, indent=1))
+        f.flush()
+        os.fsync(f.fileno())
     tmp.replace(p)
 
 
