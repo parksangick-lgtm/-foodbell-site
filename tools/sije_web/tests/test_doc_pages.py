@@ -2456,7 +2456,8 @@ def test_daily_staff_name_buttons_skip_hidden_words(pc, repo_url, custom_token, 
     글자가 똑같을 때만 뺀다 — 같은 칸에 함께 적힌 다른 이름('가짜일' · '가짜이')은 그대로 나온다."""
     daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
     fake_recent(pc, ['가짜일 · 서병선 · 춘천 · 전달, 일회용', '문수산수목장 용달 · 장진우 · 차준철', '무명가 방이동 픽업 · 가짜이',
-                     '도우미 · 도우미남자1명 · 도우미1명', '서사장 · 최인식박매호 · 최인식박맹호 · 도우미2명 · 무지개추모공원'])
+                     '도우미 · 도우미남자1명 · 도우미1명', '서사장 · 최인식박매호 · 최인식박맹호 · 도우미2명 · 무지개추모공원',
+                     '두우미1명 · 무지개추목공원'])
     pc.click('#btn-edit')
     pc.click('tr.item [data-f="staff"]')
     pc.locator('.staff-pick button').first.wait_for(timeout=15_000)
