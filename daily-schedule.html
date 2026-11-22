@@ -399,6 +399,10 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
   table.stmt.day-table tr.item td{display:block; border:0; padding:0; min-width:0}
   table.stmt.day-table tr.item td:not(.c){grid-column:1 / -1}
   table.stmt.day-table tr.item td.crew{grid-column:2}
+  /* 담당 이름 단추는 한 줄에 넷 — 번호 칸(2.2em + 사이 10px) 아래까지 넓혀 카드 폭을 다 쓴다. 담당 칸 폭에서는 둘씩 쌓여
+     아래로 길게 내려갔다(사장님 2026-11-23). 긴 이름은 단추 안에서 줄을 바꾼다 */
+  .staff-pick{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); margin-left:calc(-2.2em - 10px); word-break:normal}
+  .staff-pick .btn-name{padding-left:2px; padding-right:2px}
   table.stmt.day-table tr.item td:not(.c):not(.crew)::before{content:attr(data-label); display:block; font-size:14px; font-weight:var(--w-medium); color:var(--ink-mute); line-height:1.4}
   body:not(.editing) table.stmt.day-table td.memo-cell:has(span:empty),
   body:not(.editing) table.stmt.day-table td.meet:has(b:empty):has([data-f="lead-tel"]:empty):has([data-f="guide-tel"]:empty):has([data-f="hall"]:empty):has([data-f="depart"]:empty):has([data-f="cremate"]:empty){display:none}

@@ -2514,6 +2514,29 @@ def test_daily_new_edit_buttons_fit_phone(phone, repo_url, custom_token, made):
     assert phone.locator('tr.item:nth-child(1) .btn-contacts').count() == 1
 
 
+def test_daily_staff_names_four_per_row_on_phone(phone, repo_url, custom_token, made):
+    """휴대폰 카드 모양에서 담당 이름 단추는 한 줄에 넷 — 단추 줄을 번호 칸 아래까지 넓혀 카드 폭을 다 쓴다.
+    전에는 담당 칸 폭에서 둘씩 쌓여 아래로 길게 내려갔다(사장님 2026-11-23 캡처 — 화면을 크게 쓴 폰은 320px 쯤).
+    세 글자 이름은 한 줄 그대로, 긴 이름은 자기 단추 안에서 줄을 바꿔 옆 단추 · 화면 밖으로 안 나간다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    fake_recent(phone, ['가짜일 · 가짜이 · 가짜삼 · 가짜사', '가짜오 · 가짜육 · 가짜칠 · 가짜팔', '가짜구 · 가짜십 · 가짜아주긴이름이다'])
+    phone.click('#btn-edit')
+    phone.tap('tr.item [data-f="staff"]')
+    phone.locator('.staff-pick button').first.wait_for(timeout=15_000)
+    for width in (390, 360, 320):
+        phone.set_viewport_size({'width': width, 'height': 844})
+        got = phone.locator('.staff-pick button').evaluate_all("""(bs) => bs.map((b) => { const r = b.getBoundingClientRect(), g = document.createRange();
+            g.selectNodeContents(b);
+            return [Math.round(r.top), r.left, r.right, r.height, b.scrollWidth <= b.clientWidth, g.getClientRects().length, b.textContent]; })""")
+        tops = [g[0] for g in got]
+        assert [tops.count(t) for t in sorted(set(tops))] == [4, 4, 3], (width, tops)
+        for top, left, right, h, fits, lines, name in got:
+            assert left >= 0 and right <= width and fits and h >= 44 and right - left >= 44, (width, name, left, right, h, fits)
+            assert lines == 1 or name == '가짜아주긴이름이다', (width, name, lines)
+        edge = phone.evaluate("[document.querySelector('.staff-pick').getBoundingClientRect().left, document.querySelector('tr.item td.c').getBoundingClientRect().left]")
+        assert abs(edge[0] - edge[1]) <= 1, (width, edge)
+
+
 def test_daily_row_memo_enter_makes_new_line(pc, repo_url, custom_token, test_db, made, share_key, tmp_path):
     """줄마다의 메모 칸에서만 Enter = 줄바꿈(칸은 안 닫힘) — 글자 '\\n' 으로 들어가 저장 · 다시 열기 · 직원 게시판 · 사진 카드 ·
     인쇄에서 두 줄로 나온다. 다른 칸(장소) · 맨 위 전달 메모에서 Enter 는 전처럼 칸을 닫고 줄바꿈이 안 들어간다 (보완목록 7번)."""
