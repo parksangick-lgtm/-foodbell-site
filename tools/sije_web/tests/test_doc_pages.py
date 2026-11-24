@@ -1816,7 +1816,7 @@ def test_daily_view_place_opens_map_and_numbers_call(phone, repo_url, custom_tok
 
 
 STAFF_NOTE = "전화 · 지도는 홈 화면의 '푸드벨 일정' 아이콘을 누르세요"      # 10-24 검토 반영 — 공지 링크는 사라진 적이 있다
-STAFF_LIKE = '확인했으면 사진을 길게 눌러 좋아요 해 주세요'      # 11-01 보완 — 이모지 없이
+STAFF_LIKE = "확인은 '푸드벨 일정'에서 본인 이름을 눌러 주세요 · 고친 내용은 그 화면이 최신입니다"   # 11-24 — 확인은 이름 단추로(밤 9시 알림이 그 기록만 셈)
 STAFF_HINT = "직원이시면 단톡방 공지의 '푸드벨 일정' 링크를 누르세요"
 
 
@@ -2537,6 +2537,51 @@ def test_daily_staff_names_four_per_row_on_phone(phone, repo_url, custom_token, 
         assert abs(edge[0] - edge[1]) <= 1, (width, edge)
 
 
+SHOWN = "(s) => getComputedStyle(document.querySelector(s)).display !== 'none'"
+
+
+def test_daily_phone_header_is_one_line(phone, repo_url, custom_token, made):
+    """휴대폰 화면의 맨 위 머리글은 한 줄 — 소개 글 · 전화번호 · 주소는 화면에서만 숨긴다. 사장님 폰(320px 쯤)에서 머리글 때문에
+    첫 줄이 나오기까지 휴대폰 한 화면이 넘었다(2026-11-24 카운슬 3번). 인쇄 · PC 화면은 그대로 — 소개 글 · 전화번호가 보인다."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    for editing in (False, True):
+        if editing:
+            phone.click('#btn-edit')
+        for width in (390, 360, 320):
+            phone.set_viewport_size({'width': width, 'height': 844})
+            h, sw, cw = phone.evaluate("(() => { const m = document.querySelector('.masthead'); return [m.getBoundingClientRect().height, m.scrollWidth, m.clientWidth]; })()")
+            assert h <= 64 and sw <= cw + 2, (width, editing, h, sw, cw)   # +2 — 기운 인장(-4도)의 모서리가 종이 여백으로 1px 나온다
+            for sel in ('.brand-tag', '.brand-tel', '.brand-url'):
+                assert not phone.evaluate(SHOWN, sel), (width, editing, sel)
+            for sel in ('.brand-name', '.doc-title', '.seal'):
+                assert phone.evaluate(SHOWN, sel), (width, editing, sel)
+    phone.emulate_media(media='print')
+    for sel in ('.brand-tag', '.brand-tel'):
+        assert phone.evaluate(SHOWN, sel), ('인쇄', sel)
+    phone.emulate_media(media='screen')
+    phone.set_viewport_size({'width': 1280, 'height': 900})
+    for sel in ('.brand-tag', '.brand-tel', '.brand-url'):
+        assert phone.evaluate(SHOWN, sel), ('PC', sel)
+
+
+def test_daily_phone_date_and_memo_use_full_width(phone, repo_url, custom_token, made):
+    """휴대폰에서 날짜 뒤 요일 '(수)' 는 날짜와 같은 줄에, 맨 위 전달 메모는 이름표를 위로 올려 글 칸이 폭을 다 쓴다.
+    사장님 폰(320px)에서 '(수)' 가 다음 줄로 떨어지고 메모 글 칸이 화면 반쪽이었다(2026-11-24 카운슬 4번)."""
+    daily_new(phone, repo_url, custom_token(ALLOWED, allowed=True), made)
+    phone.click('#btn-edit')
+    edit_cell(phone, '[data-k="memo"]', '가짜 전달 메모입니다 길게 적어 봅니다')
+    for editing in (True, False):
+        if not editing:
+            phone.click('#btn-edit')
+        for width in (390, 360, 320):
+            phone.set_viewport_size({'width': width, 'height': 844})
+            d, w, b, s, p = phone.evaluate("""(() => ['[data-k="date"]', '[data-k="dow"]', 'section > p.memo b', 'section > p.memo [data-k="memo"]', 'section > p.memo']
+                .map((q) => { const r = document.querySelector(q).getBoundingClientRect(); return [r.top, r.bottom, r.width]; }))()""")
+            assert w[0] >= d[0] - 2 and w[1] <= d[1] + 2, ('요일이 다음 줄', width, editing, d, w)
+            assert b[1] <= s[0] + 1, ('메모 이름표가 위가 아님', width, editing, b, s)
+            assert s[2] >= 0.85 * p[2], ('메모 글 칸이 좁음', width, editing, s, p)
+
+
 def test_daily_row_memo_enter_makes_new_line(pc, repo_url, custom_token, test_db, made, share_key, tmp_path):
     """줄마다의 메모 칸에서만 Enter = 줄바꿈(칸은 안 닫힘) — 글자 '\\n' 으로 들어가 저장 · 다시 열기 · 직원 게시판 · 사진 카드 ·
     인쇄에서 두 줄로 나온다. 다른 칸(장소) · 맨 위 전달 메모에서 Enter 는 전처럼 칸을 닫고 줄바꿈이 안 들어간다 (보완목록 7번)."""
@@ -2903,6 +2948,20 @@ def test_daily_photo_marks_unsure_until_edited(pc, repo_url, custom_token, made)
     pc.emulate_media(media='print')
     assert _bg(pc, 'tr.item [data-f="place"]') == 'rgba(0, 0, 0, 0)'
     pc.emulate_media(media='screen')
+
+
+def test_daily_photo_always_marks_phone_numbers(pc, repo_url, custom_token, made):
+    """사진으로 읽은 전화번호(연락처 · 팀장 전화)는 AI 가 자신 있다고 해도 노란 바탕 — 11-10 실제 시험에서 팀장 전화 두 개가
+    한 자리씩 틀렸는데(7↔9 · 6↔8) 자릿수가 맞아 표시가 없었다. 빈 전화 칸 · 다른 칸은 표시하지 않는다 (2026-11-24 카운슬 2번)."""
+    fake_note_api(pc, answer=answer_rows([note_row(work='가짜 일', tel='010-0000-1111', place='가짜장소', lead='가짜팀장',
+                                                   lead_tel='010-0000-2222'),
+                                          note_row(work='가짜 둘째', place='가짜장소 둘')]))
+    daily_new(pc, repo_url, custom_token(ALLOWED, allowed=True), made)
+    photo_ready(pc)
+    pick_photo(pc)
+    wait_toast(pc, '2줄을 채웠습니다')
+    got = pc.eval_on_selector_all('.ai-unsure', """es => es.map((e) => [[...document.querySelectorAll('tr.item')].indexOf(e.closest('tr')), e.dataset.f])""")
+    assert sorted(got) == [[0, 'lead-tel'], [0, 'tel']], got
 
 
 def test_daily_photo_request_carries_token_hints_and_resized_jpeg(pc, repo_url, custom_token, test_db, made):

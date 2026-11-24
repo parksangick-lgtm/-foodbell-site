@@ -407,6 +407,20 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
   body:not(.editing) table.stmt.day-table td.memo-cell:has(span:empty),
   body:not(.editing) table.stmt.day-table td.meet:has(b:empty):has([data-f="lead-tel"]:empty):has([data-f="guide-tel"]:empty):has([data-f="hall"]:empty):has([data-f="depart"]:empty):has([data-f="cremate"]:empty){display:none}
 }
+/* 휴대폰 화면 — 머리글은 한 줄(상호 · 일일 일정표 · 인장), 소개 글 · 전화번호 · 주소는 화면에서만 숨긴다. 사장님 폰(320px 쯤)에서
+   첫 줄이 나오기까지 한 화면이 넘었다. 인쇄 · PC 화면 · 직원 사진은 그대로 (2026-11-24 카운슬 3번).
+   맨 위 전달 메모는 이름표를 위로 — 글 칸이 폭을 다 쓴다 (카운슬 4번) */
+@media screen and (max-width:620px){
+  .masthead{flex-wrap:nowrap; align-items:center; gap:10px}
+  .brand-tag, .brand-tel, .brand-url{display:none}
+  .brand-name{font-size:24px}
+  .doc-meta{gap:8px; align-items:center}
+  .doc-title{font-size:17px; margin:0}
+  .seal{width:36px; height:36px}
+  section > p.memo{flex-direction:column; align-items:stretch; gap:2px}
+}
+/* 아주 좁은 폰(320px 쯤) — 날짜 뒤 요일 '(수)' 가 다음 줄로 떨어지지 않게 (카운슬 4번) */
+@media screen and (max-width:359px){ .day{font-size:22px} }
 @media print{
   table.stmt.day-table thead{display:table-header-group}   /* 넘치면 다음 장에 표 제목 줄이 다시 나온다 */
   table.stmt.day-table .qty{display:none !important}
@@ -506,7 +520,7 @@ body.editing .day [data-ph]:empty::after{content:attr(data-ph)}
 import { lunarText } from './js/docs/lunar.js?v=1';
 import { readNumber } from './js/docs/amount.js?v=1';
 import { parseOrder } from './js/docs/order-text.js?v=4';
-import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W } from './js/docs/cards.js?v=3';
+import { cardLines, stampText, STAFF_NOTE, STAFF_LIKE, SHOT_W } from './js/docs/cards.js?v=4';
 import { staffNames, confirmState, confirmLine } from './js/docs/confirm.js?v=1';
 import { parseAmount } from './js/docs/handoff.js?v=8';   // 확정 행사 불러오기의 금액 — 다른 서류 잇기와 같은 내역서 규칙 (doc-page.js 와 같은 주소)
 
@@ -1084,7 +1098,10 @@ function fillRows(rows) {
   return n;
 }
 function fillPhotoRows(data) {
-  const n = fillRows(data.rows);
+  // 읽은 전화번호는 AI 가 자신 있다고 해도 노란 칸 — 실제 시험에서 한 자리씩 틀린 번호(7↔9 · 6↔8)가 표시 없이 들어갔다 (2026-11-24 카운슬 2번)
+  const tels = (r) => ['tel', 'lead_tel'].filter((f) => typeof r[f] === 'string' && r[f].trim());
+  const n = fillRows((Array.isArray(data.rows) ? data.rows : []).map((r) => r && typeof r === 'object'
+    ? { ...r, unsure: [...(Array.isArray(r.unsure) ? r.unsure : []), ...tels(r)] } : r));
   // 알림 한 장에 줄을 바꿔: 채운 줄 수 · 노트 날짜가 일정표와 다름(일정표 날짜는 그대로) · 칸에 못 넣은 글
   const lines = [n ? `${n}줄을 채웠습니다 — 노란 칸을 확인해 주세요` : '읽을 줄을 찾지 못했습니다'];
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof data.day === 'string' ? data.day : '');
