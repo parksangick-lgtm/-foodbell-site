@@ -2537,7 +2537,7 @@ def test_daily_staff_names_four_per_row_on_phone(phone, repo_url, custom_token, 
         assert abs(edge[0] - edge[1]) <= 1, (width, edge)
 
 
-SHOWN = "(s) => getComputedStyle(document.querySelector(s)).display !== 'none'"
+SHOWN = "(e) => getComputedStyle(e).display !== 'none'"   # 선택자 글은 page.locator(sel) 로 넘긴다 (test_selector_trap.py)
 
 
 def test_daily_phone_header_is_one_line(phone, repo_url, custom_token, made):
@@ -2552,16 +2552,16 @@ def test_daily_phone_header_is_one_line(phone, repo_url, custom_token, made):
             h, sw, cw = phone.evaluate("(() => { const m = document.querySelector('.masthead'); return [m.getBoundingClientRect().height, m.scrollWidth, m.clientWidth]; })()")
             assert h <= 64 and sw <= cw + 2, (width, editing, h, sw, cw)   # +2 — 기운 인장(-4도)의 모서리가 종이 여백으로 1px 나온다
             for sel in ('.brand-tag', '.brand-tel', '.brand-url'):
-                assert not phone.evaluate(SHOWN, sel), (width, editing, sel)
+                assert not phone.locator(sel).first.evaluate(SHOWN), (width, editing, sel)
             for sel in ('.brand-name', '.doc-title', '.seal'):
-                assert phone.evaluate(SHOWN, sel), (width, editing, sel)
+                assert phone.locator(sel).first.evaluate(SHOWN), (width, editing, sel)
     phone.emulate_media(media='print')
     for sel in ('.brand-tag', '.brand-tel'):
-        assert phone.evaluate(SHOWN, sel), ('인쇄', sel)
+        assert phone.locator(sel).first.evaluate(SHOWN), ('인쇄', sel)
     phone.emulate_media(media='screen')
     phone.set_viewport_size({'width': 1280, 'height': 900})
     for sel in ('.brand-tag', '.brand-tel', '.brand-url'):
-        assert phone.evaluate(SHOWN, sel), ('PC', sel)
+        assert phone.locator(sel).first.evaluate(SHOWN), ('PC', sel)
 
 
 def test_daily_phone_date_and_memo_use_full_width(phone, repo_url, custom_token, made):
