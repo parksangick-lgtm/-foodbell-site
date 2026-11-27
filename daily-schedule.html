@@ -1186,11 +1186,11 @@ const digits = (t) => String(t || '').replace(/\D/g, '');
 /* a 가 b 안에 있나 — a 가 숫자로 시작 · 끝나면 그 옆이 숫자가 아니어야('7-1' 은 '7-10' 안에 없다) */
 const inside = (a, b) => new RegExp((/^\d/.test(a) ? '(?:^|\\D)' : '') + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   + (/\d$/.test(a) ? '(?!\\d)' : '')).test(b);
-async function loadEvents() {
-  if (!parseDay(getText('date'))) { toast('날짜를 못 읽어 불러오지 못했습니다'); return; }
+/* 일정표 날짜의 확정 행사 중 이 일정표에 아직 없는 것, 시간 순 — 단추와 '새 일정표를 만들 때 묻기'가 같이 쓴다. 못 읽으면 알리고 null */
+async function newEvents() {
   let list;
   try { list = await window.FoodbellDoc.eventsOn(ymd()); }
-  catch (e) { toast(`확정 행사를 읽지 못했습니다 (${(e && (e.code || e.name)) || '알 수 없음'})`); return; }
+  catch (e) { toast(`확정 행사를 읽지 못했습니다 (${(e && (e.code || e.name)) || '알 수 없음'})`); return null; }
   // 이미 있는 줄은 읽고 난 뒤에 본다 — 읽는 동안 고친 것 · 두 번 누른 것까지 겹치지 않게
   const rows = Array.prototype.filter.call(sheet.querySelectorAll('tr.item'), filled);
   const places = rows.map((tr) => squash(field(tr, 'place'))).filter((p) => p.length >= 2);
@@ -1198,11 +1198,45 @@ async function loadEvents() {
   const samePlace = (p) => { const q = squash(p); return q.length >= 2 && places.some((x) => inside(q, x) || inside(x, q)); };
   const have = (ev) => [ev.titlePlace, ev.place].some(samePlace)
     || (Array.isArray(ev.contacts) ? ev.contacts : []).some((t) => digits(t).length >= 8 && tels.some((x) => x.includes(digits(t))));
-  const todo = (list || []).map((x) => x && x.ev).filter((ev) => ev && ev.status === '확정' && !have(ev))
+  return (list || []).map((x) => x && x.ev).filter((ev) => ev && ev.status === '확정' && !have(ev))
     .sort((a, b) => String(a.time || '').localeCompare(String(b.time || ''), 'ko', { numeric: true }));
+}
+async function loadEvents() {
+  if (!parseDay(getText('date'))) { toast('날짜를 못 읽어 불러오지 못했습니다'); return; }
+  const todo = await newEvents();
+  if (!todo) return;
   const n = todo.length ? fillRows(todo.map(eventRow)) : 0;
   toast(n ? `${n}줄 불러왔습니다` : '불러올 확정 행사가 없습니다');
 }
+
+/* ---------- 새 일정표를 만든 직후 한 번 — 그 날짜(내일) 확정 행사를 불러올지 묻는다 ----------
+   (2026-11-28 사장님 — 위 단추가 편집 → 줄 맨 아래라 있는 줄 몰랐다. 설계 docs/superpowers/specs/2026-11-28-daily-new-offer-events-design.md)
+   '방금 새로 만든 일정표' = 공통 부품(js/docs/doc-page.js 의 FRESH)이 이 탭에 적어 둔 표시가 남아 있는 것 — 이름이 같아야 한다
+   (tools/sije_web/js-tests/daily-offer.test.mjs 가 견준다). 한 일정표에 한 번만(새로 고침해도 다시 안 묻는다), 주인만.
+   확정 행사가 없으면 조용하고, 읽는 사이 사장님이 날짜를 바꿨거나 줄을 채우기 시작했으면 끼어들지 않는다 — 그때는 위 단추를 쓴다.
+   [확인]을 누르기 전에는 아무것도 안 바뀐다(직원 화면에도 안 올라간다). 저절로 채우지 않는 것은 사장님 결정 */
+const FRESH_KEY = 'foodbell-doc-fresh:';
+const OFFERED_KEY = 'foodbell-daily-offered:';
+async function offerEvents() {
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id || body.dataset.role !== 'owner' || !parseDay(getText('date'))) return;
+  try {
+    if (!sessionStorage.getItem(FRESH_KEY + id) || sessionStorage.getItem(OFFERED_KEY + id)) return;
+    sessionStorage.setItem(OFFERED_KEY + id, '1');
+  } catch { return; }   // 표시를 못 읽는 브라우저면 묻지 않는다 — 단추는 그대로 있다
+  const day = getText('date');
+  const todo = await newEvents();
+  if (!todo || !todo.length || getText('date') !== day
+    || Array.prototype.some.call(sheet.querySelectorAll('tr.item'), filled)) return;
+  if (!window.confirm(`${label()} 확정 행사 ${todo.length}건이 있습니다.\n\n[확인] 일정표에 불러오기\n[취소] 빈 일정표로 두기`)) return;
+  toast(`${fillRows(todo.map(eventRow))}줄 불러왔습니다`);
+}
+// 공통 부품이 서류를 그리고 화면을 'doc' 으로 바꾸는 순간 한 번 본다(역할은 그 전에 적혀 있다)
+new MutationObserver((_, ob) => {
+  if (body.dataset.docView !== 'doc') return;
+  ob.disconnect();
+  offerEvents();
+}).observe(body, { attributes: true, attributeFilter: ['data-doc-view'] });
 
 /* ---------- 담당 이름 단추 (편집 중 · 담당 칸을 누르면 그 칸 아래, 2026-11-18 보완 5번) ----------
    최근 일정표 20장의 담당 글자(photoHints — 사진으로 채우기와 같은 출처)를 staffNames 로 나눠 한 번씩. 처음 누를 때 한 번만 읽어 두고 다시 쓴다

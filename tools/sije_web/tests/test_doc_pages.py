@@ -3264,3 +3264,106 @@ def test_daily_events_unreadable_date_and_read_error(pc, repo_url, custom_token,
     pc.click(EVENTS_BTN)
     wait_toast(pc, '확정 행사를 읽지 못했습니다 (unavailable)')
     assert pc.evaluate('window.FoodbellDoc.serialize()') == before
+
+
+# ---------- 새 일정표를 만들 때 그날(내일) 확정 행사를 불러올지 묻기 (2026-11-28) ----------
+# 설계 docs/superpowers/specs/2026-11-28-daily-new-offer-events-design.md. 위 단추가 편집 → 줄 맨 아래라 사장님이 있는 줄 몰랐다.
+# 이 시험들은 2026-11-28 집 PC(시험 열쇠 없음)에서 써 두기만 했다 — 그날은 저장소 부품을 가짜로 바꿔 끼운 임시 시험으로만 확인.
+# 묻는 창은 일정표가 열리고 행사를 읽은 뒤에 뜬다 — new_doc 의 '무조건 확인' 이 떼어진 뒤일 수도 앞일 수도 있어서, 여기서는
+# 처음부터 끝까지 한 처리기가 답한다('같은 날짜 일정표가 있습니다' 는 늘 확인, '확정 행사 …' 는 accept 대로).
+
+OFFER = '확정 행사'
+
+
+def daily_new_answering(page, repo_url, token, made, accept):
+    """목록에서 '새 일정표' → (열린 일정표 id, 뜬 확인창 글 목록 — 뒤에 뜨는 것도 이 목록에 쌓인다)."""
+    asked = []
+
+    def on_dialog(d):
+        asked.append(d.message)
+        if OFFER in d.message and not accept:
+            d.dismiss()
+        else:
+            d.accept()
+    page.on('dialog', on_dialog)
+    open_list(page, repo_url, DAILY, token)
+    page.click('#doc-new')
+    page.wait_for_url('**?id=*', timeout=20_000)
+    wait_view(page, 'doc')
+    doc_id = page.evaluate("new URLSearchParams(location.search).get('id')")
+    made.append(doc_id)
+    return doc_id, asked
+
+
+def offers(page, asked, wait=8_000):
+    """'확정 행사 …' 물음이 하나 뜰 때까지(아니면 wait ms) — 행사를 읽고 묻는 것이라 일정표가 열린 뒤 조금 늦다."""
+    for _ in range(wait // 250):
+        if any(OFFER in m for m in asked):
+            break
+        page.wait_for_timeout(250)
+    return [m for m in asked if OFFER in m]
+
+
+def confirmed_on(test_db, day):
+    """시험 프로젝트에 그 날짜로 들어 있는 확정 행사 수 — 다른 실행이 남긴 것이 있어도 건수를 맞게 견주려고 센다."""
+    return sum(1 for s in test_db.collection('events').where('date', '==', day.isoformat()).stream()
+               if (s.to_dict() or {}).get('status') == '확정')
+
+
+def places_of(page):
+    return page.evaluate("""() => [...document.querySelectorAll('tr.item [data-f="place"]')].map((e) => e.textContent.trim())""")
+
+
+def test_daily_new_offers_tomorrows_confirmed_events(pc, repo_url, custom_token, test_db, made, put_events):
+    """'새 일정표'(내일 날짜)를 만들면 내일 확정 행사 건수를 알리고 묻는다. 확인 → 편집이 켜지고 확정만 시간 순으로 채워지고 저장된다.
+    미확정 · 다른 날은 안 온다. 물음은 한 번."""
+    day = ev_day(1)
+    put_events(date=day.isoformat(), time='11시', titlePlace='가짜동 9-2', contacts=['010-0000-0092'])
+    put_events(date=day.isoformat(), time='9시', titlePlace='가짜동 9-1', contacts=['010-0000-0091'])
+    put_events(date=day.isoformat(), time='10시', titlePlace='가짜동 9-3', contacts=['010-0000-0093'], status='미확정')
+    put_events(date=ev_day(2).isoformat(), time='8시', titlePlace='가짜동 9-4', contacts=['010-0000-0094'])
+    n = confirmed_on(test_db, day)
+    assert n >= 2
+    doc_id, asked = daily_new_answering(pc, repo_url, custom_token(ALLOWED, allowed=True), made, accept=True)
+    wait_toast(pc, f'{n}줄 불러왔습니다')
+    got = offers(pc, asked)
+    assert got == [f'{day_label(day)} 확정 행사 {n}건이 있습니다.\n\n[확인] 일정표에 불러오기\n[취소] 빈 일정표로 두기'], got
+    places = places_of(pc)
+    assert '가짜동 9-1' in places and '가짜동 9-2' in places, places
+    assert places.index('가짜동 9-1') < places.index('가짜동 9-2'), places                      # 9시 → 11시
+    assert '가짜동 9-3' not in places and '가짜동 9-4' not in places, places
+    assert pc.evaluate("document.body.classList.contains('editing')")
+    wait_db(test_db.collection('docs').document(doc_id), lambda s: '가짜동 9-1' in (s.to_dict() or {}).get('html', ''))
+    pc.wait_for_timeout(1_500)
+    assert len(offers(pc, asked, wait=250)) == 1                                              # 채운 뒤 다시 묻지 않는다
+
+
+def test_daily_new_offer_cancel_leaves_blank(pc, repo_url, custom_token, test_db, made, put_events):
+    """취소 → 빈 일정표 그대로(줄 · 편집 · 저장된 글자 모두). 줄 추가 아래 '확정 행사 불러오기' 단추는 전처럼 된다(대조)."""
+    day = ev_day(1)
+    put_events(date=day.isoformat(), time='9시', titlePlace='가짜동 9-5', contacts=['010-0000-0095'])
+    n = confirmed_on(test_db, day)
+    doc_id, asked = daily_new_answering(pc, repo_url, custom_token(ALLOWED, allowed=True), made, accept=False)
+    assert len(offers(pc, asked)) == 1
+    pc.wait_for_timeout(500)
+    assert [p for p in places_of(pc) if p] == []
+    assert not pc.evaluate("document.body.classList.contains('editing')")
+    assert '가짜동 9-5' not in (test_db.collection('docs').document(doc_id).get().to_dict() or {}).get('html', '')
+    pc.click('#btn-edit')
+    pc.click(EVENTS_BTN)
+    wait_toast(pc, f'{n}줄 불러왔습니다')
+    assert '가짜동 9-5' in places_of(pc)
+    assert len(offers(pc, asked, wait=250)) == 1
+
+
+def test_daily_new_no_offer_without_confirmed_events(pc, repo_url, custom_token, test_db, made, put_events):
+    """내일 확정 행사가 없으면(미확정 · 다른 날만) 묻지 않는다 — 알림도 없다. 묻는 쪽은 위 두 시험이 대조."""
+    day = ev_day(1)
+    if confirmed_on(test_db, day):
+        pytest.skip('시험 프로젝트에 내일 날짜 확정 행사가 남아 있다 — 지우고 다시 돌린다')
+    put_events(date=day.isoformat(), time='10시', titlePlace='가짜동 9-6', contacts=['010-0000-0096'], status='미확정')
+    put_events(date=ev_day(2).isoformat(), time='8시', titlePlace='가짜동 9-7', contacts=['010-0000-0097'])
+    _, asked = daily_new_answering(pc, repo_url, custom_token(ALLOWED, allowed=True), made, accept=False)
+    assert offers(pc, asked, wait=3_000) == []
+    assert pc.locator('#toast').is_hidden()
+    assert [p for p in places_of(pc) if p] == []
