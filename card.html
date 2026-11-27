@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<meta name="robots" content="noindex">
+<title>푸드벨 대표 박상익 명함</title>
+<!-- 사장님 전자명함 (2026-11-27, 설계 docs/superpowers/specs/2026-11-27-ecard-design.md).
+     전화 · 문자 · 카카오톡 주소는 index.html 과 글자 그대로 같아야 한다 — tools/sije_web/js-tests/card-page.test.mjs 가 견준다.
+     카톡은 미리보기 그림을 오래 붙잡는다 — images/og-namecard.jpg 를 바꿀 때는 파일 이름도 바꾼다.
+     위쪽 사진 images/card-photo.jpg 는 사이트 대표 상차림 사진(images/hero-table.jpg)에서 잘라 줄인 것 (같은 날 사장님: "사진을 넣고"). -->
+<meta property="og:url" content="https://foodbell.kr/card.html">
+<meta property="og:title" content="푸드벨 대표 박상익">
+<meta property="og:description" content="시제상차림 · 제사상차림 · 출장음식 · 010-5353-3477">
+<meta property="og:image" content="https://foodbell.kr/images/og-namecard.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="푸드벨 대표 박상익 명함">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%236E1E2B%22/><g fill=%22none%22 stroke=%22%23F7F2E9%22 stroke-width=%221.8%22 stroke-linecap=%22round%22><ellipse cx=%2216%22 cy=%2210%22 rx=%228%22 ry=%222.8%22/><path d=%22M8 10c0 2.5 1.6 4.5 1.6 6.5S8.8 19 8.8 21 11.6 24 16 24s7.2-1.2 7.2-3-0.8-2.5-0.8-4.5S24 12.5 24 10%22/></g></svg>">
+<meta name="theme-color" content="#6E1E2B">
+<!-- 약한 신호에서도 글자가 먼저 뜨게 바깥 글꼴은 기다리지 않는다(받아지면 바뀐다 — call.html 과 같은 방식) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="css/style.css?v=45">
+<style>
+  /* 이 쪽만의 명함 모양. 값은 css/style.css 의 :root 에서만 가져온다. 단추는 사이트의 .btn 을 그대로 쓰고 크기만 맞춘다.
+     위에 상차림 사진, 그 아래로 흰 종이(명함)가 사진에 조금 걸쳐 올라오고, 낙관이 종이 윗선에 걸친다. */
+  .card { max-width: 480px; margin: 0 auto; padding-bottom: var(--space-12); }
+  .card__photo { margin: 0; aspect-ratio: 3 / 2; overflow: hidden; background: var(--color-cream-deep); }
+  .card__photo img { width: 100%; height: 100%; object-fit: cover; }
+  .card__paper { position: relative; margin: calc(-1 * var(--space-12)) var(--space-4) 0; padding: var(--space-6) var(--space-6) var(--space-8); background: var(--color-white); border: 1px solid var(--color-border); border-top: 2px solid var(--color-gold); box-shadow: var(--shadow-soft); }
+  .card__brand { display: flex; align-items: flex-end; gap: var(--space-4); }
+  /* 낙관 — 버건디 네모 안에 푸 / 드 / 벨 세로. 종이 윗선 위로 올라와 사진에 걸친다 */
+  .card__seal { display: flex; flex-direction: column; align-items: center; margin-top: calc(-1 * var(--space-12)); padding: 8px 12px; background: var(--color-primary); color: var(--color-cream); border-radius: var(--radius-xs); font-family: var(--font-display); font-weight: var(--weight-bold); font-size: var(--text-lg); line-height: 1.25; }
+  .card__shop { font-family: var(--font-display); font-weight: var(--weight-bold); line-height: 1.35; }
+  .card__shop-name { font-size: var(--text-2xl); color: var(--color-primary); }
+  .card__shop-biz { font-size: var(--text-caption); color: var(--color-ink-soft); }
+  .card__rule { width: 44px; height: 2px; margin: var(--space-6) 0 var(--space-4); background: var(--color-gold); }
+  .card__who { display: flex; align-items: baseline; gap: var(--space-3); }
+  .card__role { font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-ink-muted); }
+  .card__name { font-size: var(--text-3xl); line-height: 1.3; letter-spacing: 0.08em; }
+  .card__work { margin-top: var(--space-1); font-size: var(--text-caption); color: var(--color-ink-soft); }
+  .card__line { height: 1px; margin: var(--space-6) 0 var(--space-3); background: var(--color-border); }
+  .card__tel { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--font-display); font-size: min(var(--text-3xl), 9vw); font-weight: var(--weight-bold); line-height: 1.3; letter-spacing: 0.01em; white-space: nowrap; color: var(--color-primary); }   /* 사이트의 큰 전화번호(.contact__cta-number)와 같은 글꼴 · 굵기. 폭 320 에서 두 줄로 꺾이지 않게 화면 폭의 9% 를 넘지 않는다(--text-hero 와 같은 방식) */
+  /* 전화 · 문자 · 카카오톡 — 한 줄에 셋. 폭 320 에서도 글자가 안 넘치게 그림을 글자 위에 둔다 */
+  .card__acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
+  .card .btn { justify-content: center; min-height: 52px; padding: 12px 8px; line-height: 1.4; }
+  .card__acts .btn { flex-direction: column; gap: var(--space-1); padding: 12px 4px; }
+  .card__wide.btn { display: flex; width: 100%; margin-top: var(--space-3); }
+  /* 휴대폰은 누른 뒤에도 '올려 둔 색'이 남는다 — 저장 · 전달 단추가 채워진 채 남아 전화 단추와 헷갈리지 않게 원래 색으로 */
+  @media (hover: none) {
+    .card .btn--outline:hover { background: transparent; color: var(--color-primary); }
+    .card .btn--primary:hover { background: var(--color-primary); border-color: var(--color-primary); }
+  }
+  .card__hint { margin-top: var(--space-2); font-size: var(--text-caption); line-height: 1.6; color: var(--color-ink-muted); }
+  .card__msg { margin-top: var(--space-2); font-size: var(--text-caption); line-height: 1.6; }
+  .card__url { margin-top: var(--space-1); font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-primary); overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+  .card__foot { margin-top: var(--space-6); padding-top: var(--space-2); border-top: 1px solid var(--color-border); text-align: center; }
+  .card__home { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-primary); }
+  /* 넓은 화면(PC)에서는 위에 여백을 두고 사진 모서리를 단추와 같게 */
+  @media (min-width: 520px) {
+    .card { padding-top: var(--space-8); }
+    .card__photo { border-radius: var(--radius-xs); }
+  }
+</style>
+</head>
+<body>
+<main class="card">
+
+  <figure class="card__photo">
+    <img src="images/card-photo.jpg" alt="야외 제단에 백설기와 유과, 배 고임을 갖춰 차린 시제 상차림" width="960" height="640" fetchpriority="high">
+  </figure>
+
+  <div class="card__paper">
+
+    <div class="card__brand">
+      <span class="card__seal" aria-hidden="true"><span>푸</span><span>드</span><span>벨</span></span>
+      <div class="card__shop">
+        <p class="card__shop-name">푸드벨</p>
+        <p class="card__shop-biz">박상익출장음식</p>
+      </div>
+    </div>
+    <div class="card__rule"></div>
+
+    <div class="card__who">
+      <p class="card__role">대표</p>
+      <h1 class="card__name">박상익</h1>
+    </div>
+    <p class="card__work">시제상차림 · 제사상차림 · 출장음식</p>
+
+    <div class="card__line"></div>
+
+    <a href="tel:010-5353-3477" class="card__tel">010-5353-3477</a>
+
+    <div class="card__acts">
+      <a href="tel:010-5353-3477" class="btn btn--primary"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg>전화</a>
+      <a href="sms:010-5353-3477?&amp;body=%ED%91%B8%EB%93%9C%EB%B2%A8%20%EC%83%81%EC%B0%A8%EB%A6%BC%20%EB%AC%B8%EC%9D%98%EB%93%9C%EB%A6%BD%EB%8B%88%EB%8B%A4.%0A%28%EB%AA%A8%EC%8B%9C%EB%8A%94%20%EC%9C%84%EC%9D%98%20%EC%88%98%20%2F%20%EB%82%A0%EC%A7%9C%20%2F%20%EC%9E%A5%EC%86%8C%29" class="btn btn--outline"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 5.5h15a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-4.5 3.5v-3.5h-1a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8 9.5h8"/><path d="M8 12.5h5"/></svg>문자</a>
+      <a href="https://pf.kakao.com/_xhaxnaX/chat" class="btn btn--outline"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5c-4.7 0-8.5 3-8.5 6.7 0 2.4 1.6 4.5 4 5.7l-.9 3.3 3.8-2.5c.5.1 1.1.1 1.6.1 4.7 0 8.5-3 8.5-6.6S16.7 4.5 12 4.5z"/></svg>카카오톡</a>
+    </div>
+
+    <!-- download 속성을 붙이지 않는다 — 아이폰이 파일 저장이 아니라 연락처 추가 화면을 띄우게 -->
+    <a href="foodbell.vcf" class="btn btn--outline card__wide"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8.5" r="3.5"/><path d="M3.5 19.5c.6-3.4 3.2-5.5 6.5-5.5 1.6 0 3 .5 4.1 1.3"/><path d="M18 14.5v6"/><path d="M15 17.5h6"/></svg>연락처에 저장</a>
+    <p class="card__hint">저장이 안 되면 위 전화번호를 길게 눌러 저장해 주십시오.</p>
+
+    <button type="button" class="btn btn--outline card__wide" id="cardShare"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 5.5l6 5.5-6 5.5v-3.5c-4.5 0-7.5 1.5-9.5 5 .5-5.5 3.5-9 9.5-9.5z"/></svg>명함 전달하기</button>
+    <p class="card__msg" id="cardShareMsg" role="status" hidden></p>
+    <p class="card__url" id="cardShareUrl" hidden></p>
+
+    <div class="card__foot">
+      <a href="https://foodbell.kr/" class="card__home">홈페이지 보기<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a>
+    </div>
+
+  </div>
+
+</main>
+<script>
+/* 명함 전달하기 — 휴대폰 공유 창에 제목과 주소만 넘긴다(글을 섞지 않는다 — 주소는 한 줄에 혼자).
+   휴대폰에서만 되는 기능이라 끝나는 길마다 보이는 글을 둔다(공유 창을 그냥 닫은 경우만 조용히). */
+(function () {
+  var CARD_URL = 'https://foodbell.kr/card.html';
+  var btn = document.getElementById('cardShare');
+  var msg = document.getElementById('cardShareMsg');
+  var addr = document.getElementById('cardShareUrl');
+  addr.textContent = CARD_URL;
+
+  function say(text, showAddr) {
+    msg.textContent = text;
+    msg.hidden = false;
+    addr.hidden = !showAddr;
+  }
+
+  btn.addEventListener('click', function () {
+    msg.hidden = true;
+    addr.hidden = true;
+
+    if (navigator.share) {
+      var sent;
+      try { sent = Promise.resolve(navigator.share({ title: '푸드벨 대표 박상익 명함', url: CARD_URL })); }
+      catch (e) { sent = Promise.reject(e); }
+      sent.catch(function (e) {
+        if (e && e.name === 'AbortError') return;   // 공유 창을 그냥 닫음
+        say('전달 창을 열지 못했습니다 (' + ((e && e.name) || 'Error') + ')');
+      });
+      return;
+    }
+
+    // 공유 창이 없는 곳(카톡 안 브라우저 · PC) — 주소를 복사하고, 복사도 안 되면 주소 글자를 보인다
+    var copied = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(CARD_URL)
+      : Promise.reject(new Error('clipboard'));
+    copied.then(
+      function () { say('명함 주소를 복사했습니다. 카카오톡 대화창에 붙여 넣어 보내 주십시오.'); },
+      function () { say('아래 주소를 길게 눌러 복사해 주십시오.', true); }
+    );
+  });
+})();
+</script>
+</body>
+</html>

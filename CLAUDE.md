@@ -153,6 +153,7 @@ sije-worksheet.html · statement.html           작업지시서(내부용) · �
 staff-pay.html                                 알바비 지급내역서(내부용 — 사무실 직원에게 "이대로 이체")
 daily-schedule.html                            직원용 일일 일정표(사장님이 채워 단톡방에 사진 카드)
 today.html                                     직원용 고정 링크 '푸드벨 일정'(today.html#암호, 로그인 없음)
+card.html · foodbell.vcf                       사장님 전자명함(foodbell.kr/card.html, 로그인 없음) · '연락처에 저장' 파일
 sije-list · sije-sheet · sije-print · sije-view (.html)   시제행사 목록 · 내역서 · 인쇄 전용 · 담당자 보기
 js/docs/ · css/docs.css                        서류 공통 부품(로그인 · 목록 · 저장 · 서류 잇기)
 css/sije-sheet.css · js/sije/                  내역서 모양 · 동작 · 웹 저장소 연결
