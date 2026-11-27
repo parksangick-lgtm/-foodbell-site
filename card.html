@@ -26,14 +26,16 @@
 <link rel="stylesheet" href="css/style.css?v=45">
 <style>
   /* 이 쪽만의 명함 모양. 값은 css/style.css 의 :root 에서만 가져온다. 단추는 사이트의 .btn 을 그대로 쓰고 크기만 맞춘다.
-     위에 상차림 사진, 그 아래로 흰 종이(명함)가 사진에 조금 걸쳐 올라오고, 낙관이 종이 윗선에 걸친다. */
-  .card { max-width: 480px; margin: 0 auto; padding-bottom: var(--space-12); }
-  .card__photo { margin: 0; aspect-ratio: 3 / 2; overflow: hidden; background: var(--color-cream-deep); }
+     흰 종이(명함) 한 장 안에 위는 상차림 사진, 금색 줄, 아래는 글자 — 사진과 글자의 양옆 선이 같은 종이에 맞는다.
+     (2026-11-27 사장님이 휴대폰에서 보고 "사진과 글자 간격이 안 맞는다" — 종이가 사진에 걸치고 낙관이 종이 위로 삐져나오던 것을 없앴다. 다시 겹치지 않는다.) */
+  .card { max-width: 480px; margin: 0 auto; padding: var(--space-4) var(--space-4) var(--space-12); }
+  .card__paper { padding: var(--space-6) var(--space-6) var(--space-8); background: var(--color-white); border: 1px solid var(--color-border); box-shadow: var(--shadow-soft); }
+  /* 사진은 종이의 안쪽 여백을 지우고 종이 폭을 꽉 채운다. 아래 여백은 종이 옆 여백과 같게 */
+  .card__photo { margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) var(--space-6); aspect-ratio: 3 / 2; overflow: hidden; background: var(--color-cream-deep); border-bottom: 2px solid var(--color-gold); }
   .card__photo img { width: 100%; height: 100%; object-fit: cover; }
-  .card__paper { position: relative; margin: calc(-1 * var(--space-12)) var(--space-4) 0; padding: var(--space-6) var(--space-6) var(--space-8); background: var(--color-white); border: 1px solid var(--color-border); border-top: 2px solid var(--color-gold); box-shadow: var(--shadow-soft); }
-  .card__brand { display: flex; align-items: flex-end; gap: var(--space-4); }
-  /* 낙관 — 버건디 네모 안에 푸 / 드 / 벨 세로. 종이 윗선 위로 올라와 사진에 걸친다 */
-  .card__seal { display: flex; flex-direction: column; align-items: center; margin-top: calc(-1 * var(--space-12)); padding: 8px 12px; background: var(--color-primary); color: var(--color-cream); border-radius: var(--radius-xs); font-family: var(--font-display); font-weight: var(--weight-bold); font-size: var(--text-lg); line-height: 1.25; }
+  .card__brand { display: flex; align-items: center; gap: var(--space-4); }
+  /* 낙관 — 버건디 네모 안에 푸 / 드 / 벨 세로 */
+  .card__seal { display: flex; flex-direction: column; align-items: center; padding: 8px 12px; background: var(--color-primary); color: var(--color-cream); border-radius: var(--radius-xs); font-family: var(--font-display); font-weight: var(--weight-bold); font-size: var(--text-lg); line-height: 1.25; }
   .card__shop { font-family: var(--font-display); font-weight: var(--weight-bold); line-height: 1.35; }
   .card__shop-name { font-size: var(--text-2xl); color: var(--color-primary); }
   .card__shop-biz { font-size: var(--text-caption); color: var(--color-ink-soft); }
@@ -59,21 +61,20 @@
   .card__url { margin-top: var(--space-1); font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-primary); overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
   .card__foot { margin-top: var(--space-6); padding-top: var(--space-2); border-top: 1px solid var(--color-border); text-align: center; }
   .card__home { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-primary); }
-  /* 넓은 화면(PC)에서는 위에 여백을 두고 사진 모서리를 단추와 같게 */
+  /* 넓은 화면(PC)에서는 위에 여백을 더 둔다 */
   @media (min-width: 520px) {
     .card { padding-top: var(--space-8); }
-    .card__photo { border-radius: var(--radius-xs); }
   }
 </style>
 </head>
 <body>
 <main class="card">
 
-  <figure class="card__photo">
-    <img src="images/card-photo.jpg" alt="야외 제단에 백설기와 유과, 배 고임을 갖춰 차린 시제 상차림" width="960" height="640" fetchpriority="high">
-  </figure>
-
   <div class="card__paper">
+
+    <figure class="card__photo">
+      <img src="images/card-photo.jpg" alt="야외 제단에 백설기와 유과, 배 고임을 갖춰 차린 시제 상차림" width="960" height="640" fetchpriority="high">
+    </figure>
 
     <div class="card__brand">
       <span class="card__seal" aria-hidden="true"><span>푸</span><span>드</span><span>벨</span></span>
