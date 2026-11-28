@@ -29,32 +29,33 @@
      미색 종이(명함) 한 장 안에 금색 가는 테, 그 안에 위는 상차림 사진, 금색 줄, 아래는 글자(가운데 맞춤).
      (2026-11-27 사장님이 휴대폰에서 보고 "사진과 글자 간격이 안 맞는다" — 종이가 사진에 걸치고 낙관이 종이 위로 삐져나오던 것을 없앴다. 다시 겹치지 않는다.)
      (2026-11-28 사장님: "빈 여백이 너무 많아 짜임새가 없다 · 홈페이지 보기 강조 · 바탕 미색으로 고급스럽게" → 보기 A(왼쪽) · B(가운데) 그림 중 B,
-      "미색을 조금 더" — 흰 종이 · 흰 단추를 미색으로, 칸 사이를 줄이고 저장 · 전달을 한 줄에 둘, 홈페이지 보기를 넓은 단추로.) */
+      "미색을 조금 더" — 흰 종이 · 흰 단추를 미색으로, 칸 사이를 줄이고 저장 · 전달을 한 줄에 둘, 홈페이지 보기를 넓은 단추로.)
+     (2026-11-28 저녁 사장님: "한 화면에 보이게" → 캡처로 잰 폭 320 · 높이 553 에 맞춤, 그림 두 장 중 B(사진 유지 · 저장 안내 글 뺌) + "사진을 조금 더 크게"(2:1).) */
   body { background: var(--color-cream-deep); }   /* 미색 종이가 떠 보이게 뒤는 한 단계 진한 미색 */
-  .card { max-width: 480px; margin: 0 auto; padding: var(--space-3) var(--space-3) var(--space-6); text-align: center; }
-  .card__paper { padding: var(--space-2); background: var(--color-cream-light); border: 1px solid var(--color-border); box-shadow: var(--shadow-soft); }
-  .card__frame { padding: 0 var(--space-4) var(--space-4); border: 1px solid var(--color-gold); }
+  .card { max-width: 480px; margin: 0 auto; padding: var(--space-1) var(--space-2); text-align: center; }
+  .card__paper { padding: var(--space-1); background: var(--color-cream-light); border: 1px solid var(--color-border); box-shadow: var(--shadow-soft); }
+  .card__frame { padding: 0 var(--space-3) var(--space-2); border: 1px solid var(--color-gold); }
   /* 사진은 테의 안쪽 여백을 지우고 테 안 폭을 꽉 채운다 */
-  .card__photo { margin: 0 calc(-1 * var(--space-4)) var(--space-4); aspect-ratio: 3 / 2; overflow: hidden; background: var(--color-cream-deep); border-bottom: 2px solid var(--color-gold); }
+  .card__photo { margin: 0 calc(-1 * var(--space-3)) var(--space-2); aspect-ratio: 2 / 1; overflow: hidden; background: var(--color-cream-deep); border-bottom: 2px solid var(--color-gold); }
   .card__photo img { width: 100%; height: 100%; object-fit: cover; }
-  .card__brand { display: flex; justify-content: center; align-items: center; gap: var(--space-3); text-align: left; }
+  .card__brand { display: flex; justify-content: center; align-items: center; gap: var(--space-2); text-align: left; }
   /* 낙관 — 버건디 네모 안에 푸 / 드 / 벨 세로 */
-  .card__seal { display: flex; flex-direction: column; align-items: center; padding: 6px 10px; background: var(--color-primary); color: var(--color-cream); border-radius: var(--radius-xs); font-family: var(--font-display); font-weight: var(--weight-bold); font-size: var(--text-md); line-height: 1.2; }
-  .card__shop { font-family: var(--font-display); font-weight: var(--weight-bold); line-height: 1.3; }
+  .card__seal { display: flex; flex-direction: column; align-items: center; padding: 4px 8px; background: var(--color-primary); color: var(--color-cream); border-radius: var(--radius-xs); font-family: var(--font-display); font-weight: var(--weight-bold); font-size: var(--text-caption); line-height: 1.15; }
+  .card__shop { font-family: var(--font-display); font-weight: var(--weight-bold); line-height: 1.25; }
   .card__shop-name { font-size: var(--text-2xl); color: var(--color-primary); }
   .card__shop-biz { font-size: var(--text-caption); color: var(--color-ink-soft); }
-  .card__rule { width: 44px; height: 2px; margin: var(--space-4) auto var(--space-3); background: var(--color-gold); }
+  .card__rule { width: 44px; height: 2px; margin: var(--space-1) auto var(--space-2); background: var(--color-gold); }
   .card__who { display: flex; justify-content: center; align-items: baseline; gap: var(--space-3); }
   .card__role { font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-ink-muted); }
-  .card__name { font-size: var(--text-3xl); line-height: 1.25; letter-spacing: 0.08em; }
-  .card__work { font-size: var(--text-caption); color: var(--color-ink-soft); }
-  .card__line { height: 1px; margin: var(--space-4) 0 var(--space-1); background: var(--color-border); }
-  .card__tel { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--font-display); font-size: min(var(--text-3xl), 9vw); font-weight: var(--weight-bold); line-height: 1.3; letter-spacing: 0.01em; white-space: nowrap; color: var(--color-primary); }   /* 사이트의 큰 전화번호(.contact__cta-number)와 같은 글꼴 · 굵기. 폭 320 에서 두 줄로 꺾이지 않게 화면 폭의 9% 를 넘지 않는다(--text-hero 와 같은 방식) */
+  .card__name { font-size: var(--text-3xl); line-height: 1.15; letter-spacing: 0.08em; }
+  .card__work { font-size: var(--text-caption); line-height: 1.5; color: var(--color-ink-soft); }
+  .card__line { height: 1px; margin: var(--space-1) 0 0; background: var(--color-border); }
+  .card__tel { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--font-display); font-size: min(var(--text-3xl), 9vw); font-weight: var(--weight-bold); line-height: 1.2; letter-spacing: 0.01em; white-space: nowrap; color: var(--color-primary); }   /* 사이트의 큰 전화번호(.contact__cta-number)와 같은 글꼴 · 굵기. 폭 320 에서 두 줄로 꺾이지 않게 화면 폭의 9% 를 넘지 않는다(--text-hero 와 같은 방식) */
   /* 전화 · 문자 · 카카오톡 한 줄에 셋, 연락처에 저장 · 명함 전달하기 한 줄에 둘. 폭 320 에서도 글자가 안 넘치게 그림을 글자 위에 둔다 */
-  .card__acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-2); }
+  .card__acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-1); }
   .card__acts--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .card .btn { justify-content: center; min-height: 52px; padding: 10px 4px; line-height: 1.4; }
-  .card__acts .btn { flex-direction: column; gap: var(--space-1); }
+  .card .btn { justify-content: center; min-height: 48px; padding: 4px; line-height: 1.3; }
+  .card__acts .btn { flex-direction: column; gap: 2px; }
   .card .btn--outline { background: var(--color-cream); }   /* 흰 단추 대신 종이보다 한 끗 밝은 미색 */
   .card .btn--outline:hover { background: var(--color-primary); }   /* PC 마우스를 올리면 사이트처럼 채워진다 — 위 줄이 이기면 흰 글자가 미색 위에 묻힌다 */
   /* 휴대폰은 누른 뒤에도 '올려 둔 색'이 남는다 — 저장 · 전달 단추가 채워진 채 남아 전화 단추와 헷갈리지 않게 원래 색으로 */
@@ -62,11 +63,10 @@
     .card .btn--outline:hover { background: var(--color-cream); color: var(--color-primary); }
     .card .btn--primary:hover { background: var(--color-primary); border-color: var(--color-primary); }
   }
-  .card__hint { margin-top: var(--space-2); font-size: var(--text-caption); line-height: 1.5; color: var(--color-ink-muted); }
   .card__msg { margin-top: var(--space-2); font-size: var(--text-caption); line-height: 1.6; }
   .card__url { margin-top: var(--space-1); font-size: var(--text-caption); font-weight: var(--weight-medium); color: var(--color-primary); overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
   /* 홈페이지 보기 — 맨 아래 넓은 단추(사장님 11-28 "강조해줘") */
-  .card__home.btn { display: flex; width: 100%; margin-top: var(--space-4); min-height: 56px; font-size: var(--text-base); }
+  .card__home.btn { display: flex; width: 100%; margin-top: var(--space-2); min-height: 48px; font-size: var(--text-base); }
   /* 넓은 화면(PC)에서는 위에 여백을 더 둔다 */
   @media (min-width: 520px) {
     .card { padding-top: var(--space-8); }
@@ -112,7 +112,6 @@
     <a href="foodbell.vcf" class="btn btn--outline"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8.5" r="3.5"/><path d="M3.5 19.5c.6-3.4 3.2-5.5 6.5-5.5 1.6 0 3 .5 4.1 1.3"/><path d="M18 14.5v6"/><path d="M15 17.5h6"/></svg>연락처에 저장</a>
     <button type="button" class="btn btn--outline" id="cardShare"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 5.5l6 5.5-6 5.5v-3.5c-4.5 0-7.5 1.5-9.5 5 .5-5.5 3.5-9 9.5-9.5z"/></svg>명함 전달하기</button>
     </div>
-    <p class="card__hint">저장이 안 되면 위 전화번호를 길게 눌러 저장해 주십시오.</p>
     <p class="card__msg" id="cardShareMsg" role="status" hidden></p>
     <p class="card__url" id="cardShareUrl" hidden></p>
 
